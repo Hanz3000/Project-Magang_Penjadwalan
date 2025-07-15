@@ -376,119 +376,136 @@
         });
     }
 
-    function handleSubtaskChange(e) {
-        const subtaskId = this.dataset.subTaskId;
-        const taskId = this.dataset.taskId;
-        const isCompleted = this.checked;
-        const subtaskItem = this.closest('.subtask-item-modal');
-        const subtaskText = subtaskItem.querySelector('.subtask-text-modal');
+  function handleSubtaskChange(e) {
+    const checkbox = e.target;
+    const subtaskId = checkbox.dataset.subTaskId;
+    const taskId = checkbox.dataset.taskId;
+    const isCompleted = checkbox.checked;
+    const subtaskItem = checkbox.closest('.subtask-item-modal');
+    const subtaskText = subtaskItem.querySelector('.subtask-text-modal');
 
-        const originalCheckedState = !isCompleted;
-        const originalTextContent = subtaskText.textContent;
+    // Apply visual changes immediately for faster response
+    subtaskText.classList.toggle('line-through', isCompleted);
+    subtaskText.classList.toggle('text-gray-400', isCompleted);
+    subtaskText.classList.toggle('text-gray-600', !isCompleted);
 
-        if (isCompleted) {
-            subtaskText.classList.add('line-through', 'text-gray-400');
-            subtaskText.classList.remove('text-gray-600');
-        } else {
-            subtaskText.classList.remove('line-through', 'text-gray-400');
-            subtaskText.classList.add('text-gray-600');
+    fetch(`/subtasks/${subtaskId}/toggle`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ completed: isCompleted })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || 'Terjadi kesalahan pada server.');
+            });
         }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const { subtasksTotal, subtasksCompleted, completed } = data;
+            const progressPercentage = subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : (completed ? 100 : 0);
+            const mainTaskCompleted = subtasksCompleted === subtasksTotal;
 
-        fetch(`/subtasks/${subtaskId}/toggle`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ completed: isCompleted })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const modalProgressBar = document.querySelector('.subtask-progress-bar-modal');
-                const modalProgressText = document.querySelector('.subtask-progress-text-modal');
-                
-                const subtaskTotal = data.subtasksTotal;
-                const subtaskCompleted = data.subtasksCompleted;
-                const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (subtaskCompleted > 0 ? 100 : 0);
-                const mainTaskCompleted = subtaskCompleted === subtaskTotal;
-
-                if (modalProgressBar) modalProgressBar.style.width = `${progressPercentage}%`;
-                if (modalProgressText) modalProgressText.textContent = `Subtasks (${subtaskCompleted}/${subtaskTotal})`;
-
-                updateMainTaskListSubtask(taskId, subtaskId, data.completed);
-                updateTaskProgress(taskId, progressPercentage, subtaskCompleted, subtaskTotal, mainTaskCompleted);
-
-                if (currentTaskData && currentTaskData.subtasks) {
-                    const subtaskIndex = currentTaskData.subtasks.findIndex(sub => sub.id == subtaskId);
-                    if (subtaskIndex !== -1) currentTaskData.subtasks[subtaskIndex].completed = data.completed;
-                    currentTaskData.progress = progressPercentage;
-                    currentTaskData.subtasksCompleted = subtaskCompleted;
-                    currentTaskData.mainTaskCompleted = mainTaskCompleted;
-                }
-
-                showNotification('Subtask berhasil diperbarui', 'success');
-            } else {
-                throw new Error(data.message || 'Terjadi kesalahan pada server');
+            // Update progress bar in modal - THIS WAS MISSING PROPER SELECTORS
+            const modalProgressBar = document.querySelector('.subtask-progress-bar-modal');
+            const modalProgressText = document.querySelector('.subtask-progress-text-modal');
+            const modalProgressPercentage = document.querySelector('.subtask-percentage'); // Add this selector
+            
+            if (modalProgressBar) {
+                modalProgressBar.style.width = `${progressPercentage}%`;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            this.checked = originalCheckedState;
-            subtaskText.textContent = originalTextContent;
-            if (originalCheckedState) {
+            if (modalProgressText) {
+                modalProgressText.textContent = `Subtasks (${subtasksCompleted}/${subtasksTotal})`;
+            }
+            // Update the percentage display in modal
+            if (modalProgressPercentage) {
+                modalProgressPercentage.textContent = `${progressPercentage}%`;
+            }
+
+            // Update main task list
+            updateMainTaskListSubtask(taskId, subtaskId, completed);
+            updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted);
+
+            // Update local data
+            if (currentTaskData && currentTaskData.subtasks) {
+                const subtaskIndex = currentTaskData.subtasks.findIndex(sub => sub.id == subtaskId);
+                if (subtaskIndex !== -1) {
+                    currentTaskData.subtasks[subtaskIndex].completed = completed;
+                }
+                currentTaskData.progress = progressPercentage;
+                currentTaskData.subtasksCompleted = subtasksCompleted;
+                currentTaskData.mainTaskCompleted = mainTaskCompleted;
+            }
+
+            showNotification('Subtask berhasil diperbarui', 'success');
+        } else {
+            throw new Error(data.message || 'Gagal memperbarui subtask.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Revert checkbox and text state on error
+        checkbox.checked = !isCompleted;
+        subtaskText.classList.toggle('line-through', !isCompleted);
+        subtaskText.classList.toggle('text-gray-400', !isCompleted);
+        subtaskText.classList.toggle('text-gray-600', isCompleted);
+        showNotification('Gagal memperbarui subtask: ' + error.message, 'error');
+    });
+}
+    function syncMainTaskListCheckboxes() {
+    document.querySelectorAll('.subtask-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function (e) {
+            const target = e.target;
+            const subtaskId = target.getAttribute('data-sub-task-id');
+            const taskId = target.getAttribute('data-task-id');
+            const isCompleted = target.checked;
+
+            const subtaskText = target.closest('form').nextElementSibling;
+            if (isCompleted) {
                 subtaskText.classList.add('line-through', 'text-gray-400');
                 subtaskText.classList.remove('text-gray-600');
             } else {
                 subtaskText.classList.remove('line-through', 'text-gray-400');
                 subtaskText.classList.add('text-gray-600');
             }
-            showNotification('Gagal memperbarui subtask: ' + error.message, 'error');
-        });
-    }
 
-    function syncMainTaskListCheckboxes() {
-        document.querySelectorAll('.subtask-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function(e) {
-                const subtaskId = this.dataset.subTaskId;
-                const taskId = this.dataset.taskId;
-                const isCompleted = this.checked;
-                
-                const subtaskText = this.closest('form').nextElementSibling;
-                if (isCompleted) {
-                    subtaskText.classList.add('line-through', 'text-gray-400');
-                    subtaskText.classList.remove('text-gray-600');
-                } else {
-                    subtaskText.classList.remove('line-through', 'text-gray-400');
-                    subtaskText.classList.add('text-gray-600');
-                }
+            fetch(`/subtasks/${subtaskId}/toggle`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ completed: isCompleted })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const subtaskTotal = data.subtasksTotal;
+                    const subtaskCompleted = data.subtasksCompleted;
+                    const progressPercentage = subtaskTotal > 0
+                        ? Math.round((subtaskCompleted / subtaskTotal) * 100)
+                        : 0;
 
-                fetch(`/subtasks/${subtaskId}/toggle`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ completed: isCompleted })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const subtaskTotal = data.subtasksTotal;
-                        const subtaskCompleted = data.subtasksCompleted;
-                        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (subtaskCompleted > 0 ? 100 : 0);
-                        const mainTaskCompleted = subtaskCompleted === subtaskTotal;
+                    const mainTaskCompleted = subtaskCompleted === subtaskTotal;
+                    updateTaskProgress(taskId, progressPercentage, subtaskCompleted, subtaskTotal, mainTaskCompleted);
 
-                        updateTaskProgress(taskId, progressPercentage, subtaskCompleted, subtaskTotal, mainTaskCompleted);
-
-                        if (!document.getElementById('taskModal').classList.contains('hidden')) {
-                            const modalTaskId = document.getElementById('taskModalContent').dataset.taskId;
-                            if (modalTaskId === taskId) {
-                                const modalCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"].subtask-checkbox-modal`);
-                                if (modalCheckbox) {
-                                    modalCheckbox.checked = this.checked;
-                                    const modalText = modalCheckbox.closest('.subtask-item-modal').querySelector('.subtask-text-modal');
-                                    if (this.checked) {
+                    // Update progress in modal if modal is open - IMPROVED LOGIC
+                    const taskModal = document.getElementById('taskModal');
+                    if (!taskModal.classList.contains('hidden')) {
+                        const modalTaskId = document.getElementById('taskModalContent').dataset.taskId;
+                        if (modalTaskId === taskId) {
+                            // Update modal checkbox
+                            const modalCheckbox = document.querySelector(`.subtask-checkbox-modal[data-sub-task-id="${subtaskId}"]`);
+                            if (modalCheckbox) {
+                                modalCheckbox.checked = isCompleted;
+                                const modalText = modalCheckbox.closest('.subtask-item-modal').querySelector('.subtask-text-modal');
+                                if (modalText) {
+                                    if (isCompleted) {
                                         modalText.classList.add('line-through', 'text-gray-400');
                                         modalText.classList.remove('text-gray-600');
                                     } else {
@@ -496,32 +513,48 @@
                                         modalText.classList.add('text-gray-600');
                                     }
                                 }
-                                const modalProgressBar = document.querySelector('.subtask-progress-bar-modal');
-                                const modalProgressText = document.querySelector('.subtask-progress-text-modal');
-                                if (modalProgressBar) modalProgressBar.style.width = `${progressPercentage}%`;
-                                if (modalProgressText) modalProgressText.textContent = `Subtasks (${subtaskCompleted}/${subtaskTotal})`;
+                            }
+                            
+                            // Update modal progress elements
+                            const modalProgressBar = document.querySelector('.subtask-progress-bar-modal');
+                            const modalProgressText = document.querySelector('.subtask-progress-text-modal');
+                            const modalProgressPercentage = document.querySelector('.subtask-percentage');
+                            
+                            if (modalProgressBar) {
+                                modalProgressBar.style.width = `${progressPercentage}%`;
+                            }
+                            if (modalProgressText) {
+                                modalProgressText.textContent = `Subtasks (${subtaskCompleted}/${subtaskTotal})`;
+                            }
+                            if (modalProgressPercentage) {
+                                modalProgressPercentage.textContent = `${progressPercentage}%`;
                             }
                         }
-                        showNotification('Subtask berhasil diperbarui', 'success');
-                    } else {
-                        throw new Error(data.message || 'Terjadi kesalahan pada server');
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    this.checked = !isCompleted;
-                    if (!isCompleted) {
-                        subtaskText.classList.add('line-through', 'text-gray-400');
-                        subtaskText.classList.remove('text-gray-600');
-                    } else {
-                        subtaskText.classList.remove('line-through', 'text-gray-400');
-                        subtaskText.classList.add('text-gray-600');
-                    }
-                    showNotification('Gagal memperbarui subtask: ' + error.message, 'error');
-                });
+
+                    showNotification('Subtask berhasil diperbarui', 'success');
+                } else {
+                    throw new Error(data.message || 'Terjadi kesalahan pada server');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                target.checked = !isCompleted;
+
+                if (!isCompleted) {
+                    subtaskText.classList.add('line-through', 'text-gray-400');
+                    subtaskText.classList.remove('text-gray-600');
+                } else {
+                    subtaskText.classList.remove('line-through', 'text-gray-400');
+                    subtaskText.classList.add('text-gray-600');
+                }
+
+                showNotification('Gagal memperbarui subtask: ' + error.message, 'error');
             });
         });
-    }
+    });
+}
+
 
     function showNotification(message, type = 'success') {
         const notification = document.createElement('div');
@@ -618,6 +651,8 @@
                     info.el.appendChild(progressBar);
                 }
             },
+
+            
             eventClick: function(info) {
                 info.jsEvent.preventDefault();
 
@@ -810,6 +845,7 @@
                     if (data.success) {
                         const subtaskTotal = data.subtasksTotal;
                         const subtaskCompleted = data.subtasksCompleted;
+                         console.log('Subtasks Selesai:', subtaskCompleted, 'dari Total:', subtaskTotal);
                         const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (isCompleted ? 100 : 0);
                         const mainTaskCompleted = isCompleted;
 
