@@ -84,15 +84,23 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-3">Subtask</label>
                         <div class="border border-gray-300 rounded-lg">
-                            <div class="bg-gray-100 px-4 py-2 rounded-t-lg">
+                            <div class="bg-gray-100 px-4 py-2 rounded-t-lg flex justify-between items-center">
                                 <span class="text-sm font-semibold text-gray-700">Daftar Subtask</span>
+                                <!-- Tombol Tambah Subtask Baru -->
+                                <button type="button" onclick="addRootSubtask()"
+                                    class="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-xs">Tambah Subtask Baru</button>
                             </div>
                             <div id="subtasks-container" class="divide-y divide-gray-200">
-                                <div class="flex items-center gap-3 px-4 py-3">
-                                    <input type="text" name="subtasks[]" placeholder="Masukkan subtask"
-                                        class="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-                                    <button type="button" onclick="addSubtask()"
-                                        class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">Tambah</button>
+                                <div class="subtask-item px-4 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <input type="text" name="subtasks[]" placeholder="Masukkan subtask"
+                                            class="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                        <button type="button" onclick="addSubtask(this)"
+                                            class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">Tambah Anak</button>
+                                        <button type="button" onclick="removeSubtask(this)"
+                                            class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Hapus</button>
+                                    </div>
+                                    <div class="ml-6 space-y-3"></div>
                                 </div>
                             </div>
                         </div>
@@ -134,25 +142,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.priority-option').forEach(option => {
         option.addEventListener('click', function(e) {
             e.preventDefault();
-
             const radioInput = this.querySelector('input[type="radio"]');
             const priority = this.getAttribute('data-priority');
-
             if(radioInput) {
                 radioInput.checked = true;
-
-                // Reset semua
                 document.querySelectorAll('.priority-option').forEach(opt => {
                     const container = opt.querySelector('.priority-container');
                     const circle = opt.querySelector('.priority-circle');
                     container.className = 'flex flex-col items-center justify-center p-4 rounded-lg border-2 border-gray-200 transition-all duration-200 priority-container';
                     circle.className = 'w-4 h-4 rounded-full border-2 border-gray-300 mb-2 priority-circle';
                 });
-
-                // Warna sesuai prioritas
                 const selectedContainer = this.querySelector('.priority-container');
                 const selectedCircle = this.querySelector('.priority-circle');
-
                 switch(priority) {
                     case 'urgent':
                         selectedContainer.classList.add('border-red-500', 'bg-red-50');
@@ -175,30 +176,53 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Default tanggal hari ini
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('start_date').value = today;
     document.getElementById('end_date').value = today;
 });
 
-// Function add subtask
-function addSubtask() {
+// Function untuk menambah subtask baru di root
+function addRootSubtask() {
     const container = document.getElementById('subtasks-container');
     const div = document.createElement('div');
-    div.className = 'flex items-center gap-3 px-4 py-3';
-
+    div.className = 'subtask-item px-4 py-3';
     div.innerHTML = `
-        <input type="text" name="subtasks[]" placeholder="Masukkan subtask"
-            class="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
-        <button type="button" onclick="removeSubtask(this)"
-            class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Hapus</button>
+        <div class="flex items-center gap-3">
+            <input type="text" name="subtasks[]" placeholder="Masukkan subtask"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+            <button type="button" onclick="addSubtask(this)"
+                class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">Tambah Anak</button>
+            <button type="button" onclick="removeSubtask(this)"
+                class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Hapus</button>
+        </div>
+        <div class="ml-6 space-y-3"></div>
     `;
-
     container.appendChild(div);
 }
 
+// Function add nested subtask
+function addSubtask(button) {
+    const parent = button.closest('.subtask-item');
+    const container = parent.querySelector('div.ml-6');
+    const div = document.createElement('div');
+    div.className = 'subtask-item';
+    div.innerHTML = `
+        <div class="flex items-center gap-3">
+            <input type="text" name="subtasks[]" placeholder="Masukkan subtask anak"
+                class="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+            <button type="button" onclick="addSubtask(this)"
+                class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">Tambah Anak</button>
+            <button type="button" onclick="removeSubtask(this)"
+                class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">Hapus</button>
+        </div>
+        <div class="ml-6 space-y-3"></div>
+    `;
+    container.appendChild(div);
+}
+
+// Function remove subtask
 function removeSubtask(button) {
-    button.parentElement.remove();
+    button.closest('.subtask-item').remove();
 }
 </script>
 @endpush
