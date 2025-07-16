@@ -59,7 +59,6 @@
                     </div>
                     <div id="calendar" style="height: 600px;" class="rounded-lg overflow-hidden border border-gray-200"></div>
                 </div>
-
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -270,12 +269,9 @@
     let currentTaskData = null;
     let calendar = null;
 
-    // Fungsi untuk sinkronisasi checkbox antara modal dan daftar utama
+    // Function to sync checkbox states between modal and main list
     function syncCheckboxStates(taskId) {
-        // Dapatkan semua checkbox subtask di daftar utama
         const mainCheckboxes = document.querySelectorAll(`#task-item-${taskId} .subtask-checkbox`);
-        
-        // Dapatkan semua checkbox subtask di modal
         const modalCheckboxes = document.querySelectorAll('.subtask-checkbox-modal');
         
         mainCheckboxes.forEach(mainCheckbox => {
@@ -283,7 +279,6 @@
             const modalCheckbox = Array.from(modalCheckboxes).find(cb => cb.dataset.subTaskId === subtaskId);
             
             if (modalCheckbox) {
-                // Sinkronkan state dari daftar utama ke modal
                 modalCheckbox.checked = mainCheckbox.checked;
                 const modalText = modalCheckbox.closest('.subtask-item-modal')?.querySelector('.subtask-text-modal');
                 if (modalText) {
@@ -295,7 +290,7 @@
         });
     }
 
-    // Fungsi untuk mengupdate progress di modal
+    // Function to update progress in modal
     function updateModalProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal) {
         const modal = document.getElementById('taskModal');
         if (!modal.classList.contains('hidden')) {
@@ -312,7 +307,7 @@
         }
     }
 
-    // Fungsi untuk mengupdate subtask di daftar utama
+    // Function to update subtask in main list
     function updateMainTaskListSubtask(taskId, subtaskId, isCompleted) {
         const taskItem = document.getElementById(`task-item-${taskId}`);
         if (!taskItem) return;
@@ -335,24 +330,22 @@
         updateTaskProgress(taskId, progressPercentage, subtaskCompleted, subtaskTotal, subtaskCompleted === subtaskTotal);
     }
 
-    // Fungsi untuk mengupdate progress task
+    // Function to update task progress
     function updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted) {
         const taskItem = document.getElementById(`task-item-${taskId}`);
         if (!taskItem) return;
 
-        // Update progress text
+        // Update progress elements
         const progressText = taskItem.querySelector('.task-progress-percentage');
         if (progressText) progressText.textContent = `${progressPercentage}%`;
 
-        // Update progress bar
         const progressBar = taskItem.querySelector('.subtask-progress-bar');
         if (progressBar) progressBar.style.width = `${progressPercentage}%`;
 
-        // Update subtask progress text
         const subtaskProgressText = taskItem.querySelector('.subtask-progress-text');
         if (subtaskProgressText) subtaskProgressText.textContent = `Subtasks (${subtasksCompleted}/${subtasksTotal})`;
 
-        // Update main checkbox and title
+        // Update main task elements
         const mainCheckbox = taskItem.querySelector('.task-checkbox');
         const taskTitle = taskItem.querySelector('.task-title');
 
@@ -371,57 +364,154 @@
         updateCalendarEvent(taskId, progressPercentage, mainTaskCompleted);
     }
 
-    // Fungsi untuk mengupdate event di kalender
-    function updateCalendarEvent(taskId, progressPercentage, mainTaskCompleted) {
-        if (!calendar) return;
+    // Function to update calendar event
+    // Fungsi yang diperbarui untuk mengupdate event di kalender
+function updateCalendarEvent(taskId, progressPercentage, mainTaskCompleted) {
+    if (!calendar) return;
 
-        const taskItem = document.getElementById(`task-item-${taskId}`);
-        if (!taskItem) return;
+    const taskItem = document.getElementById(`task-item-${taskId}`);
+    if (!taskItem) return;
 
-        const title = taskItem.querySelector('.task-title')?.textContent || '';
-        const dateText = taskItem.querySelector('.task-title')?.nextElementSibling?.querySelector('span')?.textContent || '';
-        const [startDateStr, endDateStr] = dateText.split(' - ');
+    const title = taskItem.querySelector('.task-title')?.textContent || '';
+    const dateText = taskItem.querySelector('.task-title')?.nextElementSibling?.querySelector('span')?.textContent || '';
+    const [startDateStr, endDateStr] = dateText.split(' - ');
 
-        try {
-            const startDate = startDateStr ? new Date(startDateStr + ' 00:00:00').toISOString().split('T')[0] : '';
-            const endDate = endDateStr ? new Date(endDateStr + ' 23:59:59').toISOString().split('T')[0] : '';
+    try {
+        const startDate = startDateStr ? new Date(startDateStr + ' 00:00:00').toISOString().split('T')[0] : '';
+        const endDate = endDateStr ? new Date(endDateStr + ' 23:59:59').toISOString().split('T')[0] : '';
 
-            let event = calendar.getEventById(taskId);
-            if (event) {
-                event.setProp('title', title);
-                if (startDate) event.setProp('start', startDate);
-                if (endDate) event.setProp('end', endDate);
-                event.setExtendedProp('progress', progressPercentage);
-                event.setExtendedProp('mainTaskCompleted', mainTaskCompleted);
-            } else if (startDate && endDate) {
-                calendar.addEvent({
-                    id: taskId,
-                    title: title,
-                    start: startDate,
-                    end: endDate,
-                    backgroundColor: getEventColor('medium', mainTaskCompleted),
-                    extendedProps: {
-                        progress: progressPercentage,
-                        mainTaskCompleted: mainTaskCompleted,
-                        priority: 'medium'
-                    }
-                });
+        let event = calendar.getEventById(taskId);
+        if (event) {
+            // Simpan priority yang ada atau default ke 'medium'
+            const priority = event.extendedProps.priority || 'medium';
+            
+            // Update semua properti event
+            event.setProp('title', title);
+            if (startDate) event.setProp('start', startDate);
+            if (endDate) event.setProp('end', endDate);
+            event.setExtendedProp('progress', progressPercentage);
+            event.setExtendedProp('mainTaskCompleted', mainTaskCompleted);
+            
+            // Update warna berdasarkan status completed
+            const bgColor = getEventColor(priority, mainTaskCompleted);
+            event.setProp('backgroundColor', bgColor);
+            event.setProp('borderColor', bgColor);
+            
+            // Render ulang event
+            event.setProp('display', 'none'); // Force refresh
+            event.setProp('display', 'auto');
+            
+            // Update progress bar jika ada subtask
+            if (event.extendedProps.hasSubtasks) {
+                const eventEl = event.el;
+                if (eventEl) {
+                    // Hapus progress bar lama jika ada
+                    const oldProgressBar = eventEl.querySelector('.progress-bar');
+                    if (oldProgressBar) oldProgressBar.remove();
+                    
+                    // Buat progress bar baru
+                    const progressBar = document.createElement('div');
+                    progressBar.className = 'progress-bar absolute bottom-0 left-0 h-1 rounded-b-md';
+                    progressBar.style.backgroundColor = mainTaskCompleted ? 'rgba(156, 163, 175, 0.7)' : 'rgba(255,255,255,0.7)';
+                    progressBar.style.width = progressPercentage + '%';
+                    eventEl.appendChild(progressBar);
+                }
             }
+            
             calendar.render();
-        } catch (e) {
-            console.error('Error updating calendar event:', e);
+        } else if (startDate && endDate) {
+            calendar.addEvent({
+                id: taskId,
+                title: title,
+                start: startDate,
+                end: endDate,
+                backgroundColor: getEventColor('medium', mainTaskCompleted),
+                borderColor: getEventColor('medium', mainTaskCompleted),
+                extendedProps: {
+                    progress: progressPercentage,
+                    mainTaskCompleted: mainTaskCompleted,
+                    priority: 'medium',
+                    hasSubtasks: document.querySelector(`#task-item-${taskId} .subtask-checkbox`).length > 0
+                }
+            });
+            calendar.render();
         }
+    } catch (e) {
+        console.error('Error updating calendar event:', e);
+    }
+}
+
+// Fungsi yang diperbarui untuk menangani perubahan subtask
+function handleMainListSubtaskChange(e) {
+    const checkbox = e.target;
+    const subtaskId = checkbox.dataset.subTaskId;
+    const taskId = checkbox.dataset.taskId;
+    const isCompleted = checkbox.checked;
+    const subtaskText = checkbox.closest('form')?.nextElementSibling;
+
+    // Update UI segera
+    if (subtaskText) {
+        subtaskText.classList.toggle('line-through', isCompleted);
+        subtaskText.classList.toggle('text-gray-400', isCompleted);
+        subtaskText.classList.toggle('text-gray-600', !isCompleted);
     }
 
-    // Fungsi untuk mendapatkan warna event berdasarkan prioritas
+    fetch(`/subtasks/${subtaskId}/toggle`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ completed: isCompleted })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            const { subtasksTotal, subtasksCompleted } = data;
+            const progressPercentage = subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : 0;
+            const mainTaskCompleted = subtasksCompleted === subtasksTotal;
+
+            // Update semua tampilan
+            syncCheckboxStates(taskId);
+            updateModalProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal);
+            updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted);
+            
+            // Force update calendar event
+            updateCalendarEvent(taskId, progressPercentage, mainTaskCompleted);
+            
+            showNotification('Subtask updated successfully', 'success');
+        } else {
+            throw new Error(data.message || 'Failed to update subtask');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Kembalikan UI ke state sebelumnya jika error
+        checkbox.checked = !isCompleted;
+        if (subtaskText) {
+            subtaskText.classList.toggle('line-through', !isCompleted);
+            subtaskText.classList.toggle('text-gray-400', !isCompleted);
+            subtaskText.classList.toggle('text-gray-600', isCompleted);
+        }
+        showNotification('Failed to update subtask: ' + error.message, 'error');
+    });
+}
+
+    // Function to get event color based on priority and completion status
     function getEventColor(priority, isCompleted) {
-        if (isCompleted) return '#d1d5db'; // Gray for completed tasks
+        // Gray for completed tasks regardless of priority
+        if (isCompleted) return '#d1d5db';
+        
+        // Color based on priority for incomplete tasks
         return priority === 'urgent' ? '#ef4444' :
                priority === 'high' ? '#f97316' :
                priority === 'medium' ? '#eab308' : '#22c55e';
     }
 
-    // Fungsi untuk membuka modal task
+    // Function to open task modal
     function openTaskModal(taskId, content) {
         document.getElementById('taskModalContent').innerHTML = content;
         document.getElementById('taskModalContent').dataset.taskId = taskId;
@@ -429,21 +519,18 @@
         document.getElementById('taskModal').classList.add('flex');
         document.body.style.overflow = 'hidden';
         
-        // Sinkronkan state checkbox saat modal dibuka
         syncCheckboxStates(taskId);
-        
-        // Setup handlers untuk checkbox di modal
         setupSubtaskHandlers();
     }
 
-    // Fungsi untuk menutup modal task
+    // Function to close task modal
     function closeTaskModal() {
         document.getElementById('taskModal').classList.add('hidden');
         document.getElementById('taskModal').classList.remove('flex');
         document.body.style.overflow = 'auto';
     }
 
-    // Fungsi untuk setup handler subtask di modal
+    // Function to setup subtask handlers in modal
     function setupSubtaskHandlers() {
         document.querySelectorAll('.subtask-checkbox-modal').forEach(checkbox => {
             checkbox.removeEventListener('change', handleModalSubtaskChange);
@@ -451,7 +538,7 @@
         });
     }
 
-    // Fungsi untuk menangani perubahan subtask dari modal
+    // Function to handle subtask change from modal
     function handleModalSubtaskChange(e) {
         const checkbox = e.target;
         const subtaskId = checkbox.dataset.subTaskId;
@@ -460,13 +547,14 @@
         const subtaskItem = checkbox.closest('.subtask-item-modal');
         const subtaskText = subtaskItem?.querySelector('.subtask-text-modal');
 
-        // Update UI immediately
+        // Immediate UI update
         if (subtaskText) {
             subtaskText.classList.toggle('line-through', isCompleted);
             subtaskText.classList.toggle('text-gray-400', isCompleted);
             subtaskText.classList.toggle('text-gray-600', !isCompleted);
         }
 
+        // API call to update subtask
         fetch(`/subtasks/${subtaskId}/toggle`, {
             method: 'PATCH',
             headers: {
@@ -485,10 +573,7 @@
                 const progressPercentage = subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : 0;
                 const mainTaskCompleted = subtasksCompleted === subtasksTotal;
 
-                // Update modal progress
                 updateModalProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal);
-
-                // Update main task list
                 updateMainTaskListSubtask(taskId, subtaskId, isCompleted);
                 updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted);
 
@@ -510,7 +595,7 @@
         });
     }
 
-    // Fungsi untuk menangani perubahan subtask dari daftar utama
+    // Function to handle subtask change from main list
     function handleMainListSubtaskChange(e) {
         const checkbox = e.target;
         const subtaskId = checkbox.dataset.subTaskId;
@@ -518,13 +603,14 @@
         const isCompleted = checkbox.checked;
         const subtaskText = checkbox.closest('form')?.nextElementSibling;
 
-        // Update UI immediately
+        // Immediate UI update
         if (subtaskText) {
             subtaskText.classList.toggle('line-through', isCompleted);
             subtaskText.classList.toggle('text-gray-400', isCompleted);
             subtaskText.classList.toggle('text-gray-600', !isCompleted);
         }
 
+        // API call to update subtask
         fetch(`/subtasks/${subtaskId}/toggle`, {
             method: 'PATCH',
             headers: {
@@ -543,11 +629,8 @@
                 const progressPercentage = subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : 0;
                 const mainTaskCompleted = subtasksCompleted === subtasksTotal;
 
-                // Update modal if open
                 syncCheckboxStates(taskId);
                 updateModalProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal);
-
-                // Update task progress
                 updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted);
 
                 showNotification('Subtask updated successfully', 'success');
@@ -568,7 +651,7 @@
         });
     }
 
-    // Fungsi untuk sinkronisasi checkbox di daftar utama
+    // Function to sync main list checkboxes
     function syncMainTaskListCheckboxes() {
         document.querySelectorAll('.subtask-checkbox').forEach(checkbox => {
             checkbox.removeEventListener('change', handleMainListSubtaskChange);
@@ -576,7 +659,7 @@
         });
     }
 
-    // Fungsi untuk menampilkan notifikasi
+    // Function to show notification
     function showNotification(message, type = 'success') {
         const notification = document.createElement('div');
         notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
@@ -594,7 +677,7 @@
         }, 3000);
     }
 
-    // Inisialisasi saat DOM siap
+    // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
         // Setup modal event listeners
         document.getElementById('taskModal').addEventListener('click', function(e) {
@@ -607,7 +690,7 @@
             }
         });
 
-        // Inisialisasi kalender
+        // Initialize calendar
         try {
             var calendarEl = document.getElementById('calendar');
             if (!calendarEl) {
@@ -633,8 +716,8 @@
                             title: '{{ addslashes($task->title) }}',
                             start: '{{ $task->start_date->format("Y-m-d") }}',
                             end: '{{ $task->end_date->copy()->addDay()->format("Y-m-d") }}',
-                            backgroundColor: '@if($task->priority == "urgent") #ef4444 @elseif($task->priority == "high") #f97316 @elseif($task->priority == "medium") #eab308 @else #22c55e @endif',
-                            borderColor: '@if($task->priority == "urgent") #ef4444 @elseif($task->priority == "high") #f97316 @elseif($task->priority == "medium") #eab308 @else #22c55e @endif',
+                            backgroundColor: getEventColor('{{ $task->priority }}', {{ $task->completed ? 'true' : 'false' }}),
+                            borderColor: getEventColor('{{ $task->priority }}', {{ $task->completed ? 'true' : 'false' }}),
                             extendedProps: {
                                 description: '{{ addslashes($task->description ?? "") }}',
                                 priority: '{{ $task->priority }}',
@@ -658,14 +741,25 @@
                     @endforeach
                 ],
                 eventDidMount: function(info) {
+                    const isCompleted = info.event.extendedProps.mainTaskCompleted;
+                    
                     info.el.classList.add('rounded-md', 'shadow-sm', 'text-xs', 'font-medium', 'p-1', 'cursor-pointer', 'relative');
-                    info.el.style.backgroundColor = info.event.backgroundColor;
-                    info.el.style.borderColor = info.event.borderColor;
-                    info.el.style.color = 'white';
+                    
+                    // Set colors based on completion status
+                    if (isCompleted) {
+                        info.el.style.backgroundColor = '#d1d5db';
+                        info.el.style.borderColor = '#d1d5db';
+                        info.el.style.color = '#6b7280';
+                    } else {
+                        info.el.style.backgroundColor = info.event.backgroundColor;
+                        info.el.style.borderColor = info.event.borderColor;
+                        info.el.style.color = 'white';
+                    }
 
+                    // Add priority dot
                     const dot = document.createElement('span');
                     dot.className = 'priority-dot';
-                    dot.style.backgroundColor = info.event.backgroundColor;
+                    dot.style.backgroundColor = isCompleted ? '#9ca3af' : info.event.backgroundColor;
                     dot.style.width = '6px';
                     dot.style.height = '6px';
                     dot.style.borderRadius = '50%';
@@ -674,11 +768,12 @@
                     dot.style.verticalAlign = 'middle';
                     info.el.prepend(dot);
 
+                    // Add progress bar if task has subtasks
                     if (info.event.extendedProps.hasSubtasks) {
                         const progress = info.event.extendedProps.progress;
                         const progressBar = document.createElement('div');
                         progressBar.className = 'absolute bottom-0 left-0 h-1 rounded-b-md';
-                        progressBar.style.backgroundColor = 'rgba(255,255,255,0.7)';
+                        progressBar.style.backgroundColor = isCompleted ? 'rgba(156, 163, 175, 0.7)' : 'rgba(255,255,255,0.7)';
                         progressBar.style.width = progress + '%';
                         info.el.appendChild(progressBar);
                     }
@@ -702,6 +797,7 @@
                     document.getElementById('taskModalContent').dataset.taskId = taskId;
                     document.getElementById('taskModalContent').dataset.taskData = JSON.stringify(currentTaskData);
 
+                    // Format dates
                     const startDate = event.start ? event.start.toLocaleDateString('id-ID', {
                         day: 'numeric',
                         month: 'long',
@@ -716,10 +812,12 @@
                         year: 'numeric'
                     }) : '';
 
+                    // Calculate duration
                     const durationInDays = event.start && event.end ?
                         Math.ceil((event.end.getTime() - event.start.getTime()) / (1000 * 60 * 60 * 24)) : 0;
                     const durationText = durationInDays > 0 ? durationInDays + ' hari' : '';
 
+                    // Priority labels and colors
                     const priorityLabels = {
                         'urgent': 'Urgent',
                         'high': 'High',
@@ -736,6 +834,7 @@
                     };
                     const priorityClass = priorityColors[event.extendedProps.priority] || 'bg-gray-100 text-gray-800';
 
+                    // Build subtasks HTML if exists
                     let subtasksHtml = '';
                     if (event.extendedProps.hasSubtasks) {
                         subtasksHtml = `
@@ -770,6 +869,7 @@
                         `;
                     }
 
+                    // Build modal content
                     const modalContent = `
                         <h4 class="text-xl font-bold text-gray-900 mb-2">${event.title}</h4>
                         <p class="text-gray-600 mb-4">${event.extendedProps.description || 'No description.'}</p>
@@ -848,10 +948,10 @@
                 const taskItem = document.getElementById(`task-item-${taskId}`);
                 if (!taskItem) return;
 
+                // Immediate UI updates
                 const taskTitle = taskItem.querySelector('.task-title');
                 const subtaskCheckboxes = taskItem.querySelectorAll('.subtask-checkbox');
 
-                // Update UI immediately
                 if (taskTitle) {
                     taskTitle.classList.toggle('line-through', isCompleted);
                     taskTitle.classList.toggle('text-gray-400', isCompleted);
@@ -870,6 +970,7 @@
                     }
                 });
 
+                // API call to update task
                 fetch(this.action, {
                     method: 'PATCH',
                     headers: {
@@ -906,6 +1007,7 @@
                         syncCheckboxStates(taskId);
                         updateModalProgress(taskId, progressPercentage, subtaskCompleted, subtaskTotal);
 
+                        // Update task progress and calendar
                         updateTaskProgress(taskId, progressPercentage, subtaskCompleted, subtaskTotal, mainTaskCompleted);
                         showNotification(data.message || 'Task updated successfully', 'success');
                     } else {
