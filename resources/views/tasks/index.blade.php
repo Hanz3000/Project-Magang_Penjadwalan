@@ -204,7 +204,7 @@
                         </div>
                         <div class="bg-yellow-50 p-3 rounded-lg">
                             <div class="text-yellow-600 text-sm mb-1">Terlambat</div>
-                            <div class="text-2xl font-bold text-gray-800">RATAU WONG KENE SREGEP OG</div>
+                            <div class="text-2xl font-bold text-gray-800">1922</div>
                         </div>
                     </div>
                 </div>
@@ -253,45 +253,34 @@
     </div>
 </div>
 
-<div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
-    <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4 max-h-[80vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-6 sticky top-0 bg-white">
-            <h3 class="text-lg font-semibold text-gray-800">Detail Tugas</h3>
-            <button onclick="closeTaskModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
+<div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 backdrop-blur-sm transition-opacity duration-300">
+    <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden border border-gray-200 transform transition-all duration-300 scale-95 hover:scale-100">
+        <!-- Header dengan gradient -->
+        <div class="bg-gradient-to-r from-blue-600 to-blue-500 p-4 rounded-t-xl">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-white">Detail Tugas</h3>
+                <button onclick="closeTaskModal()" class="text-white hover:text-blue-100 p-1 rounded-full hover:bg-blue-700 transition-colors duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
         </div>
-        <div id="taskModalContent" class="space-y-4 text-sm text-gray-700">
+        
+        <!-- Konten dengan padding dan scroll halus -->
+        <div id="taskModalContent" class="p-6 space-y-4 text-gray-700 overflow-y-auto max-h-[calc(90vh-120px)] scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
+            <!-- Konten akan diisi secara dinamis -->
+        </div>
+        
+        <!-- Footer dengan aksi -->
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-xl flex justify-end gap-3">
+            
         </div>
     </div>
 </div>
 
 @push('styles')
 <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
-<style>
-    .toggle-icon {
-    transition: transform 0.2s ease;
-    display: inline-block;
-    width: 16px;
-    text-align: center;
-}
-
-.toggle-icon.collapsed {
-    transform: rotate(-90deg);
-}
-
-.child-items {
-    transition: max-height 0.3s ease, opacity 0.2s ease;
-    overflow: hidden;
-}
-
-.child-items.collapsed {
-    max-height: 0;
-    opacity: 0;
-}
-</style>
 @endpush
 
 @push('scripts')
@@ -556,6 +545,7 @@ function handleMainListSubtaskChange(e) {
         
         syncCheckboxStates(taskId);
         setupSubtaskHandlers();
+        
     }
 
     // Function to close task modal
@@ -1185,5 +1175,4 @@ function handleMainListSubtaskChange(e) {
     });
 </script>
 @endpush
-
 @endsection
