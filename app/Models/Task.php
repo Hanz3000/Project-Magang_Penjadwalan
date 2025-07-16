@@ -37,8 +37,8 @@ class Task extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function subTasks(): HasMany
-    {
-        return $this->hasMany(SubTask::class);
-    }
+    public function subTasks()
+{
+    return $this->hasMany(SubTask::class)->orderBy('id');
+}
 }

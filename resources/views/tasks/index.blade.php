@@ -75,6 +75,32 @@
                     </div>
 
                     <div class="space-y-3" id="task-list-container">
+ @php
+    function renderSubtasks($subtasks, $parentId = null) {
+        $html = '';
+        foreach ($subtasks->where('parent_id', $parentId) as $subTask) {
+            $checked = $subTask->completed ? 'checked' : '';
+            $lineClass = $subTask->completed ? 'line-through text-gray-400' : 'text-gray-600';
+
+            $html .= '<li class="ml-4 subtask-item flex items-start gap-2">';
+            $html .= '<form action="' . route('subtasks.toggle', $subTask->id) . '" method="POST" class="subtask-toggle-form">';
+            $html .= csrf_field() . method_field('PATCH');
+            $html .= '<input type="checkbox" class="subtask-checkbox" data-sub-task-id="' . $subTask->id . '" ' . $checked . '>';
+            $html .= '</form>';
+            $html .= '<span class="text-sm ' . $lineClass . ' subtask-text">' . e($subTask->title) . '</span>';
+
+            if ($subtasks->where('parent_id', $subTask->id)->count() > 0) {
+                $html .= '<ul class="ml-6 space-y-2">';
+                $html .= renderSubtasks($subtasks, $subTask->id);
+                $html .= '</ul>';
+            }
+
+            $html .= '</li>';
+        }
+        return $html;
+    }
+    @endphp
+
                         @foreach($tasks as $task)
                         @php
                         $durationDays = $task->start_date->diffInDays($task->end_date) + 1;
@@ -139,24 +165,15 @@
                                                 <div class="h-full bg-blue-500 subtask-progress-bar" style="width: {{ $progressPercentage }}%"></div>
                                             </div>
                                         </div>
-                                        <ul class="space-y-2">
-                                            @foreach($task->subTasks as $subTask)
-                                            <li class="flex items-center gap-2 subtask-item" id="subtask-item-{{ $subTask->id }}">
-                                                <form action="{{ route('subtasks.toggle', $subTask->id) }}" method="POST" class="subtask-toggle-form">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="checkbox"
-                                                        class="subtask-checkbox"
-                                                        data-sub-task-id="{{ $subTask->id }}"
-                                                        data-task-id="{{ $task->id }}"
-                                                        {{ $subTask->completed ? 'checked' : '' }}>
-                                                </form>
-                                                <span class="text-sm {{ $subTask->completed ? 'line-through text-gray-400' : 'text-gray-600' }} subtask-text">
-                                                    {{ $subTask->title }}
-                                                </span>
-                                            </li>
-                                            @endforeach
-                                        </ul>
+                                     <ul class="space-y-2 pl-4" id="task-tree">
+    @foreach($task->subTasks->whereNull('parent_id') as $subTask)
+        @include('partials.subtask-item', [
+            'subTask' => $subTask,
+            'allSubTasks' => $task->subTasks,
+            'level' => 0
+        ])
+    @endforeach
+</ul>
                                     </div>
                                     @endif
                                 </div>
@@ -253,6 +270,28 @@
 
 @push('styles')
 <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    .toggle-icon {
+    transition: transform 0.2s ease;
+    display: inline-block;
+    width: 16px;
+    text-align: center;
+}
+
+.toggle-icon.collapsed {
+    transform: rotate(-90deg);
+}
+
+.child-items {
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+    overflow: hidden;
+}
+
+.child-items.collapsed {
+    max-height: 0;
+    opacity: 0;
+}
+</style>
 @endpush
 
 @push('scripts')
@@ -1127,6 +1166,22 @@ function handleMainListSubtaskChange(e) {
         } catch (e) {
             console.error('Error initializing Pusher:', e);
         }
+
+         document.querySelectorAll('.child-items').forEach(item => {
+        item.classList.add('collapsed');
+    });
+
+    // Toggle button functionality
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const subtaskId = this.getAttribute('data-subtask-id');
+            const childItems = document.getElementById(`child-items-${subtaskId}`);
+            const icon = this.querySelector('.toggle-icon');
+            
+            childItems.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        });
+    });
     });
 </script>
 @endpush

@@ -34,36 +34,46 @@ class TaskController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'priority' => 'required|in:urgent,high,medium,low',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'subtasks' => 'nullable|array',
-            'subtasks.*' => 'string|max:255'
-        ]);
+{
+    $request->validate([
+        'title' => 'required|max:255',
+        'category_id' => 'required|exists:categories,id',
+        'priority' => 'required|in:urgent,high,medium,low',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+        'subtasks' => 'nullable|array',
+        'subtasks.*.title' => 'required|string|max:255',
+    ]);
 
-        $task = Task::create($request->only([
-            'title',
-            'description',
-            'category_id',
-            'priority',
-            'start_date',
-            'end_date'
-        ]));
+    $task = Task::create($request->only([
+        'title',
+        'description',
+        'category_id',
+        'priority',
+        'start_date',
+        'end_date'
+    ]));
 
-        if ($request->has('subtasks')) {
-            foreach ($request->subtasks as $subtaskTitle) {
-                if (!empty($subtaskTitle)) {
-                    $task->subTasks()->create(['title' => $subtaskTitle]);
-                }
-            }
+    // Simpan semua subtasks
+    if ($request->has('subtasks')) {
+        $map = []; // untuk menyimpan id sementara dari front-end ke ID DB
+
+        foreach ($request->subtasks as $tempId => $subtask) {
+            $newSub = new \App\Models\SubTask();
+            $newSub->task_id = $task->id;
+            $newSub->title = $subtask['title'];
+            $newSub->parent_id = isset($subtask['parent_id']) && $subtask['parent_id'] !== '' 
+                ? $map[$subtask['parent_id']] ?? null 
+                : null;
+            $newSub->save();
+
+            $map[$tempId] = $newSub->id; // simpan mapping id sementara ke id asli
         }
-
-        return redirect()->route('tasks.index')->with('success', 'Tugas berhasil ditambahkan!');
     }
+
+    return redirect()->route('tasks.index')->with('success', 'Tugas berhasil ditambahkan!');
+}
+
 
     public function edit(Task $task)
     {
