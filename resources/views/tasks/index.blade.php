@@ -281,6 +281,19 @@
 
 @push('styles')
 <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<style>
+    .child-items.collapsed {
+    display: none;
+}
+
+.toggle-icon.collapsed svg {
+    transform: rotate(-90deg);
+}
+
+.toggle-icon svg {
+    transition: transform 0.2s ease;
+}
+</style>
 @endpush
 
 @push('scripts')
@@ -545,7 +558,6 @@ function handleMainListSubtaskChange(e) {
         
         syncCheckboxStates(taskId);
         setupSubtaskHandlers();
-        
     }
 
     // Function to close task modal
@@ -866,7 +878,7 @@ function handleMainListSubtaskChange(e) {
                             <div class="mt-4 border-t border-gray-200 pt-4">
                                 <div class="flex justify-between items-center mb-2">
                                     <div class="text-xs text-gray-500 subtask-progress-text-modal">
-                                        Subtugas (${event.extendedProps.subtasksCompleted}/${event.extendedProps.subtasksTotal})
+                                        Sub tugas (${event.extendedProps.subtasksCompleted}/${event.extendedProps.subtasksTotal})
                                     </div>
                                     <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                         <div class="h-full bg-blue-500 subtask-progress-bar-modal" style="width: ${event.extendedProps.progress}%"></div>
