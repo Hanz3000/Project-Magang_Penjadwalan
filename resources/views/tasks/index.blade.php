@@ -11,7 +11,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                         </svg>
                     </div>
-                    <h1 class="text-3xl font-bold text-gray-800">Task Manager</h1>
+                    <h1 class="text-3xl font-bold text-gray-800">Management Tugas</h1>
                 </div>
                <p class="text-gray-500">Kelola tugas dan progres dengan lebih teratur</p>
             </div>
@@ -49,10 +49,10 @@
 
                             <div class="flex bg-gray-100 p-1 rounded-lg ml-4">
                                 <button class="px-3 py-1 text-sm rounded-md transition-all duration-200 fc-dayGridMonth-button bg-white text-blue-600 shadow-sm font-medium" id="month-view">
-                                    Month
+                                    Bulan
                                 </button>
                                 <button class="px-3 py-1 text-sm rounded-md transition-all duration-200 fc-timeGridWeek-button text-gray-600 hover:text-gray-800 font-medium" id="week-view">
-                                    Week
+                                    Minggu
                                 </button>
                             </div>
                         </div>
@@ -65,12 +65,12 @@
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
                             </svg>
-                            My Tasks
+                         Tugas Saya
                         </h2>
                         <div class="flex gap-2">
-                            <button class="px-3 py-1 text-sm bg-gray-100 rounded-lg">All</button>
-                            <button class="px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded-lg">Active</button>
-                            <button class="px-3 py-1 text-sm bg-gray-100 rounded-lg">Completed</button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 rounded-lg">Semua</button>
+                            <button class="px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded-lg">Aktif</button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 rounded-lg">Selesai</button>
                         </div>
                     </div>
 
@@ -133,7 +133,7 @@
                                     <div class="mt-3 ml-7 pl-3 border-l-2 border-gray-200 task-subtasks-container">
                                         <div class="flex justify-between items-center mb-2">
                                             <div class="text-xs text-gray-500 subtask-progress-text">
-                                                Subtasks ({{ $subtaskCompleted }}/{{ $subtaskTotal }})
+                                                Subtugas ({{ $subtaskCompleted }}/{{ $subtaskTotal }})
                                             </div>
                                             <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                                 <div class="h-full bg-blue-500 subtask-progress-bar" style="width: {{ $progressPercentage }}%"></div>
@@ -169,14 +169,14 @@
 
             <div class="space-y-5">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Overview</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Ringkasan</h2>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-blue-50 p-3 rounded-lg">
-                            <div class="text-blue-600 text-sm mb-1">Total Tasks</div>
+                            <div class="text-blue-600 text-sm mb-1">Total Tugas</div>
                             <div class="text-2xl font-bold text-gray-800">{{ $totalTasks }}</div>
                         </div>
                         <div class="bg-green-50 p-3 rounded-lg">
-                            <div class="text-green-600 text-sm mb-1">Completed</div>
+                            <div class="text-green-600 text-sm mb-1">Selesai</div>
                             <div class="text-2xl font-bold text-gray-800">{{ $tasks->where('completed', true)->count() }}</div>
                         </div>
                         <div class="bg-purple-50 p-3 rounded-lg">
@@ -186,20 +186,20 @@
                             </div>
                         </div>
                         <div class="bg-yellow-50 p-3 rounded-lg">
-                            <div class="text-yellow-600 text-sm mb-1">Overdue</div>
-                            <div class="text-2xl font-bold text-gray-800">0</div>
+                            <div class="text-yellow-600 text-sm mb-1">Terlambat</div>
+                            <div class="text-2xl font-bold text-gray-800">RATAU WONG KENE SREGEP OG</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Priority</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Prioritas</h2>
                     <div class="space-y-3">
-                        @foreach(['urgent' => 'High', 'high' => 'Important', 'medium' => 'Medium', 'low' => 'Low'] as $key => $label)
+                        @foreach(['urgent' => 'Sangat mendesak', 'high' => 'Tinggi', 'medium' => 'Sedang', 'low' => 'Rendah'] as $key => $label)
                         <div>
                             <div class="flex justify-between text-sm text-gray-600 mb-1">
                                 <span>{{ $label }}</span>
-                                <span>{{ $priorityCounts[$key] ?? 0 }} tasks</span>
+                                <span>{{ $priorityCounts[$key] ?? 0 }} Tugas</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-1.5">
                                 <div class="bg-@if($key == 'urgent') red-500 @elseif($key == 'high') orange-500 @elseif($key == 'medium') yellow-500 @else green-500 @endif h-1.5 rounded-full"
@@ -212,8 +212,8 @@
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold text-gray-800">Categories</h2>
-                        <button class="text-blue-600 text-sm font-medium">View All</button>
+                        <h2 class="text-lg font-semibold text-gray-800">Kategori</h2>
+                        <button class="text-blue-600 text-sm font-medium">Lihat semua</button>
                     </div>
                     <div class="space-y-3">
                         @foreach($categories as $category)
@@ -256,10 +256,6 @@
 @endpush
 
 @push('scripts')
-<!-- <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/id.js'></script>
-<script src="https://js.pusher.com/7.0/pusher.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.11.3/echo.min.js"></script> -->
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/id.js'></script>
 <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
@@ -482,7 +478,7 @@ function handleMainListSubtaskChange(e) {
             // Force update calendar event
             updateCalendarEvent(taskId, progressPercentage, mainTaskCompleted);
             
-            showNotification('Subtask updated successfully', 'success');
+            showNotification('Tugas berhasil diperbarui', 'success');
         } else {
             throw new Error(data.message || 'Failed to update subtask');
         }
@@ -577,7 +573,7 @@ function handleMainListSubtaskChange(e) {
                 updateMainTaskListSubtask(taskId, subtaskId, isCompleted);
                 updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted);
 
-                showNotification('Subtask updated successfully', 'success');
+                showNotification('Tugas berhasil diperbarui', 'success');
             } else {
                 throw new Error(data.message || 'Failed to update subtask');
             }
@@ -633,7 +629,7 @@ function handleMainListSubtaskChange(e) {
                 updateModalProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal);
                 updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted);
 
-                showNotification('Subtask updated successfully', 'success');
+                showNotification('Tugas berhasil diperbarui', 'success');
             } else {
                 throw new Error(data.message || 'Failed to update subtask');
             }
@@ -819,10 +815,10 @@ function handleMainListSubtaskChange(e) {
 
                     // Priority labels and colors
                     const priorityLabels = {
-                        'urgent': 'Urgent',
-                        'high': 'High',
-                        'medium': 'Medium',
-                        'low': 'Low'
+                        'urgent': 'Sangat Mendesak',
+                        'high': 'Tinggi',
+                        'medium': 'Sedang',
+                        'low': 'Rendah'
                     };
                     const priorityLabel = priorityLabels[event.extendedProps.priority] || 'N/A';
 
@@ -841,7 +837,7 @@ function handleMainListSubtaskChange(e) {
                             <div class="mt-4 border-t border-gray-200 pt-4">
                                 <div class="flex justify-between items-center mb-2">
                                     <div class="text-xs text-gray-500 subtask-progress-text-modal">
-                                        Subtasks (${event.extendedProps.subtasksCompleted}/${event.extendedProps.subtasksTotal})
+                                        Subtugas (${event.extendedProps.subtasksCompleted}/${event.extendedProps.subtasksTotal})
                                     </div>
                                     <div class="w-20 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                         <div class="h-full bg-blue-500 subtask-progress-bar-modal" style="width: ${event.extendedProps.progress}%"></div>
@@ -874,9 +870,9 @@ function handleMainListSubtaskChange(e) {
                         <h4 class="text-xl font-bold text-gray-900 mb-2">${event.title}</h4>
                         <p class="text-gray-600 mb-4">${event.extendedProps.description || 'No description.'}</p>
                         <div class="space-y-2">
-                            <p><strong>Category:</strong> <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">${event.extendedProps.category || 'N/A'}</span></p>
-                            <p><strong>Priority:</strong> <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityClass}">${priorityLabel}</span></p>
-                            <p><strong>Duration:</strong> ${startDate} - ${formattedEndDate} (${durationText})</p>
+                            <p><strong>Kategori:</strong> <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">${event.extendedProps.category || 'N/A'}</span></p>
+                            <p><strong>Prioritas:</strong> <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityClass}">${priorityLabel}</span></p>
+                            <p><strong>Durasi:</strong> ${startDate} - ${formattedEndDate} (${durationText})</p>
                             <p><strong>Progress:</strong> <span class="text-blue-600 subtask-percentage">${event.extendedProps.progress}%</span></p>
                         </div>
                         ${subtasksHtml}
