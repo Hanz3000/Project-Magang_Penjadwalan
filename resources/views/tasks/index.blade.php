@@ -3,6 +3,7 @@
 @section('content')
 <div class="min-h-screen bg-gray-50 p-4">
     <div class="max-w-7xl mx-auto">
+        <!-- Header section remains unchanged -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div class="space-y-2">
                 <div class="flex items-center gap-3">
@@ -26,6 +27,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
+                <!-- Calendar section remains unchanged -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -59,6 +61,8 @@
                     </div>
                     <div id="calendar" style="height: 600px;" class="rounded-lg overflow-hidden border border-gray-200"></div>
                 </div>
+
+                <!-- Task list section with modified tree view -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -76,49 +80,54 @@
 
                     <div class="space-y-3" id="task-list-container">
                         @php
-                        function renderSubtasks($subtasks, $parentId = null) {
-                        $html = '';
+                        function renderSubtasks($subtasks, $parentId = null, $task = null) {
+                            $html = '';
 
-                        foreach ($subtasks->where('parent_id', $parentId) as $subTask) {
-                        $isParent = $subtasks->where('parent_id', $subTask->id)->count() > 0;
-
-                        $html .= '<li class="ml-4 subtask-item flex items-start gap-2">';
-
-                            // Kalau bukan parent, kasih form dan checkbox
-                            if (!$isParent) {
-                            $checked = $subTask->completed ? 'checked' : '';
-                            $lineClass = $subTask->completed ? 'line-through text-gray-400' : 'text-gray-600';
-
-                            $html .= '<form action="' . route('subtasks.toggle', $subTask->id) . '" method="POST" class="subtask-toggle-form">';
-                                $html .= csrf_field() . method_field('PATCH');
-                                $isLeaf = $subtasks->where('parent_id', $subTask->id)->count() == 0 ? 'true' : 'false';
-                                $html .= '<input type="checkbox"
-                                    class="subtask-checkbox"
-                                    data-sub-task-id="' . $subTask->id . '"
-                                    data-task-id="' . $task->id . '"
-                                    data-is-leaf="' . ($task->subTasks->where('parent_id', $subTask->id)->count() == 0 ? 'true' : 'false') . '"
-                                    data-parent-id="' . $subTask->parent_id . '" ' . ($subTask->completed ? ' checked' : '' ) . '>' ;
-
-                                    $html .='</form>' ;
-                                    $html .='<span class="text-sm ' . $lineClass . ' subtask-text">' . e($subTask->title) . '</span>';
-                                } else {
-                                // Kalau parent, tidak ada form/checkbox
-                                $html .= '<span class="text-sm font-semibold text-gray-700">' . e($subTask->title) . '</span>';
-                                }
-
+                            foreach ($subtasks->where('parent_id', $parentId) as $subTask) {
+                                $isParent = $subtasks->where('parent_id', $subTask->id)->count() > 0;
+                                
                                 if ($isParent) {
-                                $html .= '<ul class="ml-6 space-y-2">';
-                                    $html .= renderSubtasks($subtasks, $subTask->id);
-                                    $html .= '</ul>';
+                                    // Parent subtask with toggle button and title
+                                    $html .= '<div class="subtask-parent" data-subtask-id="' . $subTask->id . '">';
+                                    $html .= '<div class="flex items-center gap-2">';
+                                    $html .= '<button class="subtask-parent-toggle-btn text-gray-400 hover:text-gray-600 transition-colors duration-200" 
+                                                data-subtask-id="' . $subTask->id . '" 
+                                                data-expanded="true">
+                                                <svg class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </button>';
+                                    $html .= '<span class="text-sm font-semibold text-gray-700 cursor-pointer subtask-parent-title" data-subtask-id="' . $subTask->id . '">' . e($subTask->title) . '</span>';
+                                    $html .= '</div>';
+                                    
+                                    // Container for children with vertical layout
+                                    $html .= '<div class="subtask-children pl-6 mt-2" id="subtask-children-' . $subTask->id . '">';
+                                    $html .= renderSubtasks($subtasks, $subTask->id, $task);
+                                    $html .= '</div>';
+                                    $html .= '</div>';
+                                } else {
+                                    // Leaf subtask with checkbox
+                                    $checked = $subTask->completed ? 'checked' : '';
+                                    $lineClass = $subTask->completed ? 'line-through text-gray-400' : 'text-gray-600';
+
+                                    $html .= '<div class="subtask-item flex items-center gap-2 py-1" data-subtask-id="' . $subTask->id . '">';
+                                    $html .= '<form action="' . route('subtasks.toggle', $subTask->id) . '" method="POST" class="subtask-toggle-form">';
+                                    $html .= csrf_field() . method_field('PATCH');
+                                    $html .= '<input type="checkbox"
+                                        class="subtask-checkbox"
+                                        data-sub-task-id="' . $subTask->id . '"
+                                        data-task-id="' . $task->id . '"
+                                        data-is-leaf="true"
+                                        data-parent-id="' . $subTask->parent_id . '" ' . ($subTask->completed ? ' checked' : '' ) . '>';
+                                    $html .= '</form>';
+                                    $html .= '<span class="text-sm ' . $lineClass . ' subtask-text">' . e($subTask->title) . '</span>';
+                                    $html .= '</div>';
                                 }
+                            }
 
-                                $html .= '</li>';
-                        }
-
-                        return $html;
+                            return $html;
                         }
                         @endphp
-
 
                         @foreach($tasks as $task)
                         @php
@@ -131,7 +140,6 @@
                         ? round(($subtaskCompleted / $subtaskTotal) * 100)
                         : ($task->completed ? 100 : 0);
                         @endphp
-
 
                         <div class="border border-gray-200 rounded-lg p-4 transition-all duration-200 hover:border-blue-200 hover:shadow-xs {{ $task->completed ? 'bg-gray-50' : 'bg-white' }}" id="task-item-{{ $task->id }}">
                             <div class="flex items-start gap-3">
@@ -157,7 +165,7 @@
                                             </button>
                                             @endif
                                             <div>
-                                                <h3 class="font-medium text-gray-800 {{ $task->completed ? 'line-through text-gray-400' : '' }} task-title">
+                                                <h3 class="font-medium text-gray-800 {{ $task->completed ? 'line-through text-gray-400' : '' }} task-title cursor-pointer" data-task-id="{{ $task->id }}">
                                                     {{ $task->title }}
                                                 </h3>
                                                 <div class="flex items-center gap-2 text-sm text-gray-500 mt-1">
@@ -206,15 +214,9 @@
                                                 <div class="h-full bg-blue-500 subtask-progress-bar" style="width: {{ $progressPercentage }}%"></div>
                                             </div>
                                         </div>
-                                        <ul class="space-y-2 pl-4" id="task-tree">
-                                            @foreach($task->subTasks->whereNull('parent_id') as $subTask)
-                                            @include('partials.subtask-item', [
-                                            'subTask' => $subTask,
-                                            'allSubTasks' => $task->subTasks,
-                                            'level' => 0
-                                            ])
-                                            @endforeach
-                                        </ul>
+                                        <div class="space-y-2 vertical-tree" id="task-tree-{{ $task->id }}">
+                                            {!! renderSubtasks($task->subTasks, null, $task) !!}
+                                        </div>
                                     </div>
                                     @endif
                                 </div>
@@ -225,6 +227,7 @@
                 </div>
             </div>
 
+            <!-- Right sidebar remains unchanged -->
             <div class="space-y-5">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">Ringkasan</h2>
@@ -294,6 +297,7 @@
     </div>
 </div>
 
+<!-- Modal and loading indicator remain unchanged -->
 <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
     <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4 max-h-[80vh] overflow-y-auto">
         <div class="flex justify-between items-center mb-6 sticky top-0 bg-white">
@@ -309,7 +313,6 @@
     </div>
 </div>
 
-<!-- Loading indicator -->
 <div id="loading-indicator" class="fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hidden">
     <div class="flex items-center gap-2">
         <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -473,7 +476,97 @@
                 toggleSubtasks(this);
             });
         });
+
+        // Subtask parent toggle functionality
+        document.querySelectorAll('.subtask-parent-toggle-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                toggleSubtaskParent(this);
+            });
+        });
+
+        // Task title click to toggle subtasks
+        document.querySelectorAll('.task-title').forEach(title => {
+            title.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-task-id');
+                const toggleBtn = document.querySelector(`[data-task-id="${taskId}"].subtask-toggle-btn`);
+                if (toggleBtn) {
+                    toggleSubtasks(toggleBtn);
+                }
+            });
+        });
+
+        // Subtask parent title click to toggle children
+        document.querySelectorAll('.subtask-parent-title').forEach(title => {
+            title.addEventListener('click', function() {
+                const subtaskId = this.getAttribute('data-subtask-id');
+                const toggleBtn = document.querySelector(`[data-subtask-id="${subtaskId}"].subtask-parent-toggle-btn`);
+                if (toggleBtn) {
+                    toggleSubtaskParent(toggleBtn);
+                }
+            });
+        });
     });
+
+    // Function to toggle subtask parent visibility
+    function toggleSubtaskParent(button) {
+        const subtaskId = button.getAttribute('data-subtask-id');
+        const childrenContainer = document.getElementById(`subtask-children-${subtaskId}`);
+        const icon = button.querySelector('svg');
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+
+        if (isExpanded) {
+            // Collapse children
+            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
+            childrenContainer.offsetHeight; // Force reflow
+            childrenContainer.style.maxHeight = '0';
+            childrenContainer.style.opacity = '0';
+            childrenContainer.style.paddingTop = '0';
+            childrenContainer.style.paddingBottom = '0';
+            childrenContainer.style.marginTop = '0';
+            
+            // Rotate icon
+            icon.style.transform = 'rotate(-90deg)';
+            
+            button.setAttribute('data-expanded', 'false');
+            
+            // Hide completely after animation
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'false') {
+                    childrenContainer.style.display = 'none';
+                }
+            }, 200);
+        } else {
+            // Expand children
+            childrenContainer.style.display = 'block';
+            childrenContainer.style.maxHeight = '0';
+            childrenContainer.style.opacity = '0';
+            childrenContainer.style.paddingTop = '0';
+            childrenContainer.style.paddingBottom = '0';
+            childrenContainer.style.marginTop = '0';
+            
+            // Force reflow
+            childrenContainer.offsetHeight;
+            
+            // Animate to full height
+            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
+            childrenContainer.style.opacity = '1';
+            childrenContainer.style.paddingTop = '';
+            childrenContainer.style.paddingBottom = '';
+            childrenContainer.style.marginTop = '';
+            
+            // Rotate icon
+            icon.style.transform = 'rotate(0deg)';
+            
+            button.setAttribute('data-expanded', 'true');
+            
+            // Remove max-height after animation
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'true') {
+                    childrenContainer.style.maxHeight = '';
+                }
+            }, 200);
+        }
+    }
 
     // Function to toggle subtasks visibility
     function toggleSubtasks(button) {
@@ -536,7 +629,7 @@
         }
     }
     
-    // Function to handle task toggle with AJAX
+    // Function to handle task toggle with AJAX - Enhanced to check/uncheck all subtasks
     function handleTaskToggle(checkbox) {
         const taskId = checkbox.getAttribute('data-task-id');
         const form = checkbox.closest('form');
@@ -569,6 +662,9 @@
                 updateSummaryUI(data);
                 updateCalendarEvent(taskId, data.task.completed);
                 
+                // Update all subtasks to match the main task status
+                updateAllSubtasksStatus(taskId, isCompleted);
+                
                 // Show success message (optional)
                 showNotification('Tugas berhasil diperbarui!', 'success');
             } else {
@@ -585,6 +681,48 @@
         })
         .finally(() => {
             hideLoadingIndicator();
+        });
+    }
+
+    // Function to update all subtasks status when main task is toggled
+    function updateAllSubtasksStatus(taskId, isCompleted) {
+        const taskContainer = document.getElementById(`task-item-${taskId}`);
+        const subtaskCheckboxes = taskContainer.querySelectorAll('.subtask-checkbox');
+        
+        subtaskCheckboxes.forEach(subtaskCheckbox => {
+            const subtaskId = subtaskCheckbox.getAttribute('data-sub-task-id');
+            const subtaskForm = subtaskCheckbox.closest('form');
+            const subtaskUrl = subtaskForm.getAttribute('action');
+            const token = subtaskForm.querySelector('input[name="_token"]').value;
+            
+            // Update checkbox visually first
+            subtaskCheckbox.checked = isCompleted;
+            
+            // Update subtask text styling
+            const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
+            if (isCompleted) {
+                subtaskText.classList.add('line-through', 'text-gray-400');
+                subtaskText.classList.remove('text-gray-600');
+            } else {
+                subtaskText.classList.remove('line-through', 'text-gray-400');
+                subtaskText.classList.add('text-gray-600');
+            }
+            
+            // Send AJAX request to update subtask in backend
+            fetch(subtaskUrl, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    completed: isCompleted
+                })
+            })
+            .catch(error => {
+                console.error('Error updating subtask:', error);
+            });
         });
     }
     
@@ -815,14 +953,39 @@
 </script>
 
 <style>
-    /* CSS untuk animasi toggle subtasks */
+    /* CSS for vertical tree structure */
+    .vertical-tree {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .subtask-parent {
+        margin-bottom: 0.5rem;
+    }
+    
+    .subtask-children {
+        transition: all 0.2s ease-in-out;
+        overflow: hidden;
+        padding-left: 1.5rem;
+    }
+    
+    .subtask-item {
+        margin-bottom: 0.25rem;
+    }
+    
+    .subtask-toggle-btn svg,
+    .subtask-parent-toggle-btn svg {
+        transition: transform 0.2s ease-in-out;
+    }
+    
     .task-subtasks-container {
         transition: all 0.2s ease-in-out;
         overflow: hidden;
     }
     
-    .subtask-toggle-btn svg {
-        transition: transform 0.2s ease-in-out;
+    .task-title,
+    .subtask-parent-title {
+        cursor: pointer;
     }
 </style>
 
