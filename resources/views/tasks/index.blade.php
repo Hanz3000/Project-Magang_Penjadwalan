@@ -836,58 +836,112 @@
     }
 
     // Enhanced subtask toggle handler
-    function handleSubtaskToggle(checkbox) {
-        const subtaskId = checkbox.getAttribute('data-sub-task-id');
-        const taskId = checkbox.getAttribute('data-task-id');
-        const form = checkbox.closest('form');
-        const url = form.getAttribute('action');
-        const isCompleted = checkbox.checked;
-        
-        showLoadingIndicator();
-        
-        const token = form.querySelector('input[name="_token"]').value;
-        
-        fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': token,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                completed: isCompleted
-            })
+    // Enhanced subtask toggle handler
+function handleSubtaskToggle(checkbox) {
+    const subtaskId = checkbox.getAttribute('data-sub-task-id');
+    const taskId = checkbox.getAttribute('data-task-id');
+    const form = checkbox.closest('form');
+    const url = form.getAttribute('action');
+    const isCompleted = checkbox.checked;
+    
+    showLoadingIndicator();
+    
+    const token = form.querySelector('input[name="_token"]').value;
+    
+    fetch(url, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            completed: isCompleted
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateSubtaskUI(subtaskId, data);
-                updateTaskProgressUI(taskId, data);
-                updateMainTaskUI(taskId, data);
-                updateSummaryUI(data);
-                
-                // Update modal if open - REALTIME PROGRESS
-                updateModalSubtaskUI(subtaskId, data);
-                updateModalTaskUI(taskId, data);
-                updateModalProgress(taskId);
-                
-                updateTasksData(taskId, data);
-                
-                showNotification('Subtugas berhasil diperbarui!', 'success');
-            } else {
-                checkbox.checked = !isCompleted;
-                showNotification('Gagal memperbarui subtugas!', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateSubtaskUI(subtaskId, data);
+            updateTaskProgressUI(taskId, data);
+            updateMainTaskUI(taskId, data);
+            updateSummaryUI(data);
+            
+            // Update modal if open - REALTIME PROGRESS
+            updateModalSubtaskUI(subtaskId, data);
+            updateModalTaskUI(taskId, data);
+            updateModalProgress(taskId); // Ini yang akan memperbarui progres secara realtime
+            
+            updateTasksData(taskId, data);
+            
+            showNotification('Subtugas berhasil diperbarui!', 'success');
+        } else {
             checkbox.checked = !isCompleted;
-            showNotification('Terjadi kesalahan!', 'error');
+            showNotification('Gagal memperbarui subtugas!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        checkbox.checked = !isCompleted;
+        showNotification('Terjadi kesalahan!', 'error');
+    })
+    .finally(() => {
+        hideLoadingIndicator();
+    });
+}
+
+// Modal subtask toggle handler
+function handleModalSubtaskToggle(checkbox) {
+    const subtaskId = checkbox.getAttribute('data-sub-task-id');
+    const taskId = checkbox.getAttribute('data-task-id');
+    const form = checkbox.closest('form');
+    const url = form.getAttribute('action');
+    const isCompleted = checkbox.checked;
+    
+    showLoadingIndicator();
+    
+    const token = form.querySelector('input[name="_token"]').value;
+    
+    fetch(url, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            completed: isCompleted
         })
-        .finally(() => {
-            hideLoadingIndicator();
-        });
-    }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateSubtaskUI(subtaskId, data);
+            updateTaskProgressUI(taskId, data);
+            updateMainTaskUI(taskId, data);
+            updateSummaryUI(data);
+            
+            updateModalSubtaskUI(subtaskId, data);
+            updateModalTaskUI(taskId, data);
+            updateModalProgress(taskId); // Ini yang akan memperbarui progres secara realtime
+            
+            updateTasksData(taskId, data);
+            
+            showNotification('Subtugas berhasil diperbarui!', 'success');
+        } else {
+            checkbox.checked = !isCompleted;
+            showNotification('Gagal memperbarui subtugas!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        checkbox.checked = !isCompleted;
+        showNotification('Terjadi kesalahan!', 'error');
+    })
+    .finally(() => {
+        hideLoadingIndicator();
+    });
+}
 
     // Modal task toggle handler
     function handleModalTaskToggle(checkbox) {
@@ -994,45 +1048,64 @@
     }
 
     // NEW: Update modal progress in real-time
-    function updateModalProgress(taskId) {
-        const modal = document.getElementById('taskModal');
-        if (modal.classList.contains('hidden')) return;
-        
-        const task = tasksData.find(t => t.id == taskId);
-        if (!task) return;
-        
-        // Calculate current progress
-        const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
-            !task.sub_tasks.some(parent => parent.parent_id === st.id)
-        ) : [];
-        const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
-        const subtaskTotal = leafSubTasks.length;
-        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
-        
-        // Update progress bar
-        const progressBar = document.getElementById('modal-progress-bar');
-        if (progressBar) {
-            progressBar.style.width = `${progressPercentage}%`;
+    // Enhanced function to update modal progress in real-time
+function updateModalProgress(taskId) {
+    const modal = document.getElementById('taskModal');
+    if (modal.classList.contains('hidden')) return;
+    
+    const task = tasksData.find(t => t.id == taskId);
+    if (!task) return;
+    
+    // Calculate current progress from DOM elements in modal
+    const modalSubtasks = document.querySelectorAll('#taskModalContent .subtask-checkbox-modal');
+    let subtaskCompleted = 0;
+    let subtaskTotal = 0;
+    
+    modalSubtasks.forEach(checkbox => {
+        if (checkbox.checked) subtaskCompleted++;
+        subtaskTotal++;
+    });
+    
+    const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : 0;
+    
+    // Update progress bar
+    const progressBar = document.getElementById('modal-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${progressPercentage}%`;
+    }
+    
+    // Update progress percentage
+    const progressPercentageEl = document.getElementById('modal-progress-percentage');
+    if (progressPercentageEl) {
+        progressPercentageEl.textContent = `${progressPercentage}%`;
+    }
+    
+    // Update subtask count
+    const subtaskCount = document.getElementById('modal-subtask-count');
+    if (subtaskCount) {
+        subtaskCount.textContent = `${subtaskCompleted}/${subtaskTotal}`;
+    }
+    
+    // Update progress badge
+    const progressBadge = document.getElementById('modal-progress-badge');
+    if (progressBadge) {
+        progressBadge.textContent = `${progressPercentage}% Progress`;
+    }
+    
+    // Also update the main task progress if needed
+    const taskItem = document.getElementById(`task-item-${taskId}`);
+    if (taskItem) {
+        const taskProgressPercentage = taskItem.querySelector('.task-progress-percentage');
+        if (taskProgressPercentage) {
+            taskProgressPercentage.textContent = `${progressPercentage}%`;
         }
         
-        // Update progress percentage
-        const progressPercentageEl = document.getElementById('modal-progress-percentage');
-        if (progressPercentageEl) {
-            progressPercentageEl.textContent = `${progressPercentage}%`;
-        }
-        
-        // Update subtask count
-        const subtaskCount = document.getElementById('modal-subtask-count');
-        if (subtaskCount) {
-            subtaskCount.textContent = `${subtaskCompleted}/${subtaskTotal}`;
-        }
-        
-        // Update progress badge
-        const progressBadge = document.getElementById('modal-progress-badge');
-        if (progressBadge) {
-            progressBadge.textContent = `${progressPercentage}% Progress`;
+        const subtaskProgressBar = taskItem.querySelector('.subtask-progress-bar');
+        if (subtaskProgressBar) {
+            subtaskProgressBar.style.width = `${progressPercentage}%`;
         }
     }
+}
 
     // Enhanced toggle functions with smooth animations
     function toggleSubtasks(button) {
@@ -1290,19 +1363,32 @@
         }
     }
 
-    function updateTasksData(taskId, data) {
-        const taskIndex = tasksData.findIndex(t => t.id == taskId);
-        if (taskIndex !== -1) {
-            tasksData[taskIndex].completed = data.task.completed;
-            
-            if (data.subtask && tasksData[taskIndex].sub_tasks) {
-                const subtaskIndex = tasksData[taskIndex].sub_tasks.findIndex(st => st.id == data.subtask.id);
-                if (subtaskIndex !== -1) {
-                    tasksData[taskIndex].sub_tasks[subtaskIndex].completed = data.subtask.completed;
-                }
+    // Function to update tasks data
+function updateTasksData(taskId, data) {
+    const taskIndex = tasksData.findIndex(t => t.id == taskId);
+    if (taskIndex !== -1) {
+        tasksData[taskIndex].completed = data.task.completed;
+        
+        if (data.subtask && tasksData[taskIndex].sub_tasks) {
+            const subtaskIndex = tasksData[taskIndex].sub_tasks.findIndex(st => st.id == data.subtask.id);
+            if (subtaskIndex !== -1) {
+                tasksData[taskIndex].sub_tasks[subtaskIndex].completed = data.subtask.completed;
             }
         }
+        
+        // Calculate new progress for the task
+        if (tasksData[taskIndex].sub_tasks) {
+            const leafSubTasks = tasksData[taskIndex].sub_tasks.filter(st => 
+                !tasksData[taskIndex].sub_tasks.some(parent => parent.parent_id === st.id)
+            );
+            const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
+            const subtaskTotal = leafSubTasks.length;
+            tasksData[taskIndex].progressPercentage = subtaskTotal > 0 
+                ? Math.round((subtaskCompleted / subtaskTotal) * 100) 
+                : (tasksData[taskIndex].completed ? 100 : 0);
+        }
     }
+}
 
     function updateCalendarEvent(taskId, completed) {
         if (calendar) {
