@@ -145,22 +145,34 @@
                                 </form>
                                 <div class="flex-1">
                                     <div class="flex justify-between items-start">
-                                        <div>
-                                            <h3 class="font-medium text-gray-800 {{ $task->completed ? 'line-through text-gray-400' : '' }} task-title">
-                                                {{ $task->title }}
-                                            </h3>
-                                            <div class="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                                <span>{{ $task->start_date->format('M d') }} - {{ $task->end_date->format('M d') }}</span>
-                                                <span class="text-xs text-gray-400">•</span>
-                                                <span>
-                                                    <span>
-                                                        {{ $task->durationDays }} {{ $task->durationDays > 1 ? 'days' : 'day' }}
-                                                    </span>
-
-                                                    @if($subtaskTotal > 0)
+                                        <div class="flex items-center gap-2 flex-1">
+                                            @if($task->subTasks->count() > 0)
+                                            <!-- Toggle button untuk subtasks -->
+                                            <button class="subtask-toggle-btn text-gray-400 hover:text-gray-600 transition-colors duration-200" 
+                                                    data-task-id="{{ $task->id }}" 
+                                                    data-expanded="true">
+                                                <svg class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </button>
+                                            @endif
+                                            <div>
+                                                <h3 class="font-medium text-gray-800 {{ $task->completed ? 'line-through text-gray-400' : '' }} task-title">
+                                                    {{ $task->title }}
+                                                </h3>
+                                                <div class="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                                                    <span>{{ $task->start_date->format('M d') }} - {{ $task->end_date->format('M d') }}</span>
                                                     <span class="text-xs text-gray-400">•</span>
-                                                    <span class="text-blue-600 task-progress-percentage">{{ $progressPercentage }}%</span>
-                                                    @endif
+                                                    <span>
+                                                        <span>
+                                                            {{ $task->durationDays }} {{ $task->durationDays > 1 ? 'days' : 'day' }}
+                                                        </span>
+
+                                                        @if($subtaskTotal > 0)
+                                                        <span class="text-xs text-gray-400">•</span>
+                                                        <span class="text-blue-600 task-progress-percentage">{{ $progressPercentage }}%</span>
+                                                        @endif
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="flex gap-1.5">
@@ -185,7 +197,7 @@
                                     </div>
 
                                     @if($task->subTasks->count() > 0)
-                                    <div class="mt-3 ml-7 pl-3 border-l-2 border-gray-200 task-subtasks-container">
+                                    <div class="mt-3 ml-7 pl-3 border-l-2 border-gray-200 task-subtasks-container" id="subtasks-container-{{ $task->id }}">
                                         <div class="flex justify-between items-center mb-2">
                                             <div class="text-xs text-gray-500 subtask-progress-text">
                                                 Subtugas ({{ $subtaskCompleted }}/{{ $subtaskTotal }})
@@ -219,19 +231,19 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-blue-50 p-3 rounded-lg">
                             <div class="text-blue-600 text-sm mb-1">Total Tugas</div>
-                            <div class="text-2xl font-bold text-gray-800">{{ $totalTasks }}</div>
+                            <div class="text-2xl font-bold text-gray-800" id="total-tasks-count">{{ $totalTasks }}</div>
                         </div>
                         <div class="bg-green-50 p-3 rounded-lg">
                             <div class="text-green-600 text-sm mb-1">Selesai</div>
-                            <div class="text-2xl font-bold text-gray-800">{{ $tasks->where('completed', true)->count() }}</div>
+                            <div class="text-2xl font-bold text-gray-800" id="completed-tasks-count">{{ $tasks->where('completed', true)->count() }}</div>
                         </div>
                         <div class="bg-purple-50 p-3 rounded-lg">
-    <div class="text-purple-600 text-sm mb-1">Progress</div>
-    <div class="text-2xl font-bold text-gray-800">
-        {{ $totalTasks > 0 ? round(($tasks->where('completed', true)->count() / $totalTasks) * 100) : 0 }}%
-    </div>
-</div>
-           <div class="bg-yellow-50 p-3 rounded-lg">
+                            <div class="text-purple-600 text-sm mb-1">Progress</div>
+                            <div class="text-2xl font-bold text-gray-800" id="overall-progress-percentage">
+                                {{ $totalTasks > 0 ? round(($tasks->where('completed', true)->count() / $totalTasks) * 100) : 0 }}%
+                            </div>
+                        </div>
+                        <div class="bg-yellow-50 p-3 rounded-lg">
                             <div class="text-yellow-600 text-sm mb-1">Terlambat</div>
                             <div class="text-2xl font-bold text-gray-800">1922</div>
                         </div>
@@ -294,6 +306,17 @@
         </div>
         <div id="taskModalContent" class="space-y-4 text-sm text-gray-700">
         </div>
+    </div>
+</div>
+
+<!-- Loading indicator -->
+<div id="loading-indicator" class="fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg hidden">
+    <div class="flex items-center gap-2">
+        <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Memperbarui...</span>
     </div>
 </div>
 
@@ -430,20 +453,305 @@
             document.getElementById('month-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
         });
         
-        // Task checkbox handling
+        // AJAX Task checkbox handling
         document.querySelectorAll('.task-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
-                this.closest('form').submit();
+                handleTaskToggle(this);
             });
         });
         
-        // Subtask checkbox handling
+        // AJAX Subtask checkbox handling
         document.querySelectorAll('.subtask-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
-                this.closest('form').submit();
+                handleSubtaskToggle(this);
+            });
+        });
+
+        // Subtask toggle functionality
+        document.querySelectorAll('.subtask-toggle-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                toggleSubtasks(this);
             });
         });
     });
+
+    // Function to toggle subtasks visibility
+    function toggleSubtasks(button) {
+        const taskId = button.getAttribute('data-task-id');
+        const subtasksContainer = document.getElementById(`subtasks-container-${taskId}`);
+        const icon = button.querySelector('svg');
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+
+        if (isExpanded) {
+            // Collapse subtasks
+            subtasksContainer.style.maxHeight = subtasksContainer.scrollHeight + 'px';
+            subtasksContainer.offsetHeight; // Force reflow
+            subtasksContainer.style.maxHeight = '0';
+            subtasksContainer.style.opacity = '0';
+            subtasksContainer.style.paddingTop = '0';
+            subtasksContainer.style.paddingBottom = '0';
+            subtasksContainer.style.marginTop = '0';
+            
+            // Rotate icon
+            icon.style.transform = 'rotate(-90deg)';
+            
+            button.setAttribute('data-expanded', 'false');
+            
+            // Hide completely after animation
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'false') {
+                    subtasksContainer.style.display = 'none';
+                }
+            }, 200);
+        } else {
+            // Expand subtasks
+            subtasksContainer.style.display = 'block';
+            subtasksContainer.style.maxHeight = '0';
+            subtasksContainer.style.opacity = '0';
+            subtasksContainer.style.paddingTop = '0';
+            subtasksContainer.style.paddingBottom = '0';
+            subtasksContainer.style.marginTop = '0';
+            
+            // Force reflow
+            subtasksContainer.offsetHeight;
+            
+            // Animate to full height
+            subtasksContainer.style.maxHeight = subtasksContainer.scrollHeight + 'px';
+            subtasksContainer.style.opacity = '1';
+            subtasksContainer.style.paddingTop = '';
+            subtasksContainer.style.paddingBottom = '';
+            subtasksContainer.style.marginTop = '';
+            
+            // Rotate icon
+            icon.style.transform = 'rotate(0deg)';
+            
+            button.setAttribute('data-expanded', 'true');
+            
+            // Remove max-height after animation
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'true') {
+                    subtasksContainer.style.maxHeight = '';
+                }
+            }, 200);
+        }
+    }
+    
+    // Function to handle task toggle with AJAX
+    function handleTaskToggle(checkbox) {
+        const taskId = checkbox.getAttribute('data-task-id');
+        const form = checkbox.closest('form');
+        const url = form.getAttribute('action');
+        const isCompleted = checkbox.checked;
+        
+        // Show loading indicator
+        showLoadingIndicator();
+        
+        // Get CSRF token
+        const token = form.querySelector('input[name="_token"]').value;
+        
+        // Send AJAX request
+        fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                completed: isCompleted
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI elements
+                updateTaskUI(taskId, data);
+                updateSummaryUI(data);
+                updateCalendarEvent(taskId, data.task.completed);
+                
+                // Show success message (optional)
+                showNotification('Tugas berhasil diperbarui!', 'success');
+            } else {
+                // Revert checkbox state on error
+                checkbox.checked = !isCompleted;
+                showNotification('Gagal memperbarui tugas!', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revert checkbox state on error
+            checkbox.checked = !isCompleted;
+            showNotification('Terjadi kesalahan!', 'error');
+        })
+        .finally(() => {
+            hideLoadingIndicator();
+        });
+    }
+    
+    // Function to handle subtask toggle with AJAX
+    function handleSubtaskToggle(checkbox) {
+        const subtaskId = checkbox.getAttribute('data-sub-task-id');
+        const taskId = checkbox.getAttribute('data-task-id');
+        const form = checkbox.closest('form');
+        const url = form.getAttribute('action');
+        const isCompleted = checkbox.checked;
+        
+        // Show loading indicator
+        showLoadingIndicator();
+        
+        // Get CSRF token
+        const token = form.querySelector('input[name="_token"]').value;
+        
+        // Send AJAX request
+        fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                completed: isCompleted
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update subtask UI
+                updateSubtaskUI(subtaskId, data);
+                // Update parent task progress
+                updateTaskProgressUI(taskId, data);
+                updateSummaryUI(data);
+                
+                // Show success message (optional)
+                showNotification('Subtugas berhasil diperbarui!', 'success');
+            } else {
+                // Revert checkbox state on error
+                checkbox.checked = !isCompleted;
+                showNotification('Gagal memperbarui subtugas!', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revert checkbox state on error
+            checkbox.checked = !isCompleted;
+            showNotification('Terjadi kesalahan!', 'error');
+        })
+        .finally(() => {
+            hideLoadingIndicator();
+        });
+    }
+    
+    // Function to update task UI elements
+    function updateTaskUI(taskId, data) {
+        const taskItem = document.getElementById(`task-item-${taskId}`);
+        const taskTitle = taskItem.querySelector('.task-title');
+        const taskCheckbox = taskItem.querySelector('.task-checkbox');
+        
+        // Update checkbox state
+        taskCheckbox.checked = data.task.completed;
+        
+        // Update task title styling
+        if (data.task.completed) {
+            taskTitle.classList.add('line-through', 'text-gray-400');
+            taskItem.classList.add('bg-gray-50');
+            taskItem.classList.remove('bg-white');
+        } else {
+            taskTitle.classList.remove('line-through', 'text-gray-400');
+            taskItem.classList.remove('bg-gray-50');
+            taskItem.classList.add('bg-white');
+        }
+        
+        // Update progress if subtasks exist
+        if (data.progressPercentage !== undefined) {
+            updateTaskProgressUI(taskId, data);
+        }
+    }
+    
+    // Function to update subtask UI elements
+    function updateSubtaskUI(subtaskId, data) {
+        const subtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]`);
+        const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
+        
+        // Update checkbox state
+        subtaskCheckbox.checked = data.subtask.completed;
+        
+        // Update subtask text styling
+        if (data.subtask.completed) {
+            subtaskText.classList.add('line-through', 'text-gray-400');
+            subtaskText.classList.remove('text-gray-600');
+        } else {
+            subtaskText.classList.remove('line-through', 'text-gray-400');
+            subtaskText.classList.add('text-gray-600');
+        }
+    }
+    
+    // Function to update task progress UI
+    function updateTaskProgressUI(taskId, data) {
+        const taskItem = document.getElementById(`task-item-${taskId}`);
+        const progressPercentage = taskItem.querySelector('.task-progress-percentage');
+        const subtaskProgressText = taskItem.querySelector('.subtask-progress-text');
+        const subtaskProgressBar = taskItem.querySelector('.subtask-progress-bar');
+        
+        if (progressPercentage) {
+            progressPercentage.textContent = `${data.progressPercentage}%`;
+        }
+        
+        if (subtaskProgressText) {
+            subtaskProgressText.textContent = `Subtugas (${data.subtaskCompleted}/${data.subtaskTotal})`;
+        }
+        
+        if (subtaskProgressBar) {
+            subtaskProgressBar.style.width = `${data.progressPercentage}%`;
+        }
+    }
+    
+    // Function to update summary UI
+    function updateSummaryUI(data) {
+        if (data.totalTasks !== undefined) {
+            document.getElementById('total-tasks-count').textContent = data.totalTasks;
+        }
+        
+        if (data.completedTasks !== undefined) {
+            document.getElementById('completed-tasks-count').textContent = data.completedTasks;
+        }
+        
+        if (data.overallProgress !== undefined) {
+            document.getElementById('overall-progress-percentage').textContent = `${data.overallProgress}%`;
+        }
+    }
+    
+    // Function to update calendar event
+    function updateCalendarEvent(taskId, completed) {
+        // This would require access to the calendar instance
+        // You might need to store the calendar instance globally or implement this differently
+        // For now, we'll skip this or implement a simple refresh
+    }
+    
+    // Utility functions
+    function showLoadingIndicator() {
+        document.getElementById('loading-indicator').classList.remove('hidden');
+    }
+    
+    function hideLoadingIndicator() {
+        document.getElementById('loading-indicator').classList.add('hidden');
+    }
+    
+    function showNotification(message, type = 'success') {
+        // Create a simple notification
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
     
     function updateCalendarTitle(calendar) {
         const view = calendar.view;
@@ -505,4 +813,18 @@
         document.getElementById('taskModal').classList.add('hidden');
     }
 </script>
+
+<style>
+    /* CSS untuk animasi toggle subtasks */
+    .task-subtasks-container {
+        transition: all 0.2s ease-in-out;
+        overflow: hidden;
+    }
+    
+    .subtask-toggle-btn svg {
+        transition: transform 0.2s ease-in-out;
+    }
+</style>
+
 @endpush
+
