@@ -456,7 +456,7 @@
             document.getElementById('month-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
         });
         
-        // AJAX Task checkbox handling
+        // AJAX Task checkbox handling - MODIFIED to auto-check all subtasks
         document.querySelectorAll('.task-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 handleTaskToggle(this);
@@ -629,7 +629,7 @@
         }
     }
     
-    // Function to handle task toggle with AJAX - Enhanced to check/uncheck all subtasks
+    // MODIFIED: Function to handle task toggle with AJAX - Enhanced to check/uncheck all subtasks automatically
     function handleTaskToggle(checkbox) {
         const taskId = checkbox.getAttribute('data-task-id');
         const form = checkbox.closest('form');
@@ -642,7 +642,7 @@
         // Get CSRF token
         const token = form.querySelector('input[name="_token"]').value;
         
-        // Send AJAX request
+        // Send AJAX request to the modified toggle endpoint
         fetch(url, {
             method: 'PATCH',
             headers: {
@@ -662,11 +662,11 @@
                 updateSummaryUI(data);
                 updateCalendarEvent(taskId, data.task.completed);
                 
-                // Update all subtasks to match the main task status
-                updateAllSubtasksStatus(taskId, isCompleted);
+                // Update all subtasks UI to match the main task status
+                updateAllSubtasksUI(taskId, isCompleted);
                 
                 // Show success message (optional)
-                showNotification('Tugas berhasil diperbarui!', 'success');
+                showNotification('Tugas dan semua subtugas berhasil diperbarui!', 'success');
             } else {
                 // Revert checkbox state on error
                 checkbox.checked = !isCompleted;
@@ -684,18 +684,13 @@
         });
     }
 
-    // Function to update all subtasks status when main task is toggled
-    function updateAllSubtasksStatus(taskId, isCompleted) {
+    // NEW: Function to update all subtasks UI when main task is toggled
+    function updateAllSubtasksUI(taskId, isCompleted) {
         const taskContainer = document.getElementById(`task-item-${taskId}`);
         const subtaskCheckboxes = taskContainer.querySelectorAll('.subtask-checkbox');
         
         subtaskCheckboxes.forEach(subtaskCheckbox => {
-            const subtaskId = subtaskCheckbox.getAttribute('data-sub-task-id');
-            const subtaskForm = subtaskCheckbox.closest('form');
-            const subtaskUrl = subtaskForm.getAttribute('action');
-            const token = subtaskForm.querySelector('input[name="_token"]').value;
-            
-            // Update checkbox visually first
+            // Update checkbox visually
             subtaskCheckbox.checked = isCompleted;
             
             // Update subtask text styling
@@ -707,22 +702,6 @@
                 subtaskText.classList.remove('line-through', 'text-gray-400');
                 subtaskText.classList.add('text-gray-600');
             }
-            
-            // Send AJAX request to update subtask in backend
-            fetch(subtaskUrl, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': token,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    completed: isCompleted
-                })
-            })
-            .catch(error => {
-                console.error('Error updating subtask:', error);
-            });
         });
     }
     

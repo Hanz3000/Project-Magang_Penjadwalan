@@ -175,44 +175,111 @@ class TaskController extends Controller
         }
     }
 
-public function toggle(Subtask $subtask, Request $request)
-{
-    $completed = $request->input('completed');
-    $updateChildren = $request->input('update_children', false);
-    
-    return DB::transaction(function() use ($subtask, $completed, $updateChildren) {
-        // Update current subtask
-        $subtask->update(['completed' => $completed]);
-        
-        // If this is a parent task and we should update children
-        if ($updateChildren) {
-            $subtask->children()->update(['completed' => $completed]);
-        }
-        
-        // Recalculate progress for the parent task
-        $task = $subtask->task;
-        
-        // Get all leaf subtasks (nodes with no children)
-        $leafSubTasks = $task->subTasks->filter(function($st) use ($task) {
-            return $task->subTasks->where('parent_id', $st->id)->count() == 0;
-        });
-        
-        $completedCount = $leafSubTasks->where('completed', true)->count();
-        $totalCount = $leafSubTasks->count();
-        
-        // Update main task completion if all leaf tasks are completed
-        $taskCompleted = $totalCount > 0 && $completedCount === $totalCount;
-        $task->update(['completed' => $taskCompleted]);
-        
-        return response()->json([
-            'success' => true,
-            'subtasksCompleted' => $completedCount,
-            'subtasksTotal' => $totalCount,
-            'taskCompleted' => $taskCompleted,
-            'progress' => $totalCount > 0 ? round(($completedCount / $totalCount) * 100) : 0,
-            'completed' => $completed
+    /**
+     * Toggle task completion status and all its subtasks
+     */
+    public function toggle(Request $request, Task $task)
+    {
+        $request->validate([
+            'completed' => 'required|boolean',
         ]);
-    });
+
+        $isCompleted = $request->completed;
+
+        // Use a transaction to ensure all updates are atomic
+        return DB::transaction(function() use ($task, $isCompleted) {
+            // Update the main task's completion status
+            $task->completed = $isCompleted;
+            $task->save();
+
+            // Update all subtasks for this task to match the main task status
+            $task->subTasks()->update(['completed' => $isCompleted]);
+
+            // Get leaf subtasks for progress calculation
+            $leafSubTasks = $task->subTasks->filter(function($st) use ($task) {
+                return $task->subTasks->where('parent_id', $st->id)->count() == 0;
+            });
+            
+            $subtaskCompleted = $isCompleted ? $leafSubTasks->count() : 0;
+            $subtaskTotal = $leafSubTasks->count();
+            
+            // Calculate progress percentage
+            $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : ($isCompleted ? 100 : 0);
+            
+            // Calculate global summary stats
+            $totalTasks = Task::count();
+            $completedTasks = Task::where('completed', true)->count();
+            $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+
+            // Return response with all necessary data
+            return response()->json([
+                'success' => true,
+                'task' => [
+                    'id' => $task->id,
+                    'completed' => $task->completed
+                ],
+                'progressPercentage' => $progressPercentage,
+                'subtaskCompleted' => $subtaskCompleted,
+                'subtaskTotal' => $subtaskTotal,
+                'totalTasks' => $totalTasks,
+                'completedTasks' => $completedTasks,
+                'overallProgress' => $overallProgress
+            ]);
+        });
+    }
+
+    /**
+     * Toggle all subtasks for a task at once (alternative endpoint)
+     */
+    public function toggleAll(Request $request, $taskId)
+    {
+        $request->validate([
+            'completed' => 'required|boolean',
+        ]);
+
+        $task = Task::findOrFail($taskId);
+        $isCompleted = $request->completed;
+
+        // Use a transaction to ensure all updates are atomic
+        return DB::transaction(function() use ($task, $isCompleted) {
+            // Update all subtasks for this task
+            $task->subTasks()->update(['completed' => $isCompleted]);
+            
+            // Update the task's completion status
+            $task->completed = $isCompleted;
+            $task->save();
+
+            // Get leaf subtasks for progress calculation
+            $leafSubTasks = $task->subTasks->filter(function($st) use ($task) {
+                return $task->subTasks->where('parent_id', $st->id)->count() == 0;
+            });
+            
+            $subtaskCompleted = $isCompleted ? $leafSubTasks->count() : 0;
+            $subtaskTotal = $leafSubTasks->count();
+            
+            // Calculate progress percentage
+            $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : 0;
+            
+            // Calculate global summary stats
+            $totalTasks = Task::count();
+            $completedTasks = Task::where('completed', true)->count();
+            $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+
+            // Return response with all necessary data
+            return response()->json([
+                'success' => true,
+                'task' => [
+                    'id' => $task->id,
+                    'completed' => $task->completed
+                ],
+                'progressPercentage' => $progressPercentage,
+                'subtaskCompleted' => $subtaskCompleted,
+                'subtaskTotal' => $subtaskTotal,
+                'totalTasks' => $totalTasks,
+                'completedTasks' => $completedTasks,
+                'overallProgress' => $overallProgress
+            ]);
+        });
+    }
 }
 
-}
