@@ -11,6 +11,7 @@ class SubTaskController extends Controller
 {
     /**
      * Toggle the completion status of a single subtask
+     * MODIFIED: Now also updates main task status when subtask is unchecked
      */
     public function toggle(Request $request, $id)
     {
@@ -19,54 +20,66 @@ class SubTaskController extends Controller
         ]);
 
         $subtask = SubTask::findOrFail($id);
-        $subtask->completed = $request->completed;
-        $subtask->save();
+        $isCompleted = $request->completed;
+        
+        // Use transaction to ensure atomicity
+        return DB::transaction(function() use ($subtask, $isCompleted) {
+            // Update the subtask
+            $subtask->completed = $isCompleted;
+            $subtask->save();
 
-        // Ambil tugas induk dari subtask
-        $task = $subtask->task;
+            // Ambil tugas induk dari subtask
+            $task = $subtask->task;
 
-        // Hitung kembali jumlah subtask yang selesai dan total untuk tugas induk
-        $leafSubTasks = $task->subTasks->filter(function($st) use ($task) {
-            return $task->subTasks->where('parent_id', $st->id)->count() == 0;
+            // Hitung kembali jumlah subtask yang selesai dan total untuk tugas induk
+            $leafSubTasks = $task->subTasks->filter(function($st) use ($task) {
+                return $task->subTasks->where('parent_id', $st->id)->count() == 0;
+            });
+            
+            $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
+            $subtaskTotal = $leafSubTasks->count();
+
+            // Hitung persentase progres subtask
+            $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : 0;
+            
+            // MODIFIED LOGIC: Update main task status based on subtask completion
+            if ($isCompleted) {
+                // If subtask is checked, only mark main task as completed if ALL subtasks are completed
+                $mainTaskCompleted = ($subtaskTotal > 0 && $subtaskCompleted === $subtaskTotal);
+            } else {
+                // If subtask is unchecked, ALWAYS uncheck the main task
+                $mainTaskCompleted = false;
+            }
+
+            // Perbarui status 'completed' pada tugas induk
+            $task->completed = $mainTaskCompleted;
+            $task->save();
+
+            // Hitung total tasks dan completed tasks untuk summary global
+            $totalTasks = Task::count();
+            $completedTasks = Task::where('completed', true)->count();
+            $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+
+            // Mengembalikan respons JSON sesuai format yang diharapkan frontend
+            return response()->json([
+                'success' => true,
+                'subtask' => [
+                    'id' => $subtask->id,
+                    'completed' => $subtask->completed,
+                    'title' => $subtask->title
+                ],
+                'task' => [
+                    'id' => $task->id,
+                    'completed' => $task->completed
+                ],
+                'progressPercentage' => $progressPercentage,
+                'subtaskCompleted' => $subtaskCompleted,
+                'subtaskTotal' => $subtaskTotal,
+                'totalTasks' => $totalTasks,
+                'completedTasks' => $completedTasks,
+                'overallProgress' => $overallProgress
+            ]);
         });
-        
-        $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
-        $subtaskTotal = $leafSubTasks->count();
-
-        // Hitung persentase progres subtask
-        $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : 0;
-        
-        // Cek apakah semua subtask sudah selesai untuk menentukan status tugas utama
-        $mainTaskCompleted = ($subtaskTotal > 0 && $subtaskCompleted === $subtaskTotal);
-
-        // Perbarui status 'completed' pada tugas induk
-        $task->completed = $mainTaskCompleted;
-        $task->save();
-
-        // Hitung total tasks dan completed tasks untuk summary global
-        $totalTasks = Task::count(); // Asumsi semua task dihitung, sesuaikan jika ada filter user
-        $completedTasks = Task::where('completed', true)->count(); // Asumsi semua task dihitung, sesuaikan jika ada filter user
-        $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
-
-        // Mengembalikan respons JSON sesuai format yang diharapkan frontend
-        return response()->json([
-            'success' => true,
-            'subtask' => [
-                'id' => $subtask->id,
-                'completed' => $subtask->completed,
-                'title' => $subtask->title
-            ],
-            'task' => [
-                'id' => $task->id,
-                'completed' => $task->completed
-            ],
-            'progressPercentage' => $progressPercentage,
-            'subtaskCompleted' => $subtaskCompleted,
-            'subtaskTotal' => $subtaskTotal,
-            'totalTasks' => $totalTasks,
-            'completedTasks' => $completedTasks,
-            'overallProgress' => $overallProgress
-        ]);
     }
 
     /**
