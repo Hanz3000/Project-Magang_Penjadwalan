@@ -41,4 +41,12 @@ class Task extends Model
 {
     return $this->hasMany(SubTask::class)->orderBy('id');
 }
+
+public function getDurationDaysAttribute()
+{
+    if ($this->start_date && $this->end_date) {
+        return $this->start_date->diffInDays($this->end_date) + 1; // +1 to include both start and end days
+    }
+    return 0;
+}
 }

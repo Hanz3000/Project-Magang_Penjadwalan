@@ -76,38 +76,64 @@
 
                     <div class="space-y-3" id="task-list-container">
  @php
-    function renderSubtasks($subtasks, $parentId = null) {
-        $html = '';
-        foreach ($subtasks->where('parent_id', $parentId) as $subTask) {
+function renderSubtasks($subtasks, $parentId = null) {
+    $html = '';
+
+    foreach ($subtasks->where('parent_id', $parentId) as $subTask) {
+        $isParent = $subtasks->where('parent_id', $subTask->id)->count() > 0;
+
+        $html .= '<li class="ml-4 subtask-item flex items-start gap-2">';
+
+        // Kalau bukan parent, kasih form dan checkbox
+        if (!$isParent) {
             $checked = $subTask->completed ? 'checked' : '';
             $lineClass = $subTask->completed ? 'line-through text-gray-400' : 'text-gray-600';
 
-            $html .= '<li class="ml-4 subtask-item flex items-start gap-2">';
             $html .= '<form action="' . route('subtasks.toggle', $subTask->id) . '" method="POST" class="subtask-toggle-form">';
             $html .= csrf_field() . method_field('PATCH');
-            $html .= '<input type="checkbox" class="subtask-checkbox" data-sub-task-id="' . $subTask->id . '" ' . $checked . '>';
+           $isLeaf = $subtasks->where('parent_id', $subTask->id)->count() == 0 ? 'true' : 'false';
+$html .= '<input type="checkbox" 
+       class="subtask-checkbox" 
+       data-sub-task-id="' . $subTask->id . '"
+       data-task-id="' . $task->id . '"
+       data-is-leaf="' . ($task->subTasks->where('parent_id', $subTask->id)->count() == 0 ? 'true' : 'false') . '"
+       data-parent-id="' . $subTask->parent_id . '"
+       ' . ($subTask->completed ? 'checked' : '') . '>';
+
             $html .= '</form>';
             $html .= '<span class="text-sm ' . $lineClass . ' subtask-text">' . e($subTask->title) . '</span>';
-
-            if ($subtasks->where('parent_id', $subTask->id)->count() > 0) {
-                $html .= '<ul class="ml-6 space-y-2">';
-                $html .= renderSubtasks($subtasks, $subTask->id);
-                $html .= '</ul>';
-            }
-
-            $html .= '</li>';
+        } else {
+            // Kalau parent, tidak ada form/checkbox
+            $html .= '<span class="text-sm font-semibold text-gray-700">' . e($subTask->title) . '</span>';
         }
-        return $html;
+
+        if ($isParent) {
+            $html .= '<ul class="ml-6 space-y-2">';
+            $html .= renderSubtasks($subtasks, $subTask->id);
+            $html .= '</ul>';
+        }
+
+        $html .= '</li>';
     }
-    @endphp
+
+    return $html;
+}
+@endphp
+
 
                         @foreach($tasks as $task)
-                        @php
-                        $durationDays = $task->start_date->diffInDays($task->end_date) + 1;
-                        $subtaskCompleted = $task->subTasks->where('completed', true)->count();
-                        $subtaskTotal = $task->subTasks->count();
-                        $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : ($task->completed ? 100 : 0);
-                        @endphp
+                      @php
+    $leafSubTasks = $task->subTasks->filter(function($subTask) use ($task) {
+        return !$task->subTasks->where('parent_id', $subTask->id)->count();
+    });
+    $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
+    $subtaskTotal = $leafSubTasks->count();
+    $progressPercentage = $subtaskTotal > 0 
+        ? round(($subtaskCompleted / $subtaskTotal) * 100) 
+        : ($task->completed ? 100 : 0);
+@endphp
+
+
                         <div class="border border-gray-200 rounded-lg p-4 transition-all duration-200 hover:border-blue-200 hover:shadow-xs {{ $task->completed ? 'bg-gray-50' : 'bg-white' }}" id="task-item-{{ $task->id }}">
                             <div class="flex items-start gap-3">
                                 <form action="{{ route('tasks.toggle', $task->id) }}" method="POST" class="task-toggle-form">
@@ -127,7 +153,11 @@
                                             <div class="flex items-center gap-2 text-sm text-gray-500 mt-1">
                                                 <span>{{ $task->start_date->format('M d') }} - {{ $task->end_date->format('M d') }}</span>
                                                 <span class="text-xs text-gray-400">•</span>
-                                                <span>{{ $durationDays }} {{ $durationDays > 1 ? 'days' : 'day' }}</span>
+                                               <span>
+    <span>
+    {{ $task->durationDays }} {{ $task->durationDays > 1 ? 'days' : 'day' }}
+</span>
+        
                                                 @if($subtaskTotal > 0)
                                                 <span class="text-xs text-gray-400">•</span>
                                                 <span class="text-blue-600 task-progress-percentage">{{ $progressPercentage }}%</span>
@@ -253,28 +283,17 @@
     </div>
 </div>
 
-<div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 backdrop-blur-sm transition-opacity duration-300">
-    <div class="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden border border-gray-200 transform transition-all duration-300 scale-95 hover:scale-100">
-        <!-- Header dengan gradient -->
-        <div class="bg-gradient-to-r from-blue-600 to-blue-500 p-4 rounded-t-xl">
-            <div class="flex justify-between items-center">
-                <h3 class="text-lg font-semibold text-white">Detail Tugas</h3>
-                <button onclick="closeTaskModal()" class="text-white hover:text-blue-100 p-1 rounded-full hover:bg-blue-700 transition-colors duration-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
+<div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50">
+    <div class="bg-white rounded-lg shadow-lg max-w-md w-full p-6 mx-4 max-h-[80vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6 sticky top-0 bg-white">
+            <h3 class="text-lg font-semibold text-gray-800">Detail Tugas</h3>
+            <button onclick="closeTaskModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
         </div>
-        
-        <!-- Konten dengan padding dan scroll halus -->
-        <div id="taskModalContent" class="p-6 space-y-4 text-gray-700 overflow-y-auto max-h-[calc(90vh-120px)] scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
-            <!-- Konten akan diisi secara dinamis -->
-        </div>
-        
-        <!-- Footer dengan aksi -->
-        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 rounded-b-xl flex justify-end gap-3">
-            
+        <div id="taskModalContent" class="space-y-4 text-sm text-gray-700">
         </div>
     </div>
 </div>
@@ -344,28 +363,30 @@
         }
     }
 
-    // Function to update subtask in main list
     function updateMainTaskListSubtask(taskId, subtaskId, isCompleted) {
-        const taskItem = document.getElementById(`task-item-${taskId}`);
-        if (!taskItem) return;
+    const taskItem = document.getElementById(`task-item-${taskId}`);
+    if (!taskItem) return;
 
-        const subtaskCheckbox = taskItem.querySelector(`[data-sub-task-id="${subtaskId}"]`);
-        if (subtaskCheckbox) {
-            subtaskCheckbox.checked = isCompleted;
-            const subtaskText = subtaskCheckbox.closest('form').nextElementSibling;
-            if (subtaskText) {
-                subtaskText.classList.toggle('line-through', isCompleted);
-                subtaskText.classList.toggle('text-gray-400', isCompleted);
-                subtaskText.classList.toggle('text-gray-600', !isCompleted);
-            }
+    const subtaskCheckbox = taskItem.querySelector(`[data-sub-task-id="${subtaskId}"]`);
+    if (subtaskCheckbox) {
+        subtaskCheckbox.checked = isCompleted;
+        const subtaskText = subtaskCheckbox.closest('form').nextElementSibling;
+        if (subtaskText) {
+            subtaskText.classList.toggle('line-through', isCompleted);
+            subtaskText.classList.toggle('text-gray-400', isCompleted);
+            subtaskText.classList.toggle('text-gray-600', !isCompleted);
         }
-
-        const subtaskCheckboxes = taskItem.querySelectorAll('.subtask-checkbox');
-        const subtaskTotal = subtaskCheckboxes.length;
-        const subtaskCompleted = Array.from(subtaskCheckboxes).filter(cb => cb.checked).length;
-        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (subtaskCompleted > 0 ? 100 : 0);
-        updateTaskProgress(taskId, progressPercentage, subtaskCompleted, subtaskTotal, subtaskCompleted === subtaskTotal);
     }
+
+    // Ambil checkbox yang tidak punya data-parent-id atau parent_id === null (anggap pakai atribut custom misalnya data-is-leaf)
+    const subtaskCheckboxes = taskItem.querySelectorAll('.subtask-checkbox[data-is-leaf="true"]');
+    const subtaskTotal = subtaskCheckboxes.length;
+    const subtaskCompleted = Array.from(subtaskCheckboxes).filter(cb => cb.checked).length;
+    const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : 0;
+
+    updateTaskProgress(taskId, progressPercentage, subtaskCompleted, subtaskTotal, subtaskCompleted === subtaskTotal);
+}
+
 
     // Function to update task progress
     function updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted) {
@@ -479,61 +500,64 @@ function updateCalendarEvent(taskId, progressPercentage, mainTaskCompleted) {
 }
 
 // Fungsi yang diperbarui untuk menangani perubahan subtask
-function handleMainListSubtaskChange(e) {
+function handleMainListSubtaskChange(e) {function handleMainListSubtaskChange(e) {
     const checkbox = e.target;
     const subtaskId = checkbox.dataset.subTaskId;
     const taskId = checkbox.dataset.taskId;
     const isCompleted = checkbox.checked;
-    const subtaskText = checkbox.closest('form')?.nextElementSibling;
+    const isLeaf = checkbox.dataset.isLeaf === 'true';
+    const parentId = checkbox.dataset.parentId;
 
-    // Update UI segera
+    // Immediate UI update
+    const subtaskText = checkbox.closest('li').querySelector('.subtask-text');
     if (subtaskText) {
         subtaskText.classList.toggle('line-through', isCompleted);
         subtaskText.classList.toggle('text-gray-400', isCompleted);
-        subtaskText.classList.toggle('text-gray-600', !isCompleted);
     }
 
     fetch(`/subtasks/${subtaskId}/toggle`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
         },
-        body: JSON.stringify({ completed: isCompleted })
+        body: JSON.stringify({
+            completed: isCompleted,
+            update_children: !isLeaf
+        })
     })
-    .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
-            const { subtasksTotal, subtasksCompleted } = data;
-            const progressPercentage = subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : 0;
-            const mainTaskCompleted = subtasksCompleted === subtasksTotal;
-
-            // Update semua tampilan
-            syncCheckboxStates(taskId);
-            updateModalProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal);
-            updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted);
+            // Update task completion if needed
+            if (data.taskCompleted !== undefined) {
+                const taskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
+                if (taskCheckbox) {
+                    taskCheckbox.checked = data.taskCompleted;
+                }
+            }
             
-            // Force update calendar event
-            updateCalendarEvent(taskId, progressPercentage, mainTaskCompleted);
+            // Update progress display
+            const progressBar = document.querySelector(`#task-item-${taskId} .subtask-progress-bar`);
+            const progressText = document.querySelector(`#task-item-${taskId} .subtask-progress-text`);
+            const progressPercentage = document.querySelector(`#task-item-${taskId} .task-progress-percentage`);
             
-            showNotification('Tugas berhasil diperbarui', 'success');
-        } else {
-            throw new Error(data.message || 'Failed to update subtask');
+            if (progressBar) progressBar.style.width = `${data.progress}%`;
+            if (progressText) progressText.textContent = `Subtugas (${data.subtasksCompleted}/${data.subtasksTotal})`;
+            if (progressPercentage) progressPercentage.textContent = `${data.progress}%`;
+            
+            // Update calendar
+            updateCalendarEvent(taskId, data.progress, data.taskCompleted);
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        // Kembalikan UI ke state sebelumnya jika error
         checkbox.checked = !isCompleted;
         if (subtaskText) {
             subtaskText.classList.toggle('line-through', !isCompleted);
             subtaskText.classList.toggle('text-gray-400', !isCompleted);
-            subtaskText.classList.toggle('text-gray-600', isCompleted);
         }
-        showNotification('Failed to update subtask: ' + error.message, 'error');
     });
 }
 
@@ -632,61 +656,7 @@ function handleMainListSubtaskChange(e) {
         });
     }
 
-    // Function to handle subtask change from main list
-    function handleMainListSubtaskChange(e) {
-        const checkbox = e.target;
-        const subtaskId = checkbox.dataset.subTaskId;
-        const taskId = checkbox.dataset.taskId;
-        const isCompleted = checkbox.checked;
-        const subtaskText = checkbox.closest('form')?.nextElementSibling;
-
-        // Immediate UI update
-        if (subtaskText) {
-            subtaskText.classList.toggle('line-through', isCompleted);
-            subtaskText.classList.toggle('text-gray-400', isCompleted);
-            subtaskText.classList.toggle('text-gray-600', !isCompleted);
-        }
-
-        // API call to update subtask
-        fetch(`/subtasks/${subtaskId}/toggle`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ completed: isCompleted })
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                const { subtasksTotal, subtasksCompleted } = data;
-                const progressPercentage = subtasksTotal > 0 ? Math.round((subtasksCompleted / subtasksTotal) * 100) : 0;
-                const mainTaskCompleted = subtasksCompleted === subtasksTotal;
-
-                syncCheckboxStates(taskId);
-                updateModalProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal);
-                updateTaskProgress(taskId, progressPercentage, subtasksCompleted, subtasksTotal, mainTaskCompleted);
-
-                showNotification('Tugas berhasil diperbarui', 'success');
-            } else {
-                throw new Error(data.message || 'Failed to update subtask');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            // Revert UI on error
-            checkbox.checked = !isCompleted;
-            if (subtaskText) {
-                subtaskText.classList.toggle('line-through', !isCompleted);
-                subtaskText.classList.toggle('text-gray-400', !isCompleted);
-                subtaskText.classList.toggle('text-gray-600', isCompleted);
-            }
-            showNotification('Failed to update subtask: ' + error.message, 'error');
-        });
-    }
+    
 
     // Function to sync main list checkboxes
     function syncMainTaskListCheckboxes() {
@@ -741,42 +711,44 @@ function handleMainListSubtaskChange(e) {
                 locale: 'id',
                 height: '100%',
                 contentHeight: 'auto',
-                events: [
-                    @foreach($tasks as $task)
-                        @php
-                            $subtaskCompleted = $task->subTasks->where('completed', true)->count();
-                            $subtaskTotal = $task->subTasks->count();
-                            $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : ($task->completed ? 100 : 0);
-                        @endphp
+                events: [events: [
+    @foreach($tasks as $task)
+        @php
+            $childSubTasks = $task->subTasks->whereNotNull('parent_id');
+            $subtaskCompleted = $childSubTasks->where('completed', true)->count();
+            $subtaskTotal = $childSubTasks->count();
+            $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : ($task->completed ? 100 : 0);
+        @endphp
+        {
+            id: '{{ $task->id }}',
+            title: '{{ addslashes($task->title) }}',
+            start: '{{ $task->start_date->format("Y-m-d") }}',
+            end: '{{ $task->end_date->copy()->addDay()->format("Y-m-d") }}',
+            backgroundColor: getEventColor('{{ $task->priority }}', {{ $task->completed ? 'true' : 'false' }}),
+            borderColor: getEventColor('{{ $task->priority }}', {{ $task->completed ? 'true' : 'false' }}),
+            extendedProps: {
+                description: '{{ addslashes($task->description ?? "") }}',
+                priority: '{{ $task->priority }}',
+                progress: {{ $progressPercentage }},
+                category: '{{ addslashes(optional($task->category)->name) }}',
+                hasSubtasks: {{ $task->subTasks->count() > 0 ? 'true' : 'false' }},
+                subtasksCompleted: {{ $subtaskCompleted }},
+                subtasksTotal: {{ $subtaskTotal }},
+                mainTaskCompleted: {{ $task->completed ? 'true' : 'false' }},
+                subtasks: [
+                    @foreach($task->subTasks as $subTask)
                         {
-                            id: '{{ $task->id }}',
-                            title: '{{ addslashes($task->title) }}',
-                            start: '{{ $task->start_date->format("Y-m-d") }}',
-                            end: '{{ $task->end_date->copy()->addDay()->format("Y-m-d") }}',
-                            backgroundColor: getEventColor('{{ $task->priority }}', {{ $task->completed ? 'true' : 'false' }}),
-                            borderColor: getEventColor('{{ $task->priority }}', {{ $task->completed ? 'true' : 'false' }}),
-                            extendedProps: {
-                                description: '{{ addslashes($task->description ?? "") }}',
-                                priority: '{{ $task->priority }}',
-                                progress: {{ $progressPercentage }},
-                                category: '{{ addslashes(optional($task->category)->name) }}',
-                                hasSubtasks: {{ $task->subTasks->count() > 0 ? 'true' : 'false' }},
-                                subtasksCompleted: {{ $subtaskCompleted }},
-                                subtasksTotal: {{ $subtaskTotal }},
-                                mainTaskCompleted: {{ $task->completed ? 'true' : 'false' }},
-                                subtasks: [
-                                    @foreach($task->subTasks as $subTask)
-                                        {
-                                            id: '{{ $subTask->id }}',
-                                            title: '{{ addslashes($subTask->title) }}',
-                                            completed: {{ $subTask->completed ? 'true' : 'false' }}
-                                        }@if (!$loop->last),@endif
-                                    @endforeach
-                                ]
-                            }
+                            id: '{{ $subTask->id }}',
+                            title: '{{ addslashes($subTask->title) }}',
+                            completed: {{ $subTask->completed ? 'true' : 'false' }}
                         }@if (!$loop->last),@endif
                     @endforeach
-                ],
+                ]
+            }
+        }@if (!$loop->last),@endif
+    @endforeach
+],
+
                 eventDidMount: function(info) {
                     const isCompleted = info.event.extendedProps.mainTaskCompleted;
                     

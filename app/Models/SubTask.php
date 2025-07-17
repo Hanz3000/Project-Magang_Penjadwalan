@@ -7,12 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SubTask extends Model
 {
-    protected $fillable = [
-    'title',
-    'task_id',
-    'completed',
-    'parent_id', // ✅ tambahkan ini
-];
+    protected $table = 'sub_tasks';
+
+    protected $fillable = ['title', 'task_id', 'parent_id', 'completed', 'is_group'];
 
     public function task(): BelongsTo
     {
@@ -20,15 +17,12 @@ class SubTask extends Model
     }
 
     public function children()
-{
-    return $this->hasMany(Subtask::class, 'parent_id')->with('children');
-}
+    {
+        return $this->hasMany(SubTask::class, 'parent_id')->with('children');
+    }
 
-public function parent()
-{
-    return $this->belongsTo(Subtask::class, 'parent_id');
-}
-
-
-    
+    public function parent()
+    {
+        return $this->belongsTo(SubTask::class, 'parent_id');
+    }
 }
