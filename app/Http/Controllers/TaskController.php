@@ -175,7 +175,7 @@ class TaskController extends Controller
         }
     }
 
-   public function toggle(Subtask $subtask, Request $request)
+public function toggle(Subtask $subtask, Request $request)
 {
     $completed = $request->input('completed');
     $updateChildren = $request->input('update_children', false);
