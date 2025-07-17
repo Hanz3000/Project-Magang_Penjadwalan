@@ -315,45 +315,45 @@
     </div>
 </div>
 
-<!-- Enhanced Interactive Modal - Centered and Modern -->
-<div id="taskModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden">
-        <!-- Modal Header -->
-        <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<!-- COMPACT Modal - Smaller and More Efficient -->
+<div id="taskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <!-- Modal Header - Compact -->
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                 </svg>
                 Detail Tugas
             </h3>
-            <button onclick="closeTaskModal()" class="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:bg-white/50 transition-all duration-200">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button onclick="closeTaskModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-white/50 transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
             </button>
         </div>
         
-        <!-- Modal Content -->
-        <div class="overflow-y-auto max-h-[calc(90vh-140px)]">
-            <div id="taskModalContent" class="p-6 space-y-6 text-sm text-gray-700">
+        <!-- Modal Content - Compact -->
+        <div class="overflow-y-auto max-h-[calc(80vh-100px)]">
+            <div id="taskModalContent" class="p-4 space-y-4 text-sm text-gray-700">
                 <!-- Content will be populated by JavaScript -->
             </div>
         </div>
     </div>
 </div>
 
-<!-- Enhanced Loading Indicator - Centered -->
+<!-- COMPACT Loading Indicator -->
 <div id="loading-indicator" class="fixed inset-0 bg-black/20 backdrop-blur-sm hidden flex justify-center items-center z-40">
-    <div class="bg-white rounded-2xl shadow-2xl px-8 py-6 flex items-center gap-4">
-        <svg class="animate-spin h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24">
+    <div class="bg-white rounded-xl shadow-xl px-6 py-4 flex items-center gap-3">
+        <svg class="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <span class="text-gray-700 font-medium">Memperbarui...</span>
+        <span class="text-gray-700 font-medium text-sm">Memperbarui...</span>
     </div>
 </div>
 
-<!-- Success/Error Notification Container -->
+<!-- COMPACT Notification Container -->
 <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
 @endsection
@@ -517,7 +517,7 @@
         });
     }
 
-    // Enhanced function to open task modal
+    // COMPACT function to open task modal
     function openTaskModal(taskId) {
         const task = tasksData.find(t => t.id == taskId);
         if (!task) return;
@@ -529,19 +529,19 @@
         switch(task.priority) {
             case 'urgent':
                 priorityText = 'Sangat Mendesak';
-                priorityClass = 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border border-red-300';
+                priorityClass = 'bg-red-100 text-red-800 border border-red-300';
                 break;
             case 'high':
                 priorityText = 'Tinggi';
-                priorityClass = 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-300';
+                priorityClass = 'bg-orange-100 text-orange-800 border border-orange-300';
                 break;
             case 'medium':
                 priorityText = 'Sedang';
-                priorityClass = 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300';
+                priorityClass = 'bg-yellow-100 text-yellow-800 border border-yellow-300';
                 break;
             case 'low':
                 priorityText = 'Rendah';
-                priorityClass = 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300';
+                priorityClass = 'bg-green-100 text-green-800 border border-green-300';
                 break;
         }
 
@@ -553,26 +553,26 @@
         const subtaskTotal = leafSubTasks.length;
         const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
 
-        // Generate subtasks HTML
+        // Generate subtasks HTML - COMPACT VERSION
         let subtasksHtml = '';
         if (task.sub_tasks && task.sub_tasks.length > 0) {
             subtasksHtml = `
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200">
-                    <div class="flex justify-between items-center mb-4">
-                        <h5 class="font-semibold text-gray-800 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h5 class="font-medium text-gray-800 flex items-center gap-2 text-sm">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
                             </svg>
-                            Subtugas (${subtaskCompleted}/${subtaskTotal})
+                            Subtugas (<span id="modal-subtask-count">${subtaskCompleted}/${subtaskTotal}</span>)
                         </h5>
-                        <div class="flex items-center gap-3">
-                            <div class="w-32 h-3 bg-white rounded-full overflow-hidden shadow-inner">
-                                <div class="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500" style="width: ${progressPercentage}%"></div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-2 bg-white rounded-full overflow-hidden shadow-inner">
+                                <div id="modal-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500" style="width: ${progressPercentage}%"></div>
                             </div>
-                            <span class="text-sm font-semibold text-blue-600">${progressPercentage}%</span>
+                            <span id="modal-progress-percentage" class="text-xs font-semibold text-blue-600">${progressPercentage}%</span>
                         </div>
                     </div>
-                    <div class="space-y-2 max-h-60 overflow-y-auto">
+                    <div class="space-y-1 max-h-40 overflow-y-auto">
                         ${renderModalSubtasks(task.sub_tasks, null, task)}
                     </div>
                 </div>
@@ -580,69 +580,69 @@
         }
 
         modalContent.innerHTML = `
-            <div class="flex items-start gap-4 mb-6">
+            <div class="flex items-start gap-3 mb-4">
                 <form action="/tasks/${task.id}/toggle" method="POST" class="task-toggle-form-modal">
                     <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
                     <input type="hidden" name="_method" value="PATCH">
                     <input type="checkbox"
-                        class="task-checkbox-modal w-6 h-6 text-blue-600 rounded-lg focus:ring-blue-500 focus:ring-2"
+                        class="task-checkbox-modal w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
                         data-task-id="${task.id}"
                         ${task.completed ? 'checked' : ''}>
                 </form>
                 <div class="flex-1">
-                    <h4 class="font-bold text-xl mb-3 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}" id="modal-task-title-${task.id}">
+                    <h4 class="font-bold text-lg mb-2 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}" id="modal-task-title-${task.id}">
                         ${task.title}
                     </h4>
-                    <div class="flex items-center gap-3 mb-4 flex-wrap">
-                        <span class="px-3 py-1 text-sm rounded-xl font-medium ${priorityClass}">
+                    <div class="flex items-center gap-2 mb-3 flex-wrap">
+                        <span class="px-2 py-1 text-xs rounded-lg font-medium ${priorityClass}">
                             ${priorityText}
                         </span>
-                        ${task.completed ? '<span class="px-3 py-1 text-sm bg-gradient-to-r from-green-100 to-green-200 text-green-800 rounded-xl font-medium border border-green-300">Selesai</span>' : ''}
-                        ${subtaskTotal > 0 ? `<span class="px-3 py-1 text-sm bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-xl font-medium border border-blue-300">${progressPercentage}% Progress</span>` : ''}
+                        ${task.completed ? '<span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-lg font-medium border border-green-300">Selesai</span>' : ''}
+                        ${subtaskTotal > 0 ? `<span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">${progressPercentage}% Progress</span>` : ''}
                     </div>
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                    <div class="flex items-center gap-2 mb-2">
-                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="flex items-center gap-2 mb-1">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
-                        <span class="text-sm font-medium text-gray-600">Tanggal Mulai</span>
+                        <span class="text-xs font-medium text-gray-600">Tanggal Mulai</span>
                     </div>
-                    <span class="font-semibold text-gray-800">${formatDateString(task.start_date)}</span>
+                    <span class="font-semibold text-gray-800 text-sm">${formatDateString(task.start_date)}</span>
                 </div>
-                <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                    <div class="flex items-center gap-2 mb-2">
-                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="flex items-center gap-2 mb-1">
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
-                        <span class="text-sm font-medium text-gray-600">Tanggal Selesai</span>
+                        <span class="text-xs font-medium text-gray-600">Tanggal Selesai</span>
                     </div>
-                    <span class="font-semibold text-gray-800">${formatDateString(task.end_date)}</span>
+                    <span class="font-semibold text-gray-800 text-sm">${formatDateString(task.end_date)}</span>
                 </div>
             </div>
             
-            <div class="mb-6">
-                <h5 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="mb-4">
+                <h5 class="font-medium text-gray-800 mb-2 flex items-center gap-2 text-sm">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     Deskripsi
                 </h5>
-                <div class="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
-                    <p class="text-gray-700 leading-relaxed">${task.description || 'Tidak ada deskripsi tersedia'}</p>
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <p class="text-gray-700 leading-relaxed text-sm">${task.description || 'Tidak ada deskripsi tersedia'}</p>
                 </div>
             </div>
 
             ${subtasksHtml}
             
-            <div class="flex gap-3 pt-6 border-t border-gray-200">
-                <a href="/tasks/${task.id}/edit" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center py-3 px-6 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 shadow-lg">
+            <div class="flex gap-2 pt-4 border-t border-gray-200">
+                <a href="/tasks/${task.id}/edit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
                     Edit Tugas
                 </a>
-                <button onclick="closeTaskModal()" class="flex-1 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-800 py-3 px-6 rounded-xl font-medium transition-all duration-300 transform hover:scale-105">
+                <button onclick="closeTaskModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
                     Tutup
                 </button>
             </div>
@@ -676,7 +676,7 @@
         }, 10);
     }
 
-    // Enhanced function to render subtasks in modal
+    // COMPACT function to render subtasks in modal
     function renderModalSubtasks(subtasks, parentId = null, task) {
         let html = '';
         
@@ -688,18 +688,18 @@
             if (isParent) {
                 // Parent subtask
                 html += `
-                    <div class="subtask-parent-modal bg-white rounded-lg p-3 border border-gray-200" data-subtask-id="${subTask.id}">
-                        <div class="flex items-center gap-3 py-1">
+                    <div class="subtask-parent-modal bg-white rounded-lg p-2 border border-gray-200" data-subtask-id="${subTask.id}">
+                        <div class="flex items-center gap-2 py-1">
                             <button class="subtask-parent-toggle-btn-modal text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50" 
                                     data-subtask-id="${subTask.id}" 
                                     data-expanded="true">
-                                <svg class="w-4 h-4 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-3 h-3 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
-                            <span class="text-sm font-semibold text-gray-700">${subTask.title}</span>
+                            <span class="text-xs font-semibold text-gray-700">${subTask.title}</span>
                         </div>
-                        <div class="subtask-children-modal pl-8 mt-2 border-l-2 border-blue-100" id="modal-subtask-children-${subTask.id}">
+                        <div class="subtask-children-modal pl-6 mt-1 border-l-2 border-blue-100" id="modal-subtask-children-${subTask.id}">
                             ${renderModalSubtasks(subtasks, subTask.id, task)}
                         </div>
                     </div>
@@ -708,17 +708,17 @@
                 // Leaf subtask with checkbox
                 const lineClass = subTask.completed ? 'line-through text-gray-400' : 'text-gray-700';
                 html += `
-                    <div class="subtask-item-modal flex items-center gap-3 py-2 px-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-all duration-200" data-subtask-id="${subTask.id}">
+                    <div class="subtask-item-modal flex items-center gap-2 py-1 px-2 bg-white rounded border border-gray-200 hover:border-blue-300 transition-all duration-200" data-subtask-id="${subTask.id}">
                         <form action="/subtasks/${subTask.id}/toggle" method="POST" class="subtask-toggle-form-modal">
                             <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
                             <input type="hidden" name="_method" value="PATCH">
                             <input type="checkbox"
-                                class="subtask-checkbox-modal w-4 h-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                                class="subtask-checkbox-modal w-3 h-3 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
                                 data-sub-task-id="${subTask.id}"
                                 data-task-id="${task.id}"
                                 ${subTask.completed ? 'checked' : ''}>
                         </form>
-                        <span class="text-sm ${lineClass} subtask-text-modal flex-1">${subTask.title}</span>
+                        <span class="text-xs ${lineClass} subtask-text-modal flex-1">${subTask.title}</span>
                     </div>
                 `;
             }
@@ -757,9 +757,10 @@
                 updateCalendarEvent(taskId, data.task.completed);
                 updateAllSubtasksUI(taskId, isCompleted);
                 
-                // Update modal if open
+                // Update modal if open - REALTIME PROGRESS
                 updateModalTaskUI(taskId, data);
                 updateModalSubtasksUI(taskId, isCompleted);
+                updateModalProgress(taskId);
                 
                 updateTasksData(taskId, data);
                 
@@ -810,9 +811,10 @@
                 updateMainTaskUI(taskId, data);
                 updateSummaryUI(data);
                 
-                // Update modal if open
+                // Update modal if open - REALTIME PROGRESS
                 updateModalSubtaskUI(subtaskId, data);
                 updateModalTaskUI(taskId, data);
+                updateModalProgress(taskId);
                 
                 updateTasksData(taskId, data);
                 
@@ -863,6 +865,7 @@
                 
                 updateModalTaskUI(taskId, data);
                 updateModalSubtasksUI(taskId, isCompleted);
+                updateModalProgress(taskId);
                 
                 updateTasksData(taskId, data);
                 
@@ -915,6 +918,7 @@
                 
                 updateModalSubtaskUI(subtaskId, data);
                 updateModalTaskUI(taskId, data);
+                updateModalProgress(taskId);
                 
                 updateTasksData(taskId, data);
                 
@@ -932,6 +936,41 @@
         .finally(() => {
             hideLoadingIndicator();
         });
+    }
+
+    // NEW: Update modal progress in real-time
+    function updateModalProgress(taskId) {
+        const modal = document.getElementById('taskModal');
+        if (modal.classList.contains('hidden')) return;
+        
+        const task = tasksData.find(t => t.id == taskId);
+        if (!task) return;
+        
+        // Calculate current progress
+        const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
+            !task.sub_tasks.some(parent => parent.parent_id === st.id)
+        ) : [];
+        const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
+        const subtaskTotal = leafSubTasks.length;
+        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
+        
+        // Update progress bar
+        const progressBar = document.getElementById('modal-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${progressPercentage}%`;
+        }
+        
+        // Update progress percentage
+        const progressPercentageEl = document.getElementById('modal-progress-percentage');
+        if (progressPercentageEl) {
+            progressPercentageEl.textContent = `${progressPercentage}%`;
+        }
+        
+        // Update subtask count
+        const subtaskCount = document.getElementById('modal-subtask-count');
+        if (subtaskCount) {
+            subtaskCount.textContent = `${subtaskCompleted}/${subtaskTotal}`;
+        }
     }
 
     // Enhanced toggle functions with smooth animations
@@ -1224,19 +1263,31 @@
         document.getElementById('loading-indicator').classList.add('hidden');
     }
     
+    // COMPACT notification function
     function showNotification(message, type = 'success') {
         const container = document.getElementById('notification-container');
         const notification = document.createElement('div');
         
-        const bgColor = type === 'success' ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600';
-        const icon = type === 'success' ? 
-            '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' :
-            '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        let bgColor, icon;
+        switch(type) {
+            case 'success':
+                bgColor = 'from-green-500 to-green-600';
+                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                break;
+            case 'error':
+                bgColor = 'from-red-500 to-red-600';
+                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                break;
+            case 'info':
+                bgColor = 'from-blue-500 to-blue-600';
+                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                break;
+        }
         
-        notification.className = `bg-gradient-to-r ${bgColor} text-white px-6 py-4 rounded-xl shadow-2xl transform transition-all duration-300 flex items-center gap-3 max-w-sm`;
+        notification.className = `bg-gradient-to-r ${bgColor} text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 flex items-center gap-2 max-w-xs`;
         notification.innerHTML = `
             ${icon}
-            <span class="font-medium">${message}</span>
+            <span class="font-medium text-sm">${message}</span>
         `;
         
         // Add animation
@@ -1251,14 +1302,14 @@
             notification.style.opacity = '1';
         }, 10);
         
-        // Remove after 4 seconds
+        // Remove after 3 seconds
         setTimeout(() => {
             notification.style.transform = 'translateX(100%)';
             notification.style.opacity = '0';
             setTimeout(() => {
                 notification.remove();
             }, 300);
-        }, 4000);
+        }, 3000);
     }
     
     function updateCalendarTitle(calendar) {
@@ -1362,25 +1413,25 @@
         transition: all 0.2s ease-in-out;
     }
 
-    /* Modal specific styles */
+    /* Modal specific styles - COMPACT VERSION */
     .subtask-parent-modal {
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.5rem;
     }
     
     .subtask-children-modal {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         overflow: hidden;
-        padding-left: 2rem;
+        padding-left: 1.5rem;
     }
     
     .subtask-item-modal {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
         transition: all 0.2s ease-in-out;
     }
 
     .subtask-item-modal:hover {
-        transform: translateX(4px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
     }
 
     /* Enhanced progress bar animation */
@@ -1395,17 +1446,17 @@
 
     /* Custom scrollbar */
     .overflow-y-auto::-webkit-scrollbar {
-        width: 6px;
+        width: 4px;
     }
 
     .overflow-y-auto::-webkit-scrollbar-track {
         background: #f1f5f9;
-        border-radius: 3px;
+        border-radius: 2px;
     }
 
     .overflow-y-auto::-webkit-scrollbar-thumb {
         background: #cbd5e1;
-        border-radius: 3px;
+        border-radius: 2px;
     }
 
     .overflow-y-auto::-webkit-scrollbar-thumb:hover {
