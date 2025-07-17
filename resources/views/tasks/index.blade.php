@@ -482,7 +482,7 @@
             });
         });
 
-        // Task title click to toggle subtasks
+        // Task title click to open modal
         document.querySelectorAll('.task-title').forEach(title => {
             title.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -598,7 +598,7 @@
                             ${priorityText}
                         </span>
                         ${task.completed ? '<span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-lg font-medium border border-green-300">Selesai</span>' : ''}
-                        ${subtaskTotal > 0 ? `<span class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">${progressPercentage}% Progress</span>` : ''}
+                        ${subtaskTotal > 0 ? `<span id="modal-progress-badge" class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">${progressPercentage}% Progress</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -660,6 +660,14 @@
         modalSubtaskCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 handleModalSubtaskToggle(this);
+            });
+        });
+
+        // Add toggle functionality for modal subtask parents
+        const modalSubtaskParentToggleBtns = modalContent.querySelectorAll('.subtask-parent-toggle-btn-modal');
+        modalSubtaskParentToggleBtns.forEach(button => {
+            button.addEventListener('click', function() {
+                toggleModalSubtaskParent(this);
             });
         });
         
@@ -725,6 +733,53 @@
         });
 
         return html;
+    }
+
+    // Toggle modal subtask parent
+    function toggleModalSubtaskParent(button) {
+        const subtaskId = button.getAttribute('data-subtask-id');
+        const childrenContainer = document.getElementById(`modal-subtask-children-${subtaskId}`);
+        const icon = button.querySelector('svg');
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+
+        if (isExpanded) {
+            // Collapse
+            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
+            childrenContainer.offsetHeight;
+            childrenContainer.style.maxHeight = '0';
+            childrenContainer.style.opacity = '0';
+            childrenContainer.style.transform = 'translateY(-10px)';
+            
+            icon.style.transform = 'rotate(-90deg)';
+            button.setAttribute('data-expanded', 'false');
+            
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'false') {
+                    childrenContainer.style.display = 'none';
+                }
+            }, 300);
+        } else {
+            // Expand
+            childrenContainer.style.display = 'block';
+            childrenContainer.style.maxHeight = '0';
+            childrenContainer.style.opacity = '0';
+            childrenContainer.style.transform = 'translateY(-10px)';
+            
+            childrenContainer.offsetHeight;
+            
+            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
+            childrenContainer.style.opacity = '1';
+            childrenContainer.style.transform = 'translateY(0)';
+            
+            icon.style.transform = 'rotate(0deg)';
+            button.setAttribute('data-expanded', 'true');
+            
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'true') {
+                    childrenContainer.style.maxHeight = '';
+                }
+            }, 300);
+        }
     }
 
     // Enhanced task toggle handler
@@ -971,6 +1026,12 @@
         if (subtaskCount) {
             subtaskCount.textContent = `${subtaskCompleted}/${subtaskTotal}`;
         }
+        
+        // Update progress badge
+        const progressBadge = document.getElementById('modal-progress-badge');
+        if (progressBadge) {
+            progressBadge.textContent = `${progressPercentage}% Progress`;
+        }
     }
 
     // Enhanced toggle functions with smooth animations
@@ -1091,6 +1152,8 @@
 
     function updateSubtaskUI(subtaskId, data) {
         const subtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]`);
+        if (!subtaskCheckbox) return;
+        
         const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
         
         subtaskCheckbox.checked = data.subtask.completed;
