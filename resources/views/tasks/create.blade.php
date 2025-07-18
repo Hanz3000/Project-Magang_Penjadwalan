@@ -11,7 +11,7 @@
                 </svg>
             </div>
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Tambah Task Baru</h1>
-            <p class="text-gray-600">Buat dan kelola pekerjaan Anda dengan mudah</p>
+            <p class="text-gray-600">Buat dan kelala pekerjaan Anda dengan mudah</p>
         </div>
 
         <!-- Main Form Card -->
@@ -129,32 +129,56 @@
                         </h2>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Start Date & Time -->
                             <div>
                                 <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
                                     Tanggal Mulai <span class="text-red-500">*</span>
                                 </label>
-                                <div class="relative">
-                                    <input id="start_date" name="start_date" type="date" required
-                                        class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="relative">
+                                        <input id="start_date" name="start_date" type="date" required
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="relative">
+                                        <input id="start_time" name="start_time" type="time" 
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             
+                            <!-- End Date & Time -->
                             <div>
                                 <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
                                     Tanggal Selesai <span class="text-red-500">*</span>
                                 </label>
-                                <div class="relative">
-                                    <input id="end_date" name="end_date" type="date" required
-                                        class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                        </svg>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="relative">
+                                        <input id="end_date" name="end_date" type="date" required
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="relative">
+                                        <input id="end_time" name="end_time" type="time" 
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -309,7 +333,6 @@ function addSubtask(parentElement = null) {
     </div>
 `;
 
-
     const container = parentElement?.querySelector('.child-container') || document.getElementById('subtasks-container');
     container.appendChild(subtaskWrapper);
 }
@@ -327,20 +350,46 @@ function removeSubtask(element) {
     }
 }
 
-// Form validation
+// Form validation with time consideration
 document.getElementById('task-form').addEventListener('submit', function(e) {
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
+    const startTime = document.getElementById('start_time').value;
+    const endTime = document.getElementById('end_time').value;
     
-    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-        e.preventDefault();
-        alert('Tanggal mulai tidak boleh lebih besar dari tanggal selesai');
-        return false;
+    if (startDate && endDate) {
+        const startDateTime = new Date(`${startDate}T${startTime || '00:00'}`);
+        const endDateTime = new Date(`${endDate}T${endTime || '23:59'}`);
+        
+        if (startDateTime > endDateTime) {
+            e.preventDefault();
+            alert('Waktu mulai tidak boleh lebih besar dari waktu selesai');
+            return false;
+        }
     }
 });
 
-// Priority selection functionality
+// Set default time to current time
 document.addEventListener('DOMContentLoaded', function() {
+    // Set default time to current time if not set
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTime = `${hours}:${minutes}`;
+    
+    if (!document.getElementById('start_time').value) {
+        document.getElementById('start_time').value = currentTime;
+    }
+    
+    if (!document.getElementById('end_time').value) {
+        // Default end time is 1 hour after start time
+        const endTime = new Date(now.getTime() + 60 * 60 * 1000);
+        const endHours = String(endTime.getHours()).padStart(2, '0');
+        const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+        document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
+    }
+
+    // Priority selection functionality
     const priorityOptions = document.querySelectorAll('.priority-option input[type="radio"]');
     
     priorityOptions.forEach(option => {
@@ -378,3 +427,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
+@endsection
