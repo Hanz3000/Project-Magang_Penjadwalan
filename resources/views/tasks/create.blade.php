@@ -498,11 +498,7 @@ function addSubtask(parentElement = null) {
                 <input type="text" name="subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
                 <input type="hidden" name="subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
-                <label class="flex items-center mt-2 text-sm gap-2">
-                    <input type="checkbox" name="subtasks[${currentId}][is_group]" value="1"
-                        class="form-checkbox rounded text-blue-600">
-                    Subtask ini grup?
-                </label>
+                
             </div>
             <div class="flex gap-2">
                 <button type="button" 
