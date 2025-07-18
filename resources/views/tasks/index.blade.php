@@ -362,8 +362,6 @@
 <!-- Notification Container -->
 <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-
-
 @endsection
 
 @push('scripts')
@@ -374,35 +372,34 @@
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/id.js'></script>
 
 <script>
-    // Global variables
-    let tasksData = @json($tasks);
-    let calendar;
-    let modalUpdateTimer;
-    let isModalOpen = false;
-    let currentModalTaskId = null;
-
-    // State management
+    // Global State Management
     let appState = {
+        tasksData: @json($tasks),
+        calendar: null,
+        isModalOpen: false,
+        currentModalTaskId: null,
+        isUpdating: false,
         totalTasks: {{ $totalTasks }},
         completedTasks: {{ $tasks->where('completed', true)->count() }},
         allTasksCompleted: false
     };
 
+    // Initialize application
     document.addEventListener('DOMContentLoaded', function() {
         initializeCalendar();
-        initializeEventListeners();
+        initializeEventDelegation();
         checkAllTasksCompleted();
     });
 
-    // Initialize calendar with enhanced features
+    // ===== CALENDAR FUNCTIONS =====
     function initializeCalendar() {
-        var calendarEl = document.getElementById('calendar');
-        calendar = new FullCalendar.Calendar(calendarEl, {
+        const calendarEl = document.getElementById('calendar');
+        appState.calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             locale: 'id',
             headerToolbar: false,
             height: 600,
-            displayEventTime: false, // Hide time display
+            displayEventTime: false,
             events: generateCalendarEvents(),
             eventClick: function(info) {
                 info.jsEvent.preventDefault();
@@ -420,14 +417,13 @@
             }
         });
         
-        calendar.render();
-        updateCalendarTitle(calendar);
+        appState.calendar.render();
+        updateCalendarTitle();
         setupCalendarNavigation();
     }
 
-    // Generate calendar events with completion-based styling
     function generateCalendarEvents() {
-        return tasksData.map(task => ({
+        return appState.tasksData.map(task => ({
             id: task.id.toString(),
             title: task.title,
             start: task.start_date,
@@ -445,12 +441,8 @@
         }));
     }
 
-    // Get task color based on priority and completion - REVISED
     function getTaskColor(task) {
-        if (task.completed) {
-            return '#9ca3af'; // Gray color for completed tasks (inactive look)
-        }
-        
+        if (task.completed) return '#9ca3af';
         switch(task.priority) {
             case 'urgent': return '#ef4444';
             case 'high': return '#f97316';
@@ -460,239 +452,489 @@
         }
     }
 
-    // Setup calendar navigation
     function setupCalendarNavigation() {
-        document.getElementById('prev-month').addEventListener('click', function() {
-            calendar.prev();
-            updateCalendarTitle(calendar);
+        document.getElementById('prev-month').addEventListener('click', () => {
+            appState.calendar.prev();
+            updateCalendarTitle();
         });
         
-        document.getElementById('next-month').addEventListener('click', function() {
-            calendar.next();
-            updateCalendarTitle(calendar);
+        document.getElementById('next-month').addEventListener('click', () => {
+            appState.calendar.next();
+            updateCalendarTitle();
         });
         
         document.getElementById('month-view').addEventListener('click', function() {
-            calendar.changeView('dayGridMonth');
-            updateCalendarTitle(calendar);
+            appState.calendar.changeView('dayGridMonth');
+            updateCalendarTitle();
             this.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
             document.getElementById('week-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
         });
         
         document.getElementById('week-view').addEventListener('click', function() {
-            calendar.changeView('timeGridWeek');
-            updateCalendarTitle(calendar);
+            appState.calendar.changeView('timeGridWeek');
+            updateCalendarTitle();
             this.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
             document.getElementById('month-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
         });
     }
 
-    // Initialize all event listeners
-    function initializeEventListeners() {
-        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                handleTaskToggle(this);
+    function updateCalendarTitle() {
+        const view = appState.calendar.view;
+        let title = '';
+        
+        if (view.type === 'dayGridMonth') {
+            title = view.currentStart.toLocaleDateString('id-ID', { 
+                month: 'long', 
+                year: 'numeric' 
             });
+        } else if (view.type === 'timeGridWeek') {
+            const start = view.currentStart;
+            const end = new Date(view.currentEnd);
+            end.setDate(end.getDate() - 1);
+            
+            const startMonth = start.toLocaleDateString('id-ID', { month: 'short' });
+            const endMonth = end.toLocaleDateString('id-ID', { month: 'short' });
+            
+            if (startMonth === endMonth) {
+                title = `${start.getDate()} - ${end.getDate()} ${startMonth} ${start.getFullYear()}`;
+            } else {
+                title = `${start.getDate()} ${startMonth} - ${end.getDate()} ${endMonth} ${start.getFullYear()}`;
+            }
+        }
+        
+        document.getElementById('calendar-title').textContent = title;
+    }
+
+    // ===== EVENT DELEGATION SYSTEM =====
+    function initializeEventDelegation() {
+        // Task list container delegation
+        document.getElementById('task-list-container').addEventListener('change', handleTaskListChange);
+        document.getElementById('task-list-container').addEventListener('click', handleTaskListClick);
+        
+        // Modal container delegation
+        document.addEventListener('change', handleModalChange);
+        document.addEventListener('click', handleModalClick);
+        
+        // Modal close events
+        document.getElementById('taskModal').addEventListener('click', function(e) {
+            if (e.target === this) closeTaskModal();
         });
         
-        document.querySelectorAll('.subtask-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                handleSubtaskToggle(this);
-            });
-        });
-
-        document.querySelectorAll('.subtask-toggle-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                toggleSubtasks(this);
-            });
-        });
-
-        document.querySelectorAll('.subtask-parent-toggle-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                toggleSubtaskParent(this);
-            });
-        });
-
-        document.querySelectorAll('.task-title').forEach(title => {
-            title.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const taskId = this.getAttribute('data-task-id');
-                openTaskModal(taskId);
-            });
-        });
-
-        document.querySelectorAll('.subtask-parent-title').forEach(title => {
-            title.addEventListener('click', function() {
-                const subtaskId = this.getAttribute('data-subtask-id');
-                const toggleBtn = document.querySelector(`[data-subtask-id="${subtaskId}"].subtask-parent-toggle-btn`);
-                if (toggleBtn) {
-                    toggleSubtaskParent(toggleBtn);
-                }
-            });
-        });
-
-        document.getElementById('taskModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeTaskModal();
-            }
-        });
-
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeTaskModal();
-            }
+            if (e.key === 'Escape') closeTaskModal();
         });
     }
 
-    // Enhanced task toggle with real-time updates
-    function handleTaskToggle(checkbox) {
-    const taskId = checkbox.getAttribute('data-task-id');
-    const isModalCheckbox = checkbox.classList.contains('task-checkbox-modal');
-    const form = checkbox.closest('form');
-    const url = form.getAttribute('action');
-    const isCompleted = checkbox.checked;
-    
-    showLoadingIndicator();
-    showAutoSaveIndicator();
-    
-    const token = form.querySelector('input[name="_token"]').value;
-    
-    fetch(url, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': token,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            completed: isCompleted
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update both modal and main view
-            if (isModalCheckbox) {
-                updateMainTaskUI(taskId, data);
+    function handleTaskListChange(e) {
+        if (appState.isUpdating) return;
+        
+        if (e.target.classList.contains('task-checkbox')) {
+            performTaskUpdate(e.target, 'main');
+        } else if (e.target.classList.contains('subtask-checkbox')) {
+            performSubtaskUpdate(e.target, 'main');
+        }
+    }
+
+    function handleTaskListClick(e) {
+        if (e.target.closest('.subtask-toggle-btn')) {
+            toggleSubtasks(e.target.closest('.subtask-toggle-btn'));
+        } else if (e.target.closest('.subtask-parent-toggle-btn')) {
+            toggleSubtaskParent(e.target.closest('.subtask-parent-toggle-btn'));
+        } else if (e.target.closest('.task-title')) {
+            const taskId = e.target.closest('.task-title').getAttribute('data-task-id');
+            openTaskModal(taskId);
+        }
+    }
+
+    function handleModalChange(e) {
+        if (appState.isUpdating || !appState.isModalOpen) return;
+        
+        if (e.target.classList.contains('task-checkbox-modal')) {
+            performTaskUpdate(e.target, 'modal');
+        } else if (e.target.classList.contains('subtask-checkbox-modal')) {
+            performSubtaskUpdate(e.target, 'modal');
+        }
+    }
+
+    function handleModalClick(e) {
+        if (!appState.isModalOpen) return;
+        
+        if (e.target.closest('.subtask-parent-toggle-btn-modal')) {
+            toggleModalSubtaskParent(e.target.closest('.subtask-parent-toggle-btn-modal'));
+        }
+    }
+
+    // ===== UNIFIED UPDATE FUNCTIONS =====
+    async function performTaskUpdate(checkbox, source) {
+        if (appState.isUpdating) return;
+        
+        const taskId = checkbox.getAttribute('data-task-id');
+        const isCompleted = checkbox.checked;
+        const form = checkbox.closest('form');
+        const url = form.getAttribute('action');
+        const token = form.querySelector('input[name="_token"]').value;
+        
+        appState.isUpdating = true;
+        showLoadingIndicator();
+        showAutoSaveIndicator();
+        
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ completed: isCompleted })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update global state
+                updateTasksData(taskId, data, 'task');
+                
+                // Sync UI updates
+                syncTaskUIUpdates(taskId, data, source);
+                
+                // Update calendar and summary
+                updateCalendarEvent(taskId, data.task.completed);
+                updateSummaryUI(data);
+                
+                showNotification('Tugas berhasil diperbarui!', 'success');
+                checkAllTasksCompleted();
             } else {
-                updateModalTaskUI(taskId, data);
+                throw new Error('Update failed');
             }
-            
-            // Common updates
-            updateTaskUI(taskId, data);
-            updateSummaryUI(data);
-            updateCalendarEvent(taskId, data.task.completed);
-            updateAllSubtasksUI(taskId, isCompleted);
-            
-            // If modal is open for this task, update its content
-            if (isModalOpen && currentModalTaskId == taskId) {
-                updateModalSubtasksUI(taskId, isCompleted);
-                updateModalProgress(taskId);
-            }
-            
-            updateTasksData(taskId, data);
-            updateAppState(data);
-            
-            showNotification('Tugas berhasil diperbarui!', 'success');
-            checkAllTasksCompleted();
-        } else {
+        } catch (error) {
+            console.error('Error:', error);
             checkbox.checked = !isCompleted;
             showNotification('Gagal memperbarui tugas!', 'error');
+        } finally {
+            appState.isUpdating = false;
+            hideLoadingIndicator();
+            hideAutoSaveIndicator();
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        checkbox.checked = !isCompleted;
-        showNotification('Terjadi kesalahan!', 'error');
-    })
-    .finally(() => {
-        hideLoadingIndicator();
-        hideAutoSaveIndicator();
-    });
-}
-
-
-    // Enhanced subtask toggle with real-time updates
-    function handleSubtaskToggle(checkbox) {
-    const subtaskId = checkbox.getAttribute('data-sub-task-id');
-    const taskId = checkbox.getAttribute('data-task-id');
-    const isModalCheckbox = checkbox.classList.contains('subtask-checkbox-modal');
-    const form = checkbox.closest('form');
-    const url = form.getAttribute('action');
-    const isCompleted = checkbox.checked;
-    
-    showLoadingIndicator();
-    showAutoSaveIndicator();
-    
-    const token = form.querySelector('input[name="_token"]').value;
-    
-    fetch(url, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': token,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            completed: isCompleted
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update both modal and main view subtasks
-            if (isModalCheckbox) {
-                updateSubtaskUI(subtaskId, data);
-            } else {
-                updateModalSubtaskUI(subtaskId, data);
-            }
-            
-            // Common updates
-            updateTaskProgressUI(taskId, data);
-            updateMainTaskUI(taskId, data);
-            updateSummaryUI(data);
-            updateCalendarEvent(taskId, data.task.completed);
-            
-            // If modal is open for this task, update its content
-            if (isModalOpen && currentModalTaskId == taskId) {
-                updateModalTaskUI(taskId, data);
-                updateModalProgress(taskId);
-            }
-            
-            updateTasksData(taskId, data);
-            updateAppState(data);
-            
-            showNotification('Subtugas berhasil diperbarui!', 'success');
-            checkAllTasksCompleted();
-        } else {
-            checkbox.checked = !isCompleted;
-            showNotification('Gagal memperbarui subtugas!', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        checkbox.checked = !isCompleted;
-        showNotification('Terjadi kesalahan!', 'error');
-    })
-    .finally(() => {
-        hideLoadingIndicator();
-        hideAutoSaveIndicator();
-    });
-}
-
-    // Enhanced modal with real-time updates
-    function openTaskModal(taskId) {
-        
-        const task = tasksData.find(t => t.id == taskId);
-    if (!task) {
-        // Jika task tidak ditemukan, mungkin perlu refresh data
-        showNotification('Memuat data terbaru...', 'info');
-        window.location.reload();
-        return;
     }
 
-        isModalOpen = true;
-        currentModalTaskId = taskId;
+    async function performSubtaskUpdate(checkbox, source) {
+        if (appState.isUpdating) return;
+        
+        const subtaskId = checkbox.getAttribute('data-sub-task-id');
+        const taskId = checkbox.getAttribute('data-task-id');
+        const isCompleted = checkbox.checked;
+        const form = checkbox.closest('form');
+        const url = form.getAttribute('action');
+        const token = form.querySelector('input[name="_token"]').value;
+        
+        appState.isUpdating = true;
+        showLoadingIndicator();
+        showAutoSaveIndicator();
+        
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ completed: isCompleted })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update global state
+                updateTasksData(taskId, data, 'subtask');
+                
+                // Sync UI updates
+                syncSubtaskUIUpdates(subtaskId, taskId, data, source);
+                
+                // Update calendar and summary
+                updateCalendarEvent(taskId, data.task.completed);
+                updateSummaryUI(data);
+                
+                showNotification('Subtugas berhasil diperbarui!', 'success');
+                checkAllTasksCompleted();
+            } else {
+                throw new Error('Update failed');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            checkbox.checked = !isCompleted;
+            showNotification('Gagal memperbarui subtugas!', 'error');
+        } finally {
+            appState.isUpdating = false;
+            hideLoadingIndicator();
+            hideAutoSaveIndicator();
+        }
+    }
+
+    // ===== SYNCHRONIZATION FUNCTIONS =====
+    function syncTaskUIUpdates(taskId, data, source) {
+        const task = data.task;
+        
+        // Update main view
+        const mainCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
+        const mainTitle = document.querySelector(`#task-item-${taskId} .task-title`);
+        
+        if (mainCheckbox && source !== 'main') {
+            mainCheckbox.checked = task.completed;
+        }
+        
+        if (mainTitle) {
+            if (task.completed) {
+                mainTitle.classList.add('line-through', 'text-gray-400');
+            } else {
+                mainTitle.classList.remove('line-through', 'text-gray-400');
+            }
+        }
+        
+        // Update modal if open
+        if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
+            const modalCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
+            const modalTitle = document.getElementById(`modal-task-title-${taskId}`);
+            
+            if (modalCheckbox && source !== 'modal') {
+                modalCheckbox.checked = task.completed;
+            }
+            
+            if (modalTitle) {
+                if (task.completed) {
+                    modalTitle.classList.add('line-through', 'text-gray-400');
+                } else {
+                    modalTitle.classList.remove('line-through', 'text-gray-400');
+                }
+            }
+            
+            // Update all modal subtasks if task is toggled
+            updateAllModalSubtasks(taskId, task.completed);
+        }
+        
+        // Update all main subtasks if task is toggled
+        updateAllMainSubtasks(taskId, task.completed);
+        
+        // Update progress
+        updateTaskProgress(taskId, data);
+    }
+
+    function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
+        const subtask = data.subtask;
+        
+        // Update main view subtask
+        const mainSubtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]:not(.subtask-checkbox-modal)`);
+        const mainSubtaskText = mainSubtaskCheckbox?.parentElement?.nextElementSibling;
+        
+        if (mainSubtaskCheckbox && source !== 'main') {
+            mainSubtaskCheckbox.checked = subtask.completed;
+        }
+        
+        if (mainSubtaskText) {
+            updateTextStyle(mainSubtaskText, subtask.completed);
+        }
+        
+        // Update modal subtask if open
+        if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
+            const modalSubtaskCheckbox = document.querySelector(`.subtask-checkbox-modal[data-sub-task-id="${subtaskId}"]`);
+            const modalSubtaskText = modalSubtaskCheckbox?.parentElement?.nextElementSibling;
+            
+            if (modalSubtaskCheckbox && source !== 'modal') {
+                modalSubtaskCheckbox.checked = subtask.completed;
+            }
+            
+            if (modalSubtaskText) {
+                updateTextStyle(modalSubtaskText, subtask.completed);
+            }
+            
+            updateModalProgress(taskId);
+        }
+        
+        // Update task progress
+        updateTaskProgress(taskId, data);
+        
+        // Update main task checkbox if needed
+        const mainTaskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
+        if (mainTaskCheckbox) {
+            mainTaskCheckbox.checked = data.task.completed;
+        }
+        
+        // Update modal task checkbox if needed
+        if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
+            const modalTaskCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
+            if (modalTaskCheckbox) {
+                modalTaskCheckbox.checked = data.task.completed;
+            }
+        }
+    }
+
+    // ===== HELPER FUNCTIONS =====
+    function updateTextStyle(element, completed) {
+        if (completed) {
+            element.classList.add('line-through', 'text-gray-400');
+            element.classList.remove('text-gray-700');
+        } else {
+            element.classList.remove('line-through', 'text-gray-400');
+            element.classList.add('text-gray-700');
+        }
+    }
+
+    function updateAllMainSubtasks(taskId, completed) {
+        const subtaskCheckboxes = document.querySelectorAll(`#task-item-${taskId} .subtask-checkbox`);
+        subtaskCheckboxes.forEach(checkbox => {
+            checkbox.checked = completed;
+            const text = checkbox.parentElement?.nextElementSibling;
+            if (text) updateTextStyle(text, completed);
+        });
+    }
+
+    function updateAllModalSubtasks(taskId, completed) {
+        const modalSubtaskCheckboxes = document.querySelectorAll(`.subtask-checkbox-modal[data-task-id="${taskId}"]`);
+        modalSubtaskCheckboxes.forEach(checkbox => {
+            checkbox.checked = completed;
+            const text = checkbox.parentElement?.nextElementSibling;
+            if (text) updateTextStyle(text, completed);
+        });
+    }
+
+    function updateTaskProgress(taskId, data) {
+        if (!data.progressPercentage) return;
+        
+        const taskItem = document.getElementById(`task-item-${taskId}`);
+        if (!taskItem) return;
+        
+        const progressPercentage = taskItem.querySelector('.task-progress-percentage');
+        const subtaskProgressText = taskItem.querySelector('.subtask-progress-text');
+        const subtaskProgressBar = taskItem.querySelector('.subtask-progress-bar');
+        
+        if (progressPercentage) {
+            progressPercentage.textContent = `${data.progressPercentage}%`;
+        }
+        
+        if (subtaskProgressText) {
+            subtaskProgressText.textContent = `Subtugas (${data.subtaskCompleted}/${data.subtaskTotal})`;
+        }
+        
+        if (subtaskProgressBar) {
+            subtaskProgressBar.style.width = `${data.progressPercentage}%`;
+        }
+    }
+
+    function updateModalProgress(taskId) {
+        if (!appState.isModalOpen || appState.currentModalTaskId != taskId) return;
+        
+        const task = appState.tasksData.find(t => t.id == taskId);
+        if (!task || !task.sub_tasks) return;
+        
+        const leafSubTasks = task.sub_tasks.filter(st => 
+            !task.sub_tasks.some(parent => parent.parent_id === st.id)
+        );
+        const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
+        const subtaskTotal = leafSubTasks.length;
+        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : 0;
+        
+        const progressBar = document.getElementById('modal-progress-bar');
+        const progressPercentageEl = document.getElementById('modal-progress-percentage');
+        const subtaskCount = document.getElementById('modal-subtask-count');
+        const progressBadge = document.getElementById('modal-progress-badge');
+        
+        if (progressBar) progressBar.style.width = `${progressPercentage}%`;
+        if (progressPercentageEl) progressPercentageEl.textContent = `${progressPercentage}%`;
+        if (subtaskCount) subtaskCount.textContent = `${subtaskCompleted}/${subtaskTotal}`;
+        if (progressBadge) progressBadge.textContent = `${progressPercentage}% Progress`;
+    }
+
+    function updateTasksData(taskId, data, type) {
+        const taskIndex = appState.tasksData.findIndex(t => t.id == taskId);
+        if (taskIndex === -1) return;
+        
+        // Update task
+        appState.tasksData[taskIndex].completed = data.task.completed;
+        
+        // Update subtasks if they exist
+        if (appState.tasksData[taskIndex].sub_tasks) {
+            if (type === 'task') {
+                // If task is toggled, update all subtasks
+                appState.tasksData[taskIndex].sub_tasks.forEach(st => {
+                    st.completed = data.task.completed;
+                });
+            } else if (type === 'subtask' && data.subtask) {
+                // If subtask is toggled, update specific subtask
+                const subtaskIndex = appState.tasksData[taskIndex].sub_tasks.findIndex(st => st.id == data.subtask.id);
+                if (subtaskIndex !== -1) {
+                    appState.tasksData[taskIndex].sub_tasks[subtaskIndex].completed = data.subtask.completed;
+                }
+            }
+        }
+    }
+
+    function updateCalendarEvent(taskId, completed) {
+        if (!appState.calendar) return;
+        
+        const event = appState.calendar.getEventById(taskId.toString());
+        if (!event) return;
+        
+        const taskIndex = appState.tasksData.findIndex(t => t.id == taskId);
+        if (taskIndex !== -1) {
+            appState.tasksData[taskIndex].completed = completed;
+            
+            event.setProp('backgroundColor', getTaskColor(appState.tasksData[taskIndex]));
+            event.setProp('borderColor', getTaskColor(appState.tasksData[taskIndex]));
+            event.setProp('className', completed ? 'completed-task' : 'active-task');
+            event.setExtendedProp('completed', completed);
+        }
+    }
+
+    function updateSummaryUI(data) {
+        if (data.totalTasks !== undefined) {
+            document.getElementById('total-tasks-count').textContent = data.totalTasks;
+            appState.totalTasks = data.totalTasks;
+        }
+        
+        if (data.completedTasks !== undefined) {
+            document.getElementById('completed-tasks-count').textContent = data.completedTasks;
+            appState.completedTasks = data.completedTasks;
+        }
+        
+        if (data.overallProgress !== undefined) {
+            document.getElementById('overall-progress-percentage').textContent = `${data.overallProgress}%`;
+        }
+    }
+
+    function checkAllTasksCompleted() {
+        const allCompleted = appState.tasksData.every(task => task.completed);
+        const hasActiveTasks = appState.tasksData.length > 0;
+        
+        if (allCompleted && hasActiveTasks && !appState.allTasksCompleted) {
+            appState.allTasksCompleted = true;
+            updateCalendarCompletionIndicator(true);
+        } else if (!allCompleted && appState.allTasksCompleted) {
+            appState.allTasksCompleted = false;
+            updateCalendarCompletionIndicator(false);
+        }
+    }
+
+    function updateCalendarCompletionIndicator(show) {
+        const indicator = document.getElementById('calendar-completion-indicator');
+        if (show) {
+            indicator.classList.remove('hidden');
+        } else {
+            indicator.classList.add('hidden');
+        }
+    }
+
+    // ===== MODAL FUNCTIONS =====
+    function openTaskModal(taskId) {
+        const task = appState.tasksData.find(t => t.id == taskId);
+        if (!task) {
+            showNotification('Memuat data terbaru...', 'info');
+            window.location.reload();
+            return;
+        }
+
+        appState.isModalOpen = true;
+        appState.currentModalTaskId = taskId;
 
         const modalContent = document.getElementById('taskModalContent');
         
@@ -817,28 +1059,6 @@
                 </button>
             </div>
         `;
-
-        // Add event listeners for modal checkboxes
-        const modalTaskCheckbox = modalContent.querySelector('.task-checkbox-modal');
-        if (modalTaskCheckbox) {
-            modalTaskCheckbox.addEventListener('change', function() {
-                handleModalTaskToggle(this);
-            });
-        }
-
-        const modalSubtaskCheckboxes = modalContent.querySelectorAll('.subtask-checkbox-modal');
-        modalSubtaskCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                handleModalSubtaskToggle(this);
-            });
-        });
-
-        const modalSubtaskParentToggleBtns = modalContent.querySelectorAll('.subtask-parent-toggle-btn-modal');
-        modalSubtaskParentToggleBtns.forEach(button => {
-            button.addEventListener('click', function() {
-                toggleModalSubtaskParent(this);
-            });
-        });
         
         // Show modal with animation
         const modal = document.getElementById('taskModal');
@@ -853,7 +1073,6 @@
         }, 10);
     }
 
-    // Render modal subtasks
     function renderModalSubtasks(subtasks, parentId = null, task) {
         let html = '';
         
@@ -902,251 +1121,110 @@
         return html;
     }
 
-    // Modal task toggle handler
-    function handleModalTaskToggle(checkbox) {
-    const taskId = checkbox.getAttribute('data-task-id');
-    const form = checkbox.closest('form');
-    const url = form.getAttribute('action');
-    const isCompleted = checkbox.checked;
-    
-    showLoadingIndicator();
-    showAutoSaveIndicator();
-    
-    const token = form.querySelector('input[name="_token"]').value;
-    
-    fetch(url, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': token,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            completed: isCompleted
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update all subtasks in the response data
-            if (data.task.completed !== undefined && data.subtasks) {
-                data.subtasks.forEach(st => {
-                    st.completed = data.task.completed;
-                });
-            }
-            
-            // Update UI and data
-            updateTaskUI(taskId, data);
-            updateSummaryUI(data);
-            updateCalendarEvent(taskId, data.task.completed);
-            updateAllSubtasksUI(taskId, isCompleted);
-            
-            // Force update modal content if open
-            if (isModalOpen && currentModalTaskId == taskId) {
-                updateModalTaskUI(taskId, data);
-                updateModalSubtasksUI(taskId, isCompleted);
-                updateModalProgress(taskId);
-            }
-            
-            // Update tasks data with complete information
-            updateTasksData(taskId, {
-                task: data.task,
-                subtask: null, // Indicates we're updating the task, not a subtask
-                progressPercentage: data.progressPercentage,
-                subtaskCompleted: data.subtaskCompleted,
-                subtaskTotal: data.subtaskTotal
-            });
-            
-            updateAppState(data);
-            
-            showNotification('Tugas dan semua subtugas berhasil diperbarui!', 'success');
-            checkAllTasksCompleted();
-        } else {
-            checkbox.checked = !isCompleted;
-            showNotification('Gagal memperbarui tugas!', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        checkbox.checked = !isCompleted;
-        showNotification('Terjadi kesalahan!', 'error');
-    })
-    .finally(() => {
-        hideLoadingIndicator();
-        hideAutoSaveIndicator();
-    });
-}
-
-    // Modal subtask toggle handler
-    function handleModalSubtaskToggle(checkbox) {
-        const subtaskId = checkbox.getAttribute('data-sub-task-id');
-        const taskId = checkbox.getAttribute('data-task-id');
-        const form = checkbox.closest('form');
-        const url = form.getAttribute('action');
-        const isCompleted = checkbox.checked;
-        
-        showLoadingIndicator();
-        showAutoSaveIndicator();
-        
-        const token = form.querySelector('input[name="_token"]').value;
-        
-        fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': token,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                completed: isCompleted
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateSubtaskUI(subtaskId, data);
-                updateTaskProgressUI(taskId, data);
-                updateMainTaskUI(taskId, data);
-                updateSummaryUI(data);
-                updateCalendarEvent(taskId, data.task.completed);
-                
-                updateModalSubtaskUI(subtaskId, data);
-                updateModalTaskUI(taskId, data);
-                updateModalProgress(taskId);
-                
-                updateTasksData(taskId, data);
-                updateAppState(data);
-                
-                showNotification('Subtugas berhasil diperbarui!', 'success');
-                checkAllTasksCompleted();
-            } else {
-                checkbox.checked = !isCompleted;
-                showNotification('Gagal memperbarui subtugas!', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            checkbox.checked = !isCompleted;
-            showNotification('Terjadi kesalahan!', 'error');
-        })
-        .finally(() => {
-            hideLoadingIndicator();
-            hideAutoSaveIndicator();
-        });
-    }
-
-    // Update calendar event appearance - REVISED
-    function updateCalendarEvent(taskId, completed) {
-        if (calendar) {
-            const event = calendar.getEventById(taskId.toString());
-            if (event) {
-                // Update task in tasksData first
-                const taskIndex = tasksData.findIndex(t => t.id == taskId);
-                if (taskIndex !== -1) {
-                    tasksData[taskIndex].completed = completed;
-                    
-                    // Update event properties
-                    event.setProp('backgroundColor', getTaskColor(tasksData[taskIndex]));
-                    event.setProp('borderColor', getTaskColor(tasksData[taskIndex]));
-                    event.setProp('className', completed ? 'completed-task' : 'active-task');
-                    
-                    // Update extended props
-                    event.setExtendedProp('completed', completed);
-                }
-            }
-        }
-    }
-
-    // Check if all tasks are completed and show celebration
-    function checkAllTasksCompleted() {
-        const allCompleted = tasksData.every(task => task.completed);
-        const hasActiveTasks = tasksData.length > 0;
-        
-        if (allCompleted && hasActiveTasks && !appState.allTasksCompleted) {
-            appState.allTasksCompleted = true;
-            // showAllTasksCompletedCelebration();
-            updateCalendarCompletionIndicator(true);
-        } else if (!allCompleted && appState.allTasksCompleted) {
-            appState.allTasksCompleted = false;
-            updateCalendarCompletionIndicator(false);
-        }
-    }
-
-
-    // Update calendar completion indicator
-    function updateCalendarCompletionIndicator(show) {
-        const indicator = document.getElementById('calendar-completion-indicator');
-        if (show) {
-            indicator.classList.remove('hidden');
-        } else {
-            indicator.classList.add('hidden');
-        }
-    }
-
-    // Update app state
-    function updateAppState(data) {
-        if (data.totalTasks !== undefined) {
-            appState.totalTasks = data.totalTasks;
-        }
-        if (data.completedTasks !== undefined) {
-            appState.completedTasks = data.completedTasks;
-        }
-    }
-
-    // Update modal progress in real-time
-    function updateModalProgress(taskId) {
+    function closeTaskModal() {
         const modal = document.getElementById('taskModal');
-        if (modal.classList.contains('hidden')) return;
+        modal.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
         
-        const task = tasksData.find(t => t.id == taskId);
-        if (!task) return;
-        
-        const modalSubtasks = document.querySelectorAll('#taskModalContent .subtask-checkbox-modal');
-        let subtaskCompleted = 0;
-        let subtaskTotal = 0;
-        
-        modalSubtasks.forEach(checkbox => {
-            if (checkbox.checked) subtaskCompleted++;
-            subtaskTotal++;
-        });
-        
-        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : 0;
-        
-        const progressBar = document.getElementById('modal-progress-bar');
-        if (progressBar) {
-            progressBar.style.width = `${progressPercentage}%`;
-        }
-        
-        const progressPercentageEl = document.getElementById('modal-progress-percentage');
-        if (progressPercentageEl) {
-            progressPercentageEl.textContent = `${progressPercentage}%`;
-        }
-        
-        const subtaskCount = document.getElementById('modal-subtask-count');
-        if (subtaskCount) {
-            subtaskCount.textContent = `${subtaskCompleted}/${subtaskTotal}`;
-        }
-        
-        const progressBadge = document.getElementById('modal-progress-badge');
-        if (progressBadge) {
-            progressBadge.textContent = `${progressPercentage}% Progress`;
-        }
-        
-        const taskItem = document.getElementById(`task-item-${taskId}`);
-        if (taskItem) {
-            const taskProgressPercentage = taskItem.querySelector('.task-progress-percentage');
-            if (taskProgressPercentage) {
-                taskProgressPercentage.textContent = `${progressPercentage}%`;
-            }
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.style.opacity = '';
+            modal.style.transform = '';
+            modal.style.transition = '';
+            appState.isModalOpen = false;
+            appState.currentModalTaskId = null;
+        }, 300);
+    }
+
+    // ===== TOGGLE FUNCTIONS =====
+    function toggleSubtasks(button) {
+        const taskId = button.getAttribute('data-task-id');
+        const subtasksContainer = document.getElementById(`subtasks-container-${taskId}`);
+        const icon = button.querySelector('svg');
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+
+        if (isExpanded) {
+            subtasksContainer.style.maxHeight = subtasksContainer.scrollHeight + 'px';
+            subtasksContainer.offsetHeight;
+            subtasksContainer.style.maxHeight = '0';
+            subtasksContainer.style.opacity = '0';
+            subtasksContainer.style.transform = 'translateY(-10px)';
             
-            const subtaskProgressBar = taskItem.querySelector('.subtask-progress-bar');
-            if (subtaskProgressBar) {
-                subtaskProgressBar.style.width = `${progressPercentage}%`;
-            }
+            icon.style.transform = 'rotate(-90deg)';
+            button.setAttribute('data-expanded', 'false');
+            
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'false') {
+                    subtasksContainer.style.display = 'none';
+                }
+            }, 300);
+        } else {
+            subtasksContainer.style.display = 'block';
+            subtasksContainer.style.maxHeight = '0';
+            subtasksContainer.style.opacity = '0';
+            subtasksContainer.style.transform = 'translateY(-10px)';
+            
+            subtasksContainer.offsetHeight;
+            
+            subtasksContainer.style.maxHeight = subtasksContainer.scrollHeight + 'px';
+            subtasksContainer.style.opacity = '1';
+            subtasksContainer.style.transform = 'translateY(0)';
+            
+            icon.style.transform = 'rotate(0deg)';
+            button.setAttribute('data-expanded', 'true');
+            
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'true') {
+                    subtasksContainer.style.maxHeight = '';
+                }
+            }, 300);
         }
     }
 
-    // Toggle modal subtask parent
+    function toggleSubtaskParent(button) {
+        const subtaskId = button.getAttribute('data-subtask-id');
+        const childrenContainer = document.getElementById(`subtask-children-${subtaskId}`);
+        const icon = button.querySelector('svg');
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+
+        if (isExpanded) {
+            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
+            childrenContainer.offsetHeight;
+            childrenContainer.style.maxHeight = '0';
+            childrenContainer.style.opacity = '0';
+            childrenContainer.style.transform = 'translateY(-10px)';
+            
+            icon.style.transform = 'rotate(-90deg)';
+            button.setAttribute('data-expanded', 'false');
+            
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'false') {
+                    childrenContainer.style.display = 'none';
+                }
+            }, 300);
+        } else {
+            childrenContainer.style.display = 'block';
+            childrenContainer.style.maxHeight = '0';
+            childrenContainer.style.opacity = '0';
+            childrenContainer.style.transform = 'translateY(-10px)';
+            
+            childrenContainer.offsetHeight;
+            
+            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
+            childrenContainer.style.opacity = '1';
+            childrenContainer.style.transform = 'translateY(0)';
+            
+            icon.style.transform = 'rotate(0deg)';
+            button.setAttribute('data-expanded', 'true');
+            
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'true') {
+                    childrenContainer.style.maxHeight = '';
+                }
+            }, 300);
+        }
+    }
+
     function toggleModalSubtaskParent(button) {
         const subtaskId = button.getAttribute('data-subtask-id');
         const childrenContainer = document.getElementById(`modal-subtask-children-${subtaskId}`);
@@ -1188,6 +1266,891 @@
                     childrenContainer.style.maxHeight = '';
                 }
             }, 300);
+        }
+    }
+
+    // ===== UTILITY FUNCTIONS =====
+    function showLoadingIndicator() {
+        document.getElementById('loading-indicator').classList.remove('hidden');
+    }
+    
+    function hideLoadingIndicator() {
+        document.getElementById('loading-indicator').classList.add('hidden');
+    }
+
+    function showAutoSaveIndicator() {
+        const indicator = document.getElementById('modal-auto-save-indicator');
+        if (indicator) {
+            indicator.classList.remove('hidden');
+            setTimeout(() => {
+                indicator.classList.add('hidden');
+            }, 2000);
+        }
+    }
+
+    function hideAutoSaveIndicator() {
+        const indicator = document.getElementById('modal-auto-save-indicator');
+        if (indicator) {
+            indicator.classList.add('hidden');
+        }
+    }
+    
+    function showNotification(message, type = 'success') {
+        const container = document.getElementById('notification-container');
+        const notification = document.createElement('div');
+        
+        let bgColor, icon;
+        switch(type) {
+            case 'success':
+                bgColor = 'from-green-500 to-green-600';
+                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                break;
+            case 'error':
+                bgColor = 'from-red-500 to-red-600';
+                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                break;
+            case 'info':
+                bgColor = 'from-blue-500 to-blue-600';
+                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                break;
+        }
+        
+        notification.className = `bg-gradient-to-r ${bgColor} text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 flex items-center gap-2 max-w-xs`;
+        notification.innerHTML = `
+            ${icon}
+            <span class="font-medium text-sm">${message}</span>
+        `;
+        
+        notification.style.transform = 'translateX(100%)';
+        notification.style.opacity = '0';
+        
+        container.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+            notification.style.opacity = '1';
+        }, 10);
+        
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 3000);
+    }
+    
+    function formatDateString(dateString) {
+        return new Date(dateString).toLocaleDateString('id-ID', { 
+            day: 'numeric', 
+            month: 'long', 
+            year: 'numeric' 
+        });
+    }
+</script>
+
+<style>
+    /* Enhanced CSS with modern animations and effects */
+    .vertical-tree {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .subtask-parent {
+        margin-bottom: 0.75rem;
+    }
+    
+    .subtask-children {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        padding-left: 2rem;
+    }
+    
+    .subtask-item {
+        margin-bottom: 0.5rem;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .subtask-item:hover {
+        transform: translateX(4px);
+    }
+    
+    .subtask-toggle-btn svg,
+    .subtask-parent-toggle-btn svg {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .task-subtasks-container {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+    
+    .task-title,
+    .subtask-parent-title {
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Modal specific styles */
+    .subtask-parent-modal {
+        margin-bottom: 0.5rem;
+    }
+    
+    .subtask-children-modal {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        padding-left: 1.5rem;
+    }
+    
+    .subtask-item-modal {
+        margin-bottom: 0.25rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .subtask-item-modal:hover {
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Enhanced progress bar animation */
+    .subtask-progress-bar {
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Backdrop blur support */
+    .backdrop-blur-sm {
+        backdrop-filter: blur(4px);
+    }
+
+    /* Custom scrollbar */
+    .overflow-y-auto::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .overflow-y-auto::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 2px;
+    }
+
+    .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 2px;
+    }
+
+    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Enhanced hover effects */
+    .hover\:scale-105:hover {
+        transform: scale(1.05);
+    }
+
+    /* Gradient text support */
+    .bg-clip-text {
+        -webkit-background-clip: text;
+        background-clip: text;
+    }
+
+    /* Enhanced shadow effects */
+    .shadow-2xl {
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Pulse animation for completion indicator */
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Focus styles */
+    .focus\:ring-2:focus {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    }
+</style>
+@push('scripts')
+<!-- FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+<!-- FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/id.js'></script>
+
+<script>
+    // Global variables and state management
+    let tasksData = @json($tasks);
+    let calendar;
+    let modalUpdateTimer;
+    let isModalOpen = false;
+    let currentModalTaskId = null;
+    let isUpdating = false; // Prevent infinite loops
+
+    // Enhanced state management
+    let appState = {
+        totalTasks: {{ $totalTasks }},
+        completedTasks: {{ $tasks->where('completed', true)->count() }},
+        allTasksCompleted: false,
+        modalState: {
+            taskId: null,
+            lastUpdate: null
+        }
+    };
+
+    // Initialize application
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCalendar();
+        initializeEventListeners();
+        initializeModalEventDelegation();
+        checkAllTasksCompleted();
+    });
+
+    // Initialize calendar with enhanced features
+    function initializeCalendar() {
+        var calendarEl = document.getElementById('calendar');
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'id',
+            headerToolbar: false,
+            height: 600,
+            displayEventTime: false,
+            events: generateCalendarEvents(),
+            eventClick: function(info) {
+                info.jsEvent.preventDefault();
+                openTaskModal(info.event.id);
+            },
+            eventDidMount: function(info) {
+                info.el.style.cursor = 'pointer';
+                info.el.addEventListener('mouseenter', function() {
+                    this.style.transform = 'scale(1.02)';
+                    this.style.transition = 'transform 0.2s ease';
+                });
+                info.el.addEventListener('mouseleave', function() {
+                    this.style.transform = 'scale(1)';
+                });
+            }
+        });
+        
+        calendar.render();
+        updateCalendarTitle(calendar);
+        setupCalendarNavigation();
+    }
+
+    // Generate calendar events with completion-based styling
+    function generateCalendarEvents() {
+        return tasksData.map(task => ({
+            id: task.id.toString(),
+            title: task.title,
+            start: task.start_date,
+            end: new Date(new Date(task.end_date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            extendedProps: {
+                description: task.description,
+                priority: task.priority,
+                completed: task.completed,
+                url: `/tasks/${task.id}/edit`
+            },
+            backgroundColor: getTaskColor(task),
+            borderColor: getTaskColor(task),
+            textColor: '#fff',
+            className: task.completed ? 'completed-task' : 'active-task'
+        }));
+    }
+
+    // Get task color based on priority and completion
+    function getTaskColor(task) {
+        if (task.completed) {
+            return '#9ca3af';
+        }
+        
+        switch(task.priority) {
+            case 'urgent': return '#ef4444';
+            case 'high': return '#f97316';
+            case 'medium': return '#eab308';
+            case 'low': return '#22c55e';
+            default: return '#3b82f6';
+        }
+    }
+
+    // Setup calendar navigation
+    function setupCalendarNavigation() {
+        document.getElementById('prev-month').addEventListener('click', function() {
+            calendar.prev();
+            updateCalendarTitle(calendar);
+        });
+        
+        document.getElementById('next-month').addEventListener('click', function() {
+            calendar.next();
+            updateCalendarTitle(calendar);
+        });
+        
+        document.getElementById('month-view').addEventListener('click', function() {
+            calendar.changeView('dayGridMonth');
+            updateCalendarTitle(calendar);
+            this.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+            document.getElementById('week-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+        });
+        
+        document.getElementById('week-view').addEventListener('click', function() {
+            calendar.changeView('timeGridWeek');
+            updateCalendarTitle(calendar);
+            this.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+            document.getElementById('month-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+        });
+    }
+
+    // Initialize event listeners with event delegation for better performance
+    function initializeEventListeners() {
+        // Use event delegation for dynamic content
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('task-checkbox') && !e.target.classList.contains('task-checkbox-modal')) {
+                handleTaskToggle(e.target);
+            } else if (e.target.classList.contains('subtask-checkbox') && !e.target.classList.contains('subtask-checkbox-modal')) {
+                handleSubtaskToggle(e.target);
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.subtask-toggle-btn')) {
+                toggleSubtasks(e.target.closest('.subtask-toggle-btn'));
+            } else if (e.target.closest('.subtask-parent-toggle-btn')) {
+                toggleSubtaskParent(e.target.closest('.subtask-parent-toggle-btn'));
+            } else if (e.target.closest('.task-title')) {
+                const taskId = e.target.closest('.task-title').getAttribute('data-task-id');
+                if (taskId) openTaskModal(taskId);
+            } else if (e.target.closest('.subtask-parent-title')) {
+                const subtaskId = e.target.closest('.subtask-parent-title').getAttribute('data-subtask-id');
+                const toggleBtn = document.querySelector(`[data-subtask-id="${subtaskId}"].subtask-parent-toggle-btn`);
+                if (toggleBtn) toggleSubtaskParent(toggleBtn);
+            }
+        });
+
+        // Modal event handling
+        document.getElementById('taskModal').addEventListener('click', function(e) {
+            if (e.target === this) closeTaskModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeTaskModal();
+        });
+    }
+
+    // Initialize modal event delegation
+    function initializeModalEventDelegation() {
+        const modal = document.getElementById('taskModal');
+        
+        modal.addEventListener('change', function(e) {
+            if (e.target.classList.contains('task-checkbox-modal')) {
+                handleModalTaskToggle(e.target);
+            } else if (e.target.classList.contains('subtask-checkbox-modal')) {
+                handleModalSubtaskToggle(e.target);
+            }
+        });
+
+        modal.addEventListener('click', function(e) {
+            if (e.target.closest('.subtask-parent-toggle-btn-modal')) {
+                toggleModalSubtaskParent(e.target.closest('.subtask-parent-toggle-btn-modal'));
+            }
+        });
+    }
+
+    // Enhanced task toggle with real-time synchronization
+    function handleTaskToggle(checkbox) {
+        if (isUpdating) return;
+        
+        const taskId = checkbox.getAttribute('data-task-id');
+        const form = checkbox.closest('form');
+        const url = form.getAttribute('action');
+        const isCompleted = checkbox.checked;
+        
+        performTaskUpdate(taskId, url, isCompleted, form, 'task');
+    }
+
+    // Enhanced subtask toggle with real-time synchronization
+    function handleSubtaskToggle(checkbox) {
+        if (isUpdating) return;
+        
+        const subtaskId = checkbox.getAttribute('data-sub-task-id');
+        const taskId = checkbox.getAttribute('data-task-id');
+        const form = checkbox.closest('form');
+        const url = form.getAttribute('action');
+        const isCompleted = checkbox.checked;
+        
+        performSubtaskUpdate(subtaskId, taskId, url, isCompleted, form, 'subtask');
+    }
+
+    // Modal task toggle handler
+    function handleModalTaskToggle(checkbox) {
+        if (isUpdating) return;
+        
+        const taskId = checkbox.getAttribute('data-task-id');
+        const form = checkbox.closest('form');
+        const url = form.getAttribute('action');
+        const isCompleted = checkbox.checked;
+        
+        performTaskUpdate(taskId, url, isCompleted, form, 'modal-task');
+    }
+
+    // Modal subtask toggle handler
+    function handleModalSubtaskToggle(checkbox) {
+        if (isUpdating) return;
+        
+        const subtaskId = checkbox.getAttribute('data-sub-task-id');
+        const taskId = checkbox.getAttribute('data-task-id');
+        const form = checkbox.closest('form');
+        const url = form.getAttribute('action');
+        const isCompleted = checkbox.checked;
+        
+        performSubtaskUpdate(subtaskId, taskId, url, isCompleted, form, 'modal-subtask');
+    }
+
+    // Unified task update function
+    function performTaskUpdate(taskId, url, isCompleted, form, source) {
+        isUpdating = true;
+        showLoadingIndicator();
+        showAutoSaveIndicator();
+        
+        const token = form.querySelector('input[name="_token"]').value;
+        
+        fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                completed: isCompleted
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update global data first
+                updateTasksData(taskId, data);
+                
+                // Apply all UI updates synchronously
+                syncTaskUIUpdates(taskId, data, source);
+                
+                // Update summary and calendar
+                updateSummaryUI(data);
+                updateCalendarEvent(taskId, data.task.completed);
+                updateAppState(data);
+                
+                showNotification('Tugas berhasil diperbarui!', 'success');
+                checkAllTasksCompleted();
+            } else {
+                revertCheckboxState(taskId, !isCompleted, source);
+                showNotification('Gagal memperbarui tugas!', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            revertCheckboxState(taskId, !isCompleted, source);
+            showNotification('Terjadi kesalahan!', 'error');
+        })
+        .finally(() => {
+            isUpdating = false;
+            hideLoadingIndicator();
+            hideAutoSaveIndicator();
+        });
+    }
+
+    // Unified subtask update function
+    function performSubtaskUpdate(subtaskId, taskId, url, isCompleted, form, source) {
+        isUpdating = true;
+        showLoadingIndicator();
+        showAutoSaveIndicator();
+        
+        const token = form.querySelector('input[name="_token"]').value;
+        
+        fetch(url, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                completed: isCompleted
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update global data first
+                updateTasksData(taskId, data);
+                
+                // Apply all UI updates synchronously
+                syncSubtaskUIUpdates(subtaskId, taskId, data, source);
+                
+                // Update summary and calendar
+                updateSummaryUI(data);
+                updateCalendarEvent(taskId, data.task.completed);
+                updateAppState(data);
+                
+                showNotification('Subtugas berhasil diperbarui!', 'success');
+                checkAllTasksCompleted();
+            } else {
+                revertSubtaskCheckboxState(subtaskId, !isCompleted, source);
+                showNotification('Gagal memperbarui subtugas!', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            revertSubtaskCheckboxState(subtaskId, !isCompleted, source);
+            showNotification('Terjadi kesalahan!', 'error');
+        })
+        .finally(() => {
+            isUpdating = false;
+            hideLoadingIndicator();
+            hideAutoSaveIndicator();
+        });
+    }
+
+    // Synchronize task UI updates across all views
+    function syncTaskUIUpdates(taskId, data, source) {
+        // Update main view task
+        updateMainTaskUI(taskId, data);
+        
+        // Update modal view task if open
+        if (isModalOpen && currentModalTaskId == taskId) {
+            updateModalTaskUI(taskId, data);
+            updateModalSubtasksUI(taskId, data.task.completed);
+            updateModalProgress(taskId);
+        }
+        
+        // Update all subtasks UI
+        updateAllSubtasksUI(taskId, data.task.completed);
+    }
+
+    // Synchronize subtask UI updates across all views
+    function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
+        // Update main view subtask
+        updateSubtaskUI(subtaskId, data);
+        
+        // Update modal view subtask if open
+        if (isModalOpen && currentModalTaskId == taskId) {
+            updateModalSubtaskUI(subtaskId, data);
+            updateModalTaskUI(taskId, data);
+            updateModalProgress(taskId);
+        }
+        
+        // Update task progress
+        updateTaskProgressUI(taskId, data);
+        updateMainTaskUI(taskId, data);
+    }
+
+    // Revert checkbox states on error
+    function revertCheckboxState(taskId, originalState, source) {
+        const mainCheckbox = document.querySelector(`[data-task-id="${taskId}"].task-checkbox:not(.task-checkbox-modal)`);
+        const modalCheckbox = document.querySelector(`[data-task-id="${taskId}"].task-checkbox-modal`);
+        
+        if (mainCheckbox) mainCheckbox.checked = originalState;
+        if (modalCheckbox) modalCheckbox.checked = originalState;
+    }
+
+    function revertSubtaskCheckboxState(subtaskId, originalState, source) {
+        const mainCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"].subtask-checkbox:not(.subtask-checkbox-modal)`);
+        const modalCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"].subtask-checkbox-modal`);
+        
+        if (mainCheckbox) mainCheckbox.checked = originalState;
+        if (modalCheckbox) modalCheckbox.checked = originalState;
+    }
+
+    // Enhanced modal with real-time updates
+    function openTaskModal(taskId) {
+        const task = tasksData.find(t => t.id == taskId);
+        if (!task) {
+            showNotification('Memuat data terbaru...', 'info');
+            window.location.reload();
+            return;
+        }
+
+        isModalOpen = true;
+        currentModalTaskId = taskId;
+        appState.modalState.taskId = taskId;
+        appState.modalState.lastUpdate = Date.now();
+
+        const modalContent = document.getElementById('taskModalContent');
+        
+        let priorityText = '';
+        let priorityClass = '';
+        switch(task.priority) {
+            case 'urgent':
+                priorityText = 'Sangat Mendesak';
+                priorityClass = 'bg-red-100 text-red-800 border border-red-300';
+                break;
+            case 'high':
+                priorityText = 'Tinggi';
+                priorityClass = 'bg-orange-100 text-orange-800 border border-orange-300';
+                break;
+            case 'medium':
+                priorityText = 'Sedang';
+                priorityClass = 'bg-yellow-100 text-yellow-800 border border-yellow-300';
+                break;
+            case 'low':
+                priorityText = 'Rendah';
+                priorityClass = 'bg-green-100 text-green-800 border border-green-300';
+                break;
+        }
+
+        const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
+            !task.sub_tasks.some(parent => parent.parent_id === st.id)
+        ) : [];
+        const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
+        const subtaskTotal = leafSubTasks.length;
+        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
+
+        let subtasksHtml = '';
+        if (task.sub_tasks && task.sub_tasks.length > 0) {
+            subtasksHtml = `
+                <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h5 class="font-medium text-gray-800 flex items-center gap-2 text-sm">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
+                            </svg>
+                            Subtugas (<span id="modal-subtask-count">${subtaskCompleted}/${subtaskTotal}</span>)
+                        </h5>
+                        <div class="flex items-center gap-2">
+                            <div class="w-20 h-2 bg-white rounded-full overflow-hidden shadow-inner">
+                                <div id="modal-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500" style="width: ${progressPercentage}%"></div>
+                            </div>
+                            <span id="modal-progress-percentage" class="text-xs font-semibold text-blue-600">${progressPercentage}%</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1 max-h-40 overflow-y-auto">
+                        ${renderModalSubtasks(task.sub_tasks, null, task)}
+                    </div>
+                </div>
+            `;
+        }
+
+        modalContent.innerHTML = `
+            <div class="flex items-start gap-3 mb-4">
+                <form action="/tasks/${task.id}/toggle" method="POST" class="task-toggle-form-modal">
+                    <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                    <input type="hidden" name="_method" value="PATCH">
+                    <input type="checkbox"
+                        class="task-checkbox-modal w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                        data-task-id="${task.id}"
+                        ${task.completed ? 'checked' : ''}>
+                </form>
+                <div class="flex-1">
+                    <h4 class="font-bold text-lg mb-2 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}" id="modal-task-title-${task.id}">
+                        ${task.title}
+                    </h4>
+                    <div class="flex items-center gap-2 mb-3 flex-wrap">
+                        <span class="px-2 py-1 text-xs rounded-lg font-medium ${priorityClass}">
+                            ${priorityText}
+                        </span>
+                        ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg font-medium border border-gray-300">Selesai</span>' : ''}
+                        ${subtaskTotal > 0 ? `<span id="modal-progress-badge" class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">${progressPercentage}% Progress</span>` : ''}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="flex items-center gap-2 mb-1">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="text-xs font-medium text-gray-600">Tanggal Mulai</span>
+                    </div>
+                    <span class="font-semibold text-gray-800 text-sm">${formatDateString(task.start_date)}</span>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <div class="flex items-center gap-2 mb-1">
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="text-xs font-medium text-gray-600">Tanggal Selesai</span>
+                    </div>
+                    <span class="font-semibold text-gray-800 text-sm">${formatDateString(task.end_date)}</span>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h5 class="font-medium text-gray-800 mb-2 flex items-center gap-2 text-sm">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Deskripsi
+                </h5>
+                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <p class="text-gray-700 leading-relaxed text-sm">${task.description || 'Tidak ada deskripsi tersedia'}</p>
+                </div>
+            </div>
+
+            ${subtasksHtml}
+            
+            <div class="flex gap-2 pt-4 border-t border-gray-200">
+                <a href="/tasks/${task.id}/edit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
+                    Edit Tugas
+                </a>
+                <button onclick="closeTaskModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
+                    Tutup
+                </button>
+            </div>
+        `;
+        
+        // Show modal with animation
+        const modal = document.getElementById('taskModal');
+        modal.classList.remove('hidden');
+        modal.style.opacity = '0';
+        modal.style.transform = 'scale(0.95)';
+        
+        setTimeout(() => {
+            modal.style.opacity = '1';
+            modal.style.transform = 'scale(1)';
+            modal.style.transition = 'all 0.3s ease-out';
+        }, 10);
+    }
+
+    // Render modal subtasks with proper event handling
+    function renderModalSubtasks(subtasks, parentId = null, task) {
+        let html = '';
+        
+        const filteredSubtasks = subtasks.filter(st => st.parent_id === parentId);
+        
+        filteredSubtasks.forEach(subTask => {
+            const isParent = subtasks.some(st => st.parent_id === subTask.id);
+            
+            if (isParent) {
+                html += `
+                    <div class="subtask-parent-modal bg-white rounded-lg p-2 border border-gray-200" data-subtask-id="${subTask.id}">
+                        <div class="flex items-center gap-2 py-1">
+                            <button class="subtask-parent-toggle-btn-modal text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50" 
+                                    data-subtask-id="${subTask.id}" 
+                                    data-expanded="true">
+                                <svg class="w-3 h-3 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <span class="text-xs font-semibold text-gray-700">${subTask.title}</span>
+                        </div>
+                        <div class="subtask-children-modal pl-6 mt-1 border-l-2 border-blue-100" id="modal-subtask-children-${subTask.id}">
+                            ${renderModalSubtasks(subtasks, subTask.id, task)}
+                        </div>
+                    </div>
+                `;
+            } else {
+                const lineClass = subTask.completed ? 'line-through text-gray-400' : 'text-gray-700';
+                html += `
+                    <div class="subtask-item-modal flex items-center gap-2 py-1 px-2 bg-white rounded border border-gray-200 hover:border-blue-300 transition-all duration-200" data-subtask-id="${subTask.id}">
+                        <form action="/subtasks/${subTask.id}/toggle" method="POST" class="subtask-toggle-form-modal">
+                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                            <input type="hidden" name="_method" value="PATCH">
+                            <input type="checkbox"
+                                class="subtask-checkbox-modal w-3 h-3 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                                data-sub-task-id="${subTask.id}"
+                                data-task-id="${task.id}"
+                                ${subTask.completed ? 'checked' : ''}>
+                        </form>
+                        <span class="text-xs ${lineClass} subtask-text-modal flex-1">${subTask.title}</span>
+                    </div>
+                `;
+            }
+        });
+
+        return html;
+    }
+
+    // Update calendar event appearance
+    function updateCalendarEvent(taskId, completed) {
+        if (calendar) {
+            const event = calendar.getEventById(taskId.toString());
+            if (event) {
+                const taskIndex = tasksData.findIndex(t => t.id == taskId);
+                if (taskIndex !== -1) {
+                    tasksData[taskIndex].completed = completed;
+                    
+                    event.setProp('backgroundColor', getTaskColor(tasksData[taskIndex]));
+                    event.setProp('borderColor', getTaskColor(tasksData[taskIndex]));
+                    event.setProp('className', completed ? 'completed-task' : 'active-task');
+                    event.setExtendedProp('completed', completed);
+                }
+            }
+        }
+    }
+
+    // Check if all tasks are completed
+    function checkAllTasksCompleted() {
+        const allCompleted = tasksData.every(task => task.completed);
+        const hasActiveTasks = tasksData.length > 0;
+        
+        if (allCompleted && hasActiveTasks && !appState.allTasksCompleted) {
+            appState.allTasksCompleted = true;
+            updateCalendarCompletionIndicator(true);
+        } else if (!allCompleted && appState.allTasksCompleted) {
+            appState.allTasksCompleted = false;
+            updateCalendarCompletionIndicator(false);
+        }
+    }
+
+    // Update calendar completion indicator
+    function updateCalendarCompletionIndicator(show) {
+        const indicator = document.getElementById('calendar-completion-indicator');
+        if (show) {
+            indicator.classList.remove('hidden');
+        } else {
+            indicator.classList.add('hidden');
+        }
+    }
+
+    // Update app state
+    function updateAppState(data) {
+        if (data.totalTasks !== undefined) {
+            appState.totalTasks = data.totalTasks;
+        }
+        if (data.completedTasks !== undefined) {
+            appState.completedTasks = data.completedTasks;
+        }
+    }
+
+    // Enhanced modal progress update with real-time sync
+    function updateModalProgress(taskId) {
+        if (!isModalOpen || currentModalTaskId != taskId) return;
+        
+        const task = tasksData.find(t => t.id == taskId);
+        if (!task || !task.sub_tasks) return;
+        
+        const leafSubTasks = task.sub_tasks.filter(st => 
+            !task.sub_tasks.some(parent => parent.parent_id === st.id)
+        );
+        
+        const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
+        const subtaskTotal = leafSubTasks.length;
+        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
+        
+        // Update modal progress elements
+        const progressBar = document.getElementById('modal-progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${progressPercentage}%`;
+        }
+        
+        const progressPercentageEl = document.getElementById('modal-progress-percentage');
+        if (progressPercentageEl) {
+            progressPercentageEl.textContent = `${progressPercentage}%`;
+        }
+        
+        const subtaskCount = document.getElementById('modal-subtask-count');
+        if (subtaskCount) {
+            subtaskCount.textContent = `${subtaskCompleted}/${subtaskTotal}`;
+        }
+        
+        const progressBadge = document.getElementById('modal-progress-badge');
+        if (progressBadge) {
+            progressBadge.textContent = `${progressPercentage}% Progress`;
         }
     }
 
@@ -1280,45 +2243,114 @@
         }
     }
 
-    // UI Update functions - REVISED
-   function updateTaskUI(taskId, data) {
-    const taskItem = document.getElementById(`task-item-${taskId}`);
-    const taskTitle = taskItem.querySelector('.task-title');
-    const taskCheckbox = taskItem.querySelector('.task-checkbox');
-    
-    taskCheckbox.checked = data.task.completed;
-    
-    if (data.task.completed) {
-        taskTitle.classList.add('line-through');
-        taskTitle.classList.remove('text-gray-800'); // Hapus class warna abu-abu
-    } else {
-        taskTitle.classList.remove('line-through');
-        taskTitle.classList.add('text-gray-800'); // Kembalikan warna default
+    function toggleModalSubtaskParent(button) {
+        const subtaskId = button.getAttribute('data-subtask-id');
+        const childrenContainer = document.getElementById(`modal-subtask-children-${subtaskId}`);
+        const icon = button.querySelector('svg');
+        const isExpanded = button.getAttribute('data-expanded') === 'true';
+
+        if (isExpanded) {
+            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
+            childrenContainer.offsetHeight;
+            childrenContainer.style.maxHeight = '0';
+            childrenContainer.style.opacity = '0';
+            childrenContainer.style.transform = 'translateY(-10px)';
+            
+            icon.style.transform = 'rotate(-90deg)';
+            button.setAttribute('data-expanded', 'false');
+            
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'false') {
+                    childrenContainer.style.display = 'none';
+                }
+            }, 300);
+        } else {
+            childrenContainer.style.display = 'block';
+            childrenContainer.style.maxHeight = '0';
+            childrenContainer.style.opacity = '0';
+            childrenContainer.style.transform = 'translateY(-10px)';
+            
+            childrenContainer.offsetHeight;
+            
+            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
+            childrenContainer.style.opacity = '1';
+            childrenContainer.style.transform = 'translateY(0)';
+            
+            icon.style.transform = 'rotate(0deg)';
+            button.setAttribute('data-expanded', 'true');
+            
+            setTimeout(() => {
+                if (button.getAttribute('data-expanded') === 'true') {
+                    childrenContainer.style.maxHeight = '';
+                }
+            }, 300);
+        }
     }
-    
-    if (data.progressPercentage !== undefined) {
-        updateTaskProgressUI(taskId, data);
+
+    // Enhanced UI update functions with real-time synchronization
+    function updateMainTaskUI(taskId, data) {
+        if (isUpdating) return;
+        
+        const mainTaskTitle = document.querySelector(`#task-item-${taskId} .task-title`);
+        const mainTaskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
+        
+        if (mainTaskCheckbox) {
+            mainTaskCheckbox.checked = data.task.completed;
+        }
+        
+        if (mainTaskTitle) {
+            if (data.task.completed) {
+                mainTaskTitle.classList.add('line-through', 'text-gray-400');
+            } else {
+                mainTaskTitle.classList.remove('line-through', 'text-gray-400');
+            }
+        }
+        
+        // Update progress if available
+        if (data.progressPercentage !== undefined) {
+            updateTaskProgressUI(taskId, data);
+        }
     }
-}
+
+    function updateModalTaskUI(taskId, data) {
+        if (!isModalOpen || currentModalTaskId != taskId) return;
+        
+        const modalTaskTitle = document.getElementById(`modal-task-title-${taskId}`);
+        const modalTaskCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
+        
+        if (modalTaskCheckbox) {
+            modalTaskCheckbox.checked = data.task.completed;
+        }
+        
+        if (modalTaskTitle) {
+            if (data.task.completed) {
+                modalTaskTitle.classList.add('line-through', 'text-gray-400');
+            } else {
+                modalTaskTitle.classList.remove('line-through', 'text-gray-400');
+            }
+        }
+    }
 
     function updateSubtaskUI(subtaskId, data) {
-    const subtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]:not(.subtask-checkbox-modal)`);
-    if (!subtaskCheckbox) return;
-    
-    const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
-    
-    subtaskCheckbox.checked = data.subtask.completed;
-    
-    if (data.subtask.completed) {
-        subtaskText.classList.add('line-through', 'text-gray-400');
-        subtaskText.classList.remove('text-gray-700');
-    } else {
-        subtaskText.classList.remove('line-through', 'text-gray-400');
-        subtaskText.classList.add('text-gray-700');
+        const subtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]:not(.subtask-checkbox-modal)`);
+        if (!subtaskCheckbox) return;
+        
+        const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
+        
+        subtaskCheckbox.checked = data.subtask.completed;
+        
+        if (data.subtask.completed) {
+            subtaskText.classList.add('line-through', 'text-gray-400');
+            subtaskText.classList.remove('text-gray-700');
+        } else {
+            subtaskText.classList.remove('line-through', 'text-gray-400');
+            subtaskText.classList.add('text-gray-700');
+        }
     }
-    
-    // Also update modal subtask if open
-    if (isModalOpen) {
+
+    function updateModalSubtaskUI(subtaskId, data) {
+        if (!isModalOpen) return;
+        
         const modalSubtaskCheckbox = document.querySelector(`.subtask-checkbox-modal[data-sub-task-id="${subtaskId}"]`);
         const modalSubtaskText = modalSubtaskCheckbox?.parentElement.nextElementSibling;
         
@@ -1336,68 +2368,54 @@
             }
         }
     }
-}
 
     function updateTaskProgressUI(taskId, data) {
         const taskItem = document.getElementById(`task-item-${taskId}`);
+        if (!taskItem) return;
+        
         const progressPercentage = taskItem.querySelector('.task-progress-percentage');
         const subtaskProgressText = taskItem.querySelector('.subtask-progress-text');
         const subtaskProgressBar = taskItem.querySelector('.subtask-progress-bar');
         
-        if (progressPercentage) {
+        if (progressPercentage && data.progressPercentage !== undefined) {
             progressPercentage.textContent = `${data.progressPercentage}%`;
         }
         
-        if (subtaskProgressText) {
+        if (subtaskProgressText && data.subtaskCompleted !== undefined && data.subtaskTotal !== undefined) {
             subtaskProgressText.textContent = `Subtugas (${data.subtaskCompleted}/${data.subtaskTotal})`;
         }
         
-        if (subtaskProgressBar) {
+        if (subtaskProgressBar && data.progressPercentage !== undefined) {
             subtaskProgressBar.style.width = `${data.progressPercentage}%`;
         }
     }
 
-   function updateMainTaskUI(taskId, data) {
-    const mainTaskTitle = document.querySelector(`#task-item-${taskId} .task-title`);
-    const mainTaskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
-    
-    if (mainTaskCheckbox) {
-        mainTaskCheckbox.checked = data.task.completed;
-    }
-    
-    if (mainTaskTitle) {
-        if (data.task.completed) {
-            mainTaskTitle.classList.add('line-through', 'text-gray-400');
-        } else {
-            mainTaskTitle.classList.remove('line-through', 'text-gray-400');
-        }
-    }
-    
-    // Also update the modal's task title and checkbox if open
-    if (isModalOpen && currentModalTaskId == taskId) {
-        const modalTaskTitle = document.getElementById(`modal-task-title-${taskId}`);
-        const modalTaskCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
-        
-        if (modalTaskCheckbox) {
-            modalTaskCheckbox.checked = data.task.completed;
-        }
-        
-        if (modalTaskTitle) {
-            if (data.task.completed) {
-                modalTaskTitle.classList.add('line-through', 'text-gray-400');
-            } else {
-                modalTaskTitle.classList.remove('line-through', 'text-gray-400');
-            }
-        }
-    }
-}
-
-
     function updateAllSubtasksUI(taskId, isCompleted) {
         const taskContainer = document.getElementById(`task-item-${taskId}`);
+        if (!taskContainer) return;
+        
         const subtaskCheckboxes = taskContainer.querySelectorAll('.subtask-checkbox');
         
         subtaskCheckboxes.forEach(subtaskCheckbox => {
+            subtaskCheckbox.checked = isCompleted;
+            
+            const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
+            if (isCompleted) {
+                subtaskText.classList.add('line-through', 'text-gray-400');
+                subtaskText.classList.remove('text-gray-700');
+            } else {
+                subtaskText.classList.remove('line-through', 'text-gray-400');
+                subtaskText.classList.add('text-gray-700');
+            }
+        });
+    }
+
+    function updateModalSubtasksUI(taskId, isCompleted) {
+        if (!isModalOpen || currentModalTaskId != taskId) return;
+        
+        const modalSubtaskCheckboxes = document.querySelectorAll(`.subtask-checkbox-modal[data-task-id="${taskId}"]`);
+        
+        modalSubtaskCheckboxes.forEach(subtaskCheckbox => {
             subtaskCheckbox.checked = isCompleted;
             
             const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
@@ -1425,113 +2443,15 @@
         }
     }
 
-    // Modal UI update functions - REVISED
-    function updateModalTaskUI(taskId, data) {
-    const modalTaskTitle = document.getElementById(`modal-task-title-${taskId}`);
-    const modalTaskCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
-    
-    if (modalTaskCheckbox) {
-        modalTaskCheckbox.checked = data.task.completed;
-    }
-    
-    if (modalTaskTitle) {
-        if (data.task.completed) {
-            modalTaskTitle.classList.add('line-through', 'text-gray-400');
-            // Update completion badge if exists
-            const completionBadge = modalTaskTitle.parentElement.querySelector('.bg-green-100');
-            if (completionBadge) {
-                completionBadge.className = 'px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg font-medium border border-gray-300';
-                completionBadge.textContent = 'Selesai';
-            }
-        } else {
-            modalTaskTitle.classList.remove('line-through', 'text-gray-400');
-            // Remove completion badge if task is uncompleted
-            const completionBadge = modalTaskTitle.parentElement.querySelector('.bg-gray-100');
-            if (completionBadge && completionBadge.textContent === 'Selesai') {
-                completionBadge.remove();
-            }
-        }
-    }
-    
-    // Also update the main view's task title and checkbox
-    const mainTaskTitle = document.querySelector(`#task-item-${taskId} .task-title`);
-    const mainTaskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
-    
-    if (mainTaskTitle) {
-        if (data.task.completed) {
-            mainTaskTitle.classList.add('line-through', 'text-gray-400');
-        } else {
-            mainTaskTitle.classList.remove('line-through', 'text-gray-400');
-        }
-    }
-    
-    if (mainTaskCheckbox) {
-        mainTaskCheckbox.checked = data.task.completed;
-    }
-}
-
-    function updateModalSubtasksUI(taskId, isCompleted) {
-        const modalSubtaskCheckboxes = document.querySelectorAll(`.subtask-checkbox-modal[data-task-id="${taskId}"]`);
-        
-        modalSubtaskCheckboxes.forEach(subtaskCheckbox => {
-            subtaskCheckbox.checked = isCompleted;
-            
-            const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
-            if (isCompleted) {
-                subtaskText.classList.add('line-through', 'text-gray-400');
-                subtaskText.classList.remove('text-gray-700');
-            } else {
-                subtaskText.classList.remove('line-through', 'text-gray-400');
-                subtaskText.classList.add('text-gray-700');
-            }
-        });
-    }
-
-    function updateModalSubtaskUI(subtaskId, data) {
-    const modalSubtaskCheckbox = document.querySelector(`.subtask-checkbox-modal[data-sub-task-id="${subtaskId}"]`);
-    const modalSubtaskText = modalSubtaskCheckbox?.parentElement.nextElementSibling;
-    
-    if (modalSubtaskCheckbox) {
-        modalSubtaskCheckbox.checked = data.subtask.completed;
-    }
-    
-    if (modalSubtaskText) {
-        if (data.subtask.completed) {
-            modalSubtaskText.classList.add('line-through', 'text-gray-400');
-            modalSubtaskText.classList.remove('text-gray-700');
-        } else {
-            modalSubtaskText.classList.remove('line-through', 'text-gray-400');
-            modalSubtaskText.classList.add('text-gray-700');
-        }
-    }
-    
-    // Also update main view subtask
-    const mainSubtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]:not(.subtask-checkbox-modal)`);
-    const mainSubtaskText = mainSubtaskCheckbox?.parentElement.nextElementSibling;
-    
-    if (mainSubtaskCheckbox) {
-        mainSubtaskCheckbox.checked = data.subtask.completed;
-    }
-    
-    if (mainSubtaskText) {
-        if (data.subtask.completed) {
-            mainSubtaskText.classList.add('line-through', 'text-gray-400');
-            mainSubtaskText.classList.remove('text-gray-700');
-        } else {
-            mainSubtaskText.classList.remove('line-through', 'text-gray-400');
-            mainSubtaskText.classList.add('text-gray-700');
-        }
-    }
-}
-
-    // Function to update tasks data
+    // Enhanced data update function with proper synchronization
     function updateTasksData(taskId, data) {
-    const taskIndex = tasksData.findIndex(t => t.id == taskId);
-    if (taskIndex !== -1) {
+        const taskIndex = tasksData.findIndex(t => t.id == taskId);
+        if (taskIndex === -1) return;
+        
         // Update task completion status
         tasksData[taskIndex].completed = data.task.completed;
         
-        // Update subtask if exists in data
+        // Update specific subtask if exists in data
         if (data.subtask && tasksData[taskIndex].sub_tasks) {
             const subtaskIndex = tasksData[taskIndex].sub_tasks.findIndex(st => st.id == data.subtask.id);
             if (subtaskIndex !== -1) {
@@ -1539,7 +2459,7 @@
             }
         }
         
-        // Update all subtasks if task is toggled
+        // Update all subtasks if task completion changed
         if (data.task.completed !== undefined && tasksData[taskIndex].sub_tasks) {
             tasksData[taskIndex].sub_tasks.forEach(st => {
                 st.completed = data.task.completed;
@@ -1558,7 +2478,6 @@
                 : (tasksData[taskIndex].completed ? 100 : 0);
         }
     }
-}
 
     // Utility functions
     function showLoadingIndicator() {
@@ -1679,6 +2598,7 @@
             modal.style.transition = '';
             isModalOpen = false;
             currentModalTaskId = null;
+            appState.modalState.taskId = null;
         }, 300);
     }
 </script>
@@ -1791,18 +2711,6 @@
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
 
-    /* Confetti animation */
-    @keyframes fall {
-        0% {
-            transform: translateY(-100vh) rotate(0deg);
-            opacity: 1;
-        }
-        100% {
-            transform: translateY(100vh) rotate(360deg);
-            opacity: 0;
-        }
-    }
-
     /* Pulse animation for completion indicator */
     @keyframes pulse {
         0%, 100% {
@@ -1816,7 +2724,6 @@
     .animate-pulse {
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
-
    
     /* Focus styles */
     .focus\:ring-2:focus {
@@ -1843,6 +2750,24 @@
         90% {
             transform: translate3d(0, -4px, 0);
         }
+    }
+
+    /* Prevent layout shift during updates */
+    .task-item, .subtask-item, .subtask-item-modal {
+        min-height: fit-content;
+        will-change: transform;
+    }
+
+    /* Smooth state transitions */
+    .task-checkbox, .subtask-checkbox, .task-checkbox-modal, .subtask-checkbox-modal {
+        transition: all 0.2s ease-in-out;
+    }
+
+    /* Enhanced focus states for accessibility */
+    .task-checkbox:focus, .subtask-checkbox:focus, 
+    .task-checkbox-modal:focus, .subtask-checkbox-modal:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
     }
 </style>
 
