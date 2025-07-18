@@ -72,7 +72,7 @@
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
                             </svg>
-                            Tugas Saya
+                            List Jadwal dan Tugas
                         </h2>
                         <div class="flex gap-2">
                             <button class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-200">Semua</button>
@@ -197,32 +197,47 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="flex gap-1">
-                                            <button onclick="openTaskModal({{ $task->id }})"
-                                                class="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                </svg>
-                                            </button>
-                                            <a href="{{ route('tasks.edit', $task->id) }}"
-                                                class="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                </svg>
-                                            </a>
-                                            <form action="{{ route('tasks.destroy', $task->id) }}" method="POST">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all duration-200"
-                                                    onclick="return confirm('Hapus tugas ini?')">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        </div>
+                                       <div class="flex items-center gap-2">
+    <!-- Tombol Lihat -->
+    <button onclick="openTaskModal({{ $task->id }})"
+        class="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
+        title="Lihat">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+    </button>
+
+    <!-- Tombol Edit -->
+    <a href="{{ route('tasks.edit', $task->id) }}"
+        class="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
+        title="Edit">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
+                m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+    </a>
+
+    <!-- Tombol Hapus -->
+    <div class="flex items-center">
+        <form action="{{ route('tasks.destroy', $task->id) }}" method="POST" onsubmit="return confirm('Hapus tugas ini?')">
+            @csrf
+            @method('DELETE')
+            <button type="submit"
+                class="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-all duration-200"
+                title="Hapus">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7
+                        m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </form>
+    </div>
+</div>
                                     </div>
 
                                     @if($task->subTasks->count() > 0)
@@ -721,53 +736,83 @@
     }
 
     function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
-        const subtask = data.subtask;
-        
-        // Update main view subtask
-        const mainSubtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]:not(.subtask-checkbox-modal)`);
-        const mainSubtaskText = mainSubtaskCheckbox?.parentElement?.nextElementSibling;
-        
-        if (mainSubtaskCheckbox && source !== 'main') {
-            mainSubtaskCheckbox.checked = subtask.completed;
+    const subtask = data.subtask;
+
+    // Update main view subtask
+    const mainSubtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]:not(.subtask-checkbox-modal)`);
+    const mainSubtaskText = mainSubtaskCheckbox?.parentElement?.nextElementSibling;
+
+    if (mainSubtaskCheckbox && source !== 'main') {
+        mainSubtaskCheckbox.checked = subtask.completed;
+    }
+
+    if (mainSubtaskText) {
+        updateTextStyle(mainSubtaskText, subtask.completed);
+    }
+
+    // Update modal subtask if open
+    if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
+        const modalSubtaskCheckbox = document.querySelector(`.subtask-checkbox-modal[data-sub-task-id="${subtaskId}"]`);
+        const modalSubtaskText = modalSubtaskCheckbox?.parentElement?.nextElementSibling;
+
+        if (modalSubtaskCheckbox && source !== 'modal') {
+            modalSubtaskCheckbox.checked = subtask.completed;
         }
-        
-        if (mainSubtaskText) {
-            updateTextStyle(mainSubtaskText, subtask.completed);
+
+        if (modalSubtaskText) {
+            updateTextStyle(modalSubtaskText, subtask.completed);
         }
-        
-        // Update modal subtask if open
-        if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
-            const modalSubtaskCheckbox = document.querySelector(`.subtask-checkbox-modal[data-sub-task-id="${subtaskId}"]`);
-            const modalSubtaskText = modalSubtaskCheckbox?.parentElement?.nextElementSibling;
-            
-            if (modalSubtaskCheckbox && source !== 'modal') {
-                modalSubtaskCheckbox.checked = subtask.completed;
+
+        updateModalProgress(taskId);
+    }
+
+    // Update task progress
+    updateTaskProgress(taskId, data);
+
+    // Update main task checkbox if needed
+    const mainTaskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
+    if (mainTaskCheckbox) {
+        mainTaskCheckbox.checked = data.task.completed;
+    }
+
+    // Update modal task checkbox if needed
+    if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
+        const modalTaskCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
+        if (modalTaskCheckbox) {
+            modalTaskCheckbox.checked = data.task.completed;
+        }
+    }
+
+    // ✅ Tambahan: update strike-through pada judul tugas jika semua subtugas selesai
+    const task = appState.tasksData.find(t => t.id == taskId);
+    if (task && task.sub_tasks) {
+        const leafSubTasks = task.sub_tasks.filter(st =>
+            !task.sub_tasks.some(parent => parent.parent_id === st.id)
+        );
+        const completedCount = leafSubTasks.filter(st => st.completed).length;
+        const isAllCompleted = leafSubTasks.length > 0 && completedCount === leafSubTasks.length;
+
+        const mainTitle = document.querySelector(`#task-item-${taskId} .task-title`);
+        const modalTitle = document.getElementById(`modal-task-title-${taskId}`);
+
+        if (mainTitle) {
+            if (isAllCompleted) {
+                mainTitle.classList.add('line-through', 'text-gray-400');
+            } else {
+                mainTitle.classList.remove('line-through', 'text-gray-400');
             }
-            
-            if (modalSubtaskText) {
-                updateTextStyle(modalSubtaskText, subtask.completed);
-            }
-            
-            updateModalProgress(taskId);
         }
-        
-        // Update task progress
-        updateTaskProgress(taskId, data);
-        
-        // Update main task checkbox if needed
-        const mainTaskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
-        if (mainTaskCheckbox) {
-            mainTaskCheckbox.checked = data.task.completed;
-        }
-        
-        // Update modal task checkbox if needed
-        if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
-            const modalTaskCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
-            if (modalTaskCheckbox) {
-                modalTaskCheckbox.checked = data.task.completed;
+
+        if (modalTitle) {
+            if (isAllCompleted) {
+                modalTitle.classList.add('line-through', 'text-gray-400');
+            } else {
+                modalTitle.classList.remove('line-through', 'text-gray-400');
             }
         }
     }
+}
+
 
     // ===== HELPER FUNCTIONS =====
     function updateTextStyle(element, completed) {
@@ -799,7 +844,8 @@
     }
 
     function updateTaskProgress(taskId, data) {
-        if (!data.progressPercentage) return;
+        if (typeof data.progressPercentage !== 'number') return;
+
         
         const taskItem = document.getElementById(`task-item-${taskId}`);
         if (!taskItem) return;
