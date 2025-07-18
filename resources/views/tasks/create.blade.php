@@ -11,7 +11,7 @@
                 </svg>
             </div>
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Tambah Task Baru</h1>
-            <p class="text-gray-600">Buat dan kelala pekerjaan Anda dengan mudah</p>
+            <p class="text-gray-600">Buat dan kelola pekerjaan Anda dengan mudah</p>
         </div>
 
         <!-- Main Form Card -->
@@ -51,22 +51,39 @@
                                     Kategori <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative">
-                                    <select id="category_id" name="category_id" required
-                                        class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 appearance-none">
-                                        <option value="">Pilih Kategori</option>
-                                        @foreach($categories as $category)
-                                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
+                                    <div class="relative flex items-center gap-2">
+                                        <div class="flex-1 relative">
+                                            <div class="custom-select border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all duration-200 hover:border-gray-400">
+                                                <input type="text" id="category-search" placeholder="Cari atau pilih kategori..." 
+                                                    class="w-full px-4 py-3 pl-12 border-0 rounded-t-xl focus:ring-0 focus:border-0"
+                                                    style="outline: none;">
+                                                <div id="category-options" class="max-h-40 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hidden">
+                                                    @foreach($categories as $category)
+                                                        <div class="category-option px-4 py-2 cursor-pointer hover:bg-gray-100" data-id="{{ $category->id }}">
+                                                            {{ $category->name }}
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                <input type="hidden" name="category_id" id="category_id" required>
+                                            </div>
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                                </svg>
+                                            </div>
+                                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center dropdown-toggle">
+                                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <button type="button" onclick="openCategoryModal()" 
+                                            class="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors duration-200"
+                                            title="Kelola Kategori">
+                                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -266,27 +283,242 @@
     </div>
 </div>
 
+<!-- Category Management Modal -->
+<div id="category-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+        </div>
+        
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true"></span>
+        
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            Kelola Kategori
+                        </h3>
+                        
+                        <!-- Add New Category Form -->
+                        <div class="mb-6">
+                            <div class="flex gap-2">
+                                <input type="text" id="new-category-name" placeholder="Nama kategori baru" 
+                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <button type="button" onclick="addCategory()"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    Tambah
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Categories Table -->
+                        <div class="overflow-y-auto max-h-96">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Nama Kategori
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Aksi
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="categories-table-body" class="bg-white divide-y divide-gray-200">
+                                    @foreach($categories as $category)
+                                    <tr data-id="{{ $category->id }}">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ $category->name }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <button type="button" onclick="editCategory(this)" 
+                                                class="text-blue-600 hover:text-blue-900 mr-3">
+                                                Edit
+                                            </button>
+                                            <button type="button" onclick="deleteCategory({{ $category->id }})" 
+                                                class="text-red-600 hover:text-red-900">
+                                                Hapus
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="closeCategoryModal()"
+                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('styles')
+<style>
+    .scrollbar-thin {
+        scrollbar-width: thin;
+    }
+    .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 6px;
+    }
+    .scrollbar-track-gray-100::-webkit-scrollbar-track {
+        background-color: #f3f4f6;
+    }
+    .custom-select {
+        position: relative;
+        width: 100%;
+        border-radius: 0.75rem;
+    }
+    .custom-select input {
+        border-bottom: none !important;
+        border-radius: 0.75rem 0.75rem 0 0;
+    }
+    #category-options {
+        max-height: 10rem; /* Approximately 5 options visible */
+        border-top: none;
+        border-radius: 0 0 0.75rem 0.75rem;
+        background-color: white;
+        position: absolute;
+        width: 100%;
+        z-index: 10;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        display: none;
+    }
+    .category-option {
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .category-option:hover {
+        background-color: #f3f4f6;
+    }
+    .category-option:last-child {
+        border-bottom: none;
+    }
+    .dropdown-toggle {
+        cursor: pointer;
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
 let subtaskIdCounter = 0;
 
+// Category Management Functions
+function openCategoryModal() {
+    document.getElementById('category-modal').classList.remove('hidden');
+}
+
+function closeCategoryModal() {
+    document.getElementById('category-modal').classList.add('hidden');
+}
+
+function addCategory() {
+    const nameInput = document.getElementById('new-category-name');
+    const name = nameInput.value.trim();
+    
+    if (!name) {
+        alert('Nama kategori tidak boleh kosong');
+        return;
+    }
+    
+    const tempId = Date.now();
+    
+    const tableBody = document.getElementById('categories-table-body');
+    const newRow = document.createElement('tr');
+    newRow.dataset.id = tempId;
+    newRow.innerHTML = `
+        <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm text-gray-900">${name}</div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <button type="button" onclick="editCategory(this)" 
+                class="text-blue-600 hover:text-blue-900 mr-3">
+                Edit
+            </button>
+            <button type="button" onclick="deleteCategory(${tempId})" 
+                class="text-red-600 hover:text-red-900">
+                Hapus
+            </button>
+        </td>
+    `;
+    tableBody.appendChild(newRow);
+    
+    const optionsContainer = document.getElementById('category-options');
+    const newOption = document.createElement('div');
+    newOption.className = 'category-option';
+    newOption.dataset.id = tempId;
+    newOption.textContent = name;
+    newOption.addEventListener('click', selectCategory);
+    optionsContainer.appendChild(newOption);
+    
+    nameInput.value = '';
+}
+
+function editCategory(button) {
+    const row = button.closest('tr');
+    const id = row.dataset.id;
+    const nameCell = row.querySelector('td:first-child div');
+    const currentName = nameCell.textContent;
+    
+    const newName = prompt('Edit nama kategori:', currentName);
+    if (newName && newName.trim() !== '' && newName !== currentName) {
+        nameCell.textContent = newName.trim();
+        
+        const options = document.querySelectorAll('#category-options .category-option');
+        options.forEach(option => {
+            if (option.dataset.id === id) {
+                option.textContent = newName.trim();
+            }
+        });
+    }
+}
+
+function deleteCategory(id) {
+    if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) {
+        return;
+    }
+    
+    const row = document.querySelector(`#categories-table-body tr[data-id="${id}"]`);
+    if (row) row.remove();
+    
+    const option = document.querySelector(`#category-options .category-option[data-id="${id}"]`);
+    if (option) option.remove();
+}
+
+function selectCategory(event) {
+    const option = event.target;
+    const selectedId = option.dataset.id;
+    const selectedText = option.textContent;
+    const searchInput = document.getElementById('category-search');
+    const hiddenInput = document.getElementById('category_id');
+    const optionsContainer = document.getElementById('category-options');
+
+    hiddenInput.value = selectedId;
+    searchInput.value = selectedText;
+    optionsContainer.style.display = 'none';
+}
+
+// Subtask Management Functions
 function getIndentLevel(element) {
     let level = 0;
     let current = element;
-
     while (current && current.classList.contains('subtask-item')) {
         level++;
         current = current.parentElement.closest('.subtask-item');
     }
-
     return level;
 }
 
 function addSubtask(parentElement = null) {
     const noSubtasksMsg = document.getElementById('no-subtasks');
-    if (noSubtasksMsg) {
-        noSubtasksMsg.style.display = 'none';
-    }
+    if (noSubtasksMsg) noSubtasksMsg.style.display = 'none';
 
     const parentId = parentElement?.dataset.id || null;
     const subtaskWrapper = document.createElement('div');
@@ -339,18 +571,14 @@ function addSubtask(parentElement = null) {
 
 function removeSubtask(element) {
     element.remove();
-    
     const container = document.getElementById('subtasks-container');
     const subtasks = container.querySelectorAll('.subtask-item');
     if (subtasks.length === 0) {
         const noSubtasksMsg = document.getElementById('no-subtasks');
-        if (noSubtasksMsg) {
-            noSubtasksMsg.style.display = 'block';
-        }
+        if (noSubtasksMsg) noSubtasksMsg.style.display = 'block';
     }
 }
 
-// Form validation with time consideration
 document.getElementById('task-form').addEventListener('submit', function(e) {
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
@@ -360,7 +588,6 @@ document.getElementById('task-form').addEventListener('submit', function(e) {
     if (startDate && endDate) {
         const startDateTime = new Date(`${startDate}T${startTime || '00:00'}`);
         const endDateTime = new Date(`${endDate}T${endTime || '23:59'}`);
-        
         if (startDateTime > endDateTime) {
             e.preventDefault();
             alert('Waktu mulai tidak boleh lebih besar dari waktu selesai');
@@ -369,9 +596,58 @@ document.getElementById('task-form').addEventListener('submit', function(e) {
     }
 });
 
-// Set default time to current time
 document.addEventListener('DOMContentLoaded', function() {
-    // Set default time to current time if not set
+    const searchInput = document.getElementById('category-search');
+    const optionsContainer = document.getElementById('category-options');
+    const hiddenInput = document.getElementById('category_id');
+    const options = document.querySelectorAll('.category-option');
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+
+    // Toggle dropdown with arrow button
+    dropdownToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        const isOpen = optionsContainer.style.display === 'block';
+        optionsContainer.style.display = isOpen ? 'none' : 'block';
+        if (!isOpen) {
+            options.forEach(option => option.style.display = 'block'); // Show all options when opening
+            searchInput.focus();
+        }
+    });
+
+    // Open dropdown on input click
+    searchInput.addEventListener('click', function() {
+        optionsContainer.style.display = 'block';
+        options.forEach(option => option.style.display = 'block'); // Show all options initially
+        searchInput.focus();
+    });
+
+    // Filter options on input
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        let hasVisibleOptions = false;
+        options.forEach(option => {
+            const text = option.textContent.toLowerCase();
+            option.style.display = text.includes(searchTerm) ? 'block' : 'none';
+            if (text.includes(searchTerm)) hasVisibleOptions = true;
+        });
+        optionsContainer.style.display = 'block'; // Keep dropdown open during search
+    });
+
+    // Select option on click
+    options.forEach(option => {
+        option.addEventListener('click', function(e) {
+            selectCategory({ target: this });
+        });
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.custom-select')) {
+            optionsContainer.style.display = 'none';
+        }
+    });
+
+    // Set default time
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -380,18 +656,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!document.getElementById('start_time').value) {
         document.getElementById('start_time').value = currentTime;
     }
-    
     if (!document.getElementById('end_time').value) {
-        // Default end time is 1 hour after start time
         const endTime = new Date(now.getTime() + 60 * 60 * 1000);
         const endHours = String(endTime.getHours()).padStart(2, '0');
         const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
         document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
     }
 
-    // Priority selection functionality
+    // Priority selection
     const priorityOptions = document.querySelectorAll('.priority-option input[type="radio"]');
-    
     priorityOptions.forEach(option => {
         option.addEventListener('change', function() {
             priorityOptions.forEach(opt => {
@@ -401,25 +674,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 div.classList.remove('border-red-500', 'border-yellow-500', 'border-blue-500', 'border-green-500');
                 div.classList.remove('bg-red-100', 'bg-yellow-100', 'bg-blue-100', 'bg-green-100');
             });
-            
             if (this.checked) {
                 const parent = this.closest('.priority-option');
                 const div = parent.querySelector('div');
                 const value = this.value;
-                
                 switch(value) {
-                    case 'urgent':
-                        div.classList.add('ring-2', 'ring-red-500', 'border-red-500', 'bg-red-100');
-                        break;
-                    case 'high':
-                        div.classList.add('ring-2', 'ring-yellow-500', 'border-yellow-500', 'bg-yellow-100');
-                        break;
-                    case 'medium':
-                        div.classList.add('ring-2', 'ring-blue-500', 'border-blue-500', 'bg-blue-100');
-                        break;
-                    case 'low':
-                        div.classList.add('ring-2', 'ring-green-500', 'border-green-500', 'bg-green-100');
-                        break;
+                    case 'urgent': div.classList.add('ring-2', 'ring-red-500', 'border-red-500', 'bg-red-100'); break;
+                    case 'high': div.classList.add('ring-2', 'ring-yellow-500', 'border-yellow-500', 'bg-yellow-100'); break;
+                    case 'medium': div.classList.add('ring-2', 'ring-blue-500', 'border-blue-500', 'bg-blue-100'); break;
+                    case 'low': div.classList.add('ring-2', 'ring-green-500', 'border-green-500', 'bg-green-100'); break;
                 }
             }
         });
