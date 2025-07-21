@@ -192,6 +192,13 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Full Day Button -->
+                        <div class="mt-4">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="full_day_toggle" class="form-checkbox h-5 w-5 text-blue-600">
+                                <span class="ml-2 text-gray-700">Sehari Penuh</span>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Description Section -->
@@ -226,7 +233,7 @@
                                         <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                                         </svg>
-                                        <span class="text-sm font-medium text-indigo-700">Daftar Subtask</span>
+                                        <span class="text-sm font-medium text-indigo-700">Daftar Subtask (Maksimal 6 level)</span>
                                     </div>
                                     <button type="button" onclick="addSubtask(null)"
                                         class="inline-flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-sm font-medium shadow-sm">
@@ -517,12 +524,19 @@ function addSubtask(parentElement = null) {
     }
 
     const parentId = parentElement?.dataset.id || null;
+    const indentLevel = getIndentLevel(parentElement);
+
+    // Cek jika level sudah mencapai maksimum (6)
+    if (indentLevel >= 6) {
+        alert('Maksimal 6 level subtask telah tercapai');
+        return;
+    }
+
     const subtaskWrapper = document.createElement('div');
     const currentId = ++subtaskIdCounter;
     subtaskWrapper.dataset.id = currentId;
     subtaskWrapper.className = 'subtask-item';
 
-    const indentLevel = getIndentLevel(parentElement);
     const marginLeft = indentLevel * 20;
 
     subtaskWrapper.innerHTML = `
@@ -562,17 +576,35 @@ function addSubtask(parentElement = null) {
 }
 
 function removeSubtask(element) {
-    element.remove();
-    
-    const container = document.getElementById('subtasks-container');
-    const subtasks = container.querySelectorAll('.subtask-item');
-    if (subtasks.length === 0) {
-        const noSubtasksMsg = document.getElementById('no-subtasks');
-        if (noSubtasksMsg) {
-            noSubtasksMsg.style.display = 'block';
+    if (confirm('Apakah Anda yakin ingin menghapus subtask ini beserta semua subtask di bawahnya?')) {
+        element.remove();
+        
+        const container = document.getElementById('subtasks-container');
+        const subtasks = container.querySelectorAll('.subtask-item');
+        if (subtasks.length === 0) {
+            const noSubtasksMsg = document.getElementById('no-subtasks');
+            if (noSubtasksMsg) {
+                noSubtasksMsg.style.display = 'block';
+            }
         }
     }
 }
+
+// Full Day Toggle Functionality
+document.getElementById('full_day_toggle').addEventListener('change', function() {
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    
+    if (this.checked) {
+        startTimeInput.value = '00:00';
+        endTimeInput.value = '23:59';
+        startTimeInput.disabled = true;
+        endTimeInput.disabled = true;
+    } else {
+        startTimeInput.disabled = false;
+        endTimeInput.disabled = false;
+    }
+});
 
 // Form validation with time consideration
 document.getElementById('task-form').addEventListener('submit', function(e) {
