@@ -52,50 +52,6 @@ class TaskController extends Controller
         return view('tasks.create', compact('categories'));
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'priority' => 'required|in:urgent,high,medium,low',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'subtasks' => 'nullable|array',
-            'subtasks.*.title' => 'required|string|max:255',
-            'subtasks.*.parent_id' => 'nullable',
-            'subtasks.*.is_group' => 'nullable|boolean',
-        ]);
-
-
-        $task = Task::create($request->only([
-            'title',
-            'description',
-            'category_id',
-            'priority',
-            'start_date',
-            'end_date'
-        ]));
-
-        // Simpan semua subtasks
-        if ($request->has('subtasks')) {
-            $map = []; // untuk menyimpan id sementara dari front-end ke ID DB
-
-            foreach ($request->subtasks as $tempId => $subtask) {
-                $newSub = new \App\Models\SubTask();
-                $newSub->task_id = $task->id;
-                $newSub->title = $subtask['title'];
-                $newSub->is_group = isset($subtask['is_group']) ? true : false;
-                $newSub->parent_id = isset($subtask['parent_id']) && $subtask['parent_id'] !== ''
-                    ? $map[$subtask['parent_id']] ?? null
-                    : null;
-                $newSub->save();
-
-                $map[$tempId] = $newSub->id;
-            }
-        }
-
-        return redirect()->route('tasks.index')->with('success', 'Tugas berhasil ditambahkan!');
-    }
 
 
     public function edit(Task $task)
