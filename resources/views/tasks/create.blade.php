@@ -245,25 +245,24 @@
                                 </div>
                             </div>
                             <div id="subtasks-container" class="relative p-6 space-y-3 min-h-[120px] bg-gray-50 overflow-x-auto">
-    <!-- Scroll Indicator -->
-    <div id="scroll-indicator" class="absolute top-2 right-2 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm hidden z-10">
-        ← Scroll untuk melihat lebih banyak
-    </div>
+                                <!-- Scroll Indicator -->
+                                <div id="scroll-indicator" class="absolute top-2 right-2 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm hidden z-10">
+                                    ← Scroll untuk melihat lebih banyak
+                                </div>
 
-    <!-- Subtasks Scroll Container -->
-    <div class="subtasks-scroll-container min-w-full">
-        <div class="text-center text-gray-500 text-sm py-8" id="no-subtasks">
-            <div class="flex flex-col items-center">
-                <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 17v-2a4 4 0 00-4-4H5a4 4 0 000 8h1a4 4 0 004-4zm0 0h6m0 0v2a4 4 0 004 4h1a4 4 0 000-8h-1a4 4 0 00-4 4v2z" />
-                </svg>
-                <span class="text-gray-400 text-xs mt-1">Klik tombol "Tambah Subtask" untuk mulai menambahkan</span>
-            </div>
-        </div>
-    </div>
-</div>
-
+                                <!-- Subtasks Scroll Container -->
+                                <div class="subtasks-scroll-container min-w-full">
+                                    <div class="text-center text-gray-500 text-sm py-8" id="no-subtasks">
+                                        <div class="flex flex-col items-center">
+                                            <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M9 17v-2a4 4 0 00-4-4H5a4 4 0 000 8h1a4 4 0 004-4zm0 0h6m0 0v2a4 4 0 004 4h1a4 4 0 000-8h-1a4 4 0 00-4 4v2" />
+                                            </svg>
+                                            <span class="text-gray-400 text-xs mt-1">Klik tombol "Tambah Subtask" untuk mulai menambahkan</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -389,7 +388,6 @@ function addCategory() {
         return;
     }
     
-    // Kirim permintaan AJAX ke server
     fetch('{{ route("categories.store") }}', {
         method: 'POST',
         headers: {
@@ -403,7 +401,6 @@ function addCategory() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Tambahkan ke tabel
             const tableBody = document.getElementById('categories-table-body');
             const newRow = document.createElement('tr');
             newRow.dataset.id = data.category.id;
@@ -424,14 +421,12 @@ function addCategory() {
             `;
             tableBody.appendChild(newRow);
             
-            // Tambahkan ke dropdown select
             const select = document.getElementById('category_id');
             const option = document.createElement('option');
             option.value = data.category.id;
             option.textContent = data.category.name;
             select.appendChild(option);
             
-            // Reset input
             nameInput.value = '';
         } else {
             alert(data.message || 'Gagal menambahkan kategori');
@@ -451,7 +446,6 @@ function editCategory(button) {
     
     const newName = prompt('Edit nama kategori:', currentName);
     if (newName && newName.trim() !== '' && newName !== currentName) {
-        // Kirim permintaan AJAX ke server
         fetch(`/categories/${id}`, {
             method: 'PUT',
             headers: {
@@ -466,10 +460,8 @@ function editCategory(button) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Update tampilan
                 nameCell.textContent = newName.trim();
                 
-                // Update dropdown select
                 const select = document.getElementById('category_id');
                 const option = select.querySelector(`option[value="${id}"]`);
                 if (option) {
@@ -491,26 +483,37 @@ function deleteCategory(id) {
         return;
     }
     
-    // In a real app, you would make an AJAX call here to delete the category
-    // For this example, we'll just remove it from the DOM
-    
-    // Remove from the table
-    const row = document.querySelector(`#categories-table-body tr[data-id="${id}"]`);
-    if (row) {
-        row.remove();
-    }
-    
-    // Remove from the select dropdown
-    const select = document.getElementById('category_id');
-    const option = select.querySelector(`option[value="${id}"]`);
-    if (option) {
-        option.remove();
-    }
-    
-    // In a real app, you would:
-    // 1. Make an AJAX call to delete the category
-    // 2. Handle errors (e.g., if the category is in use)
-    // 3. Update the UI only after successful deletion
+    fetch(`/categories/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            _method: 'DELETE'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.querySelector(`#categories-table-body tr[data-id="${id}"]`);
+            if (row) {
+                row.remove();
+            }
+            
+            const select = document.getElementById('category_id');
+            const option = select.querySelector(`option[value="${id}"]`);
+            if (option) {
+                option.remove();
+            }
+        } else {
+            alert(data.message || 'Gagal menghapus kategori');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat menghapus kategori');
+    });
 }
 
 // Subtask Management Functions
@@ -535,7 +538,6 @@ function addSubtask(parentElement = null) {
     const parentId = parentElement?.dataset.id || null;
     const indentLevel = getIndentLevel(parentElement);
 
-    // Cek jika level sudah mencapai maksimum (6)
     if (indentLevel >= 6) {
         alert('Maksimal 6 level subtask telah tercapai');
         return;
@@ -549,39 +551,43 @@ function addSubtask(parentElement = null) {
     const marginLeft = indentLevel * 20;
 
     subtaskWrapper.innerHTML = `
-    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
-        <div class="flex items-center gap-3">
-            <div class="flex-1">
-                <input type="text" name="subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
-                <input type="hidden" name="subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
-                
+        <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
+            <div class="flex items-center gap-3">
+                <div class="flex-1">
+                    <input type="text" name="subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                    <input type="hidden" name="subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" 
+                        class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                        onclick="addSubtask(this.closest('.subtask-item'))"
+                        title="Tambah Sub-subtask">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </button>
+                    <button type="button" 
+                        class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                        onclick="removeSubtask(this.closest('.subtask-item'))"
+                        title="Hapus Subtask">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button type="button" 
-                    class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                    onclick="addSubtask(this.closest('.subtask-item'))"
-                    title="Tambah Sub-subtask">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                </button>
-                <button type="button" 
-                    class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                    onclick="removeSubtask(this.closest('.subtask-item'))"
-                    title="Hapus Subtask">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
+            <div class="mt-3 space-y-3 child-container"></div>
         </div>
-        <div class="mt-3 space-y-3 child-container"></div>
-    </div>
-`;
+    `;
 
-    const container = parentElement?.querySelector('.child-container') || document.getElementById('subtasks-container');
-    container.appendChild(subtaskWrapper);
+    const container = parentElement?.querySelector('.child-container') || document.querySelector('#subtasks-container .subtasks-scroll-container');
+    
+    if (container.firstChild && container.firstChild.id === 'no-subtasks') {
+        container.insertBefore(subtaskWrapper, container.firstChild.nextSibling);
+    } else {
+        container.insertBefore(subtaskWrapper, container.firstChild);
+    }
 }
 
 function removeSubtask(element) {
@@ -651,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const endTime = new Date(now.getTime() + 60 * 60 * 1000);
         const endHours = String(endTime.getHours()).padStart(2, '0');
         const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
-        document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
+        document.getElementById('end_time').value = `${endHours}:${minutes}`;
     }
 
     // Priority selection functionality
@@ -690,6 +696,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+// Timepicker menggunakan Flatpickr dengan format 24 jam
+flatpickr("#start_time", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i",
+    time_24hr: true
+});
+
+flatpickr("#end_time", {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: "H:i",
+    time_24hr: true
+});
 </script>
+
 @endpush
 @endsection
