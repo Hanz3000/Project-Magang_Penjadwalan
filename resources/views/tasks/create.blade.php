@@ -373,47 +373,58 @@ function addCategory() {
         return;
     }
     
-    // In a real app, you would make an AJAX call here to save the category
-    // For this example, we'll just add it to the table
-    
-    // Generate a temporary ID (in a real app, this would come from the server)
-    const tempId = Date.now();
-    
-    const tableBody = document.getElementById('categories-table-body');
-    const newRow = document.createElement('tr');
-    newRow.dataset.id = tempId;
-    newRow.innerHTML = `
-        <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900">${name}</div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <button type="button" onclick="editCategory(this)" 
-                class="text-blue-600 hover:text-blue-900 mr-3">
-                Edit
-            </button>
-            <button type="button" onclick="deleteCategory(${tempId})" 
-                class="text-red-600 hover:text-red-900">
-                Hapus
-            </button>
-        </td>
-    `;
-    
-    tableBody.appendChild(newRow);
-    
-    // Add to the select dropdown
-    const select = document.getElementById('category_id');
-    const option = document.createElement('option');
-    option.value = tempId;
-    option.textContent = name;
-    select.appendChild(option);
-    
-    // Clear the input
-    nameInput.value = '';
-    
-    // In a real app, you would:
-    // 1. Make an AJAX call to save the category
-    // 2. On success, update the table and select dropdown with the real ID from the server
-    // 3. Handle errors appropriately
+    // Kirim permintaan AJAX ke server
+    fetch('{{ route("categories.store") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            name: name
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Tambahkan ke tabel
+            const tableBody = document.getElementById('categories-table-body');
+            const newRow = document.createElement('tr');
+            newRow.dataset.id = data.category.id;
+            newRow.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">${data.category.name}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button type="button" onclick="editCategory(this)" 
+                        class="text-blue-600 hover:text-blue-900 mr-3">
+                        Edit
+                    </button>
+                    <button type="button" onclick="deleteCategory(${data.category.id})" 
+                        class="text-red-600 hover:text-red-900">
+                        Hapus
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(newRow);
+            
+            // Tambahkan ke dropdown select
+            const select = document.getElementById('category_id');
+            const option = document.createElement('option');
+            option.value = data.category.id;
+            option.textContent = data.category.name;
+            select.appendChild(option);
+            
+            // Reset input
+            nameInput.value = '';
+        } else {
+            alert(data.message || 'Gagal menambahkan kategori');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat menambahkan kategori');
+    });
 }
 
 function editCategory(button) {
@@ -424,15 +435,38 @@ function editCategory(button) {
     
     const newName = prompt('Edit nama kategori:', currentName);
     if (newName && newName.trim() !== '' && newName !== currentName) {
-        // In a real app, you would make an AJAX call here to update the category
-        nameCell.textContent = newName.trim();
-        
-        // Update the select dropdown
-        const select = document.getElementById('category_id');
-        const option = select.querySelector(`option[value="${id}"]`);
-        if (option) {
-            option.textContent = newName.trim();
-        }
+        // Kirim permintaan AJAX ke server
+        fetch(`/categories/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                name: newName.trim(),
+                _method: 'PUT'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update tampilan
+                nameCell.textContent = newName.trim();
+                
+                // Update dropdown select
+                const select = document.getElementById('category_id');
+                const option = select.querySelector(`option[value="${id}"]`);
+                if (option) {
+                    option.textContent = newName.trim();
+                }
+            } else {
+                alert(data.message || 'Gagal mengupdate kategori');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat mengupdate kategori');
+        });
     }
 }
 
