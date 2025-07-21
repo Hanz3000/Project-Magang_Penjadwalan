@@ -696,24 +696,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script>
-// Timepicker menggunakan Flatpickr dengan format 24 jam
-flatpickr("#start_time", {
-    enableTime: true,
-    noCalendar: true,
-    dateFormat: "H:i",
-    time_24hr: true
-});
-
-flatpickr("#end_time", {
-    enableTime: true,
-    noCalendar: true,
-    dateFormat: "H:i",
-    time_24hr: true
-});
 </script>
-
 @endpush
 @endsection
