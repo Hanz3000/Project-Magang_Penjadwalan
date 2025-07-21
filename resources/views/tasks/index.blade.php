@@ -65,7 +65,7 @@
                     <div id="calendar" style="height: 600px;" class="rounded-xl overflow-hidden border border-gray-200 shadow-inner"></div>
                 </div>
 
-                <!-- Task list section with enhanced design -->
+                <!-- Task list section with enhanced design and ACTIVE FILTER -->
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -73,11 +73,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
                             </svg>
                             List Jadwal dan Tugas
+                            <span id="filtered-count" class="hidden ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full font-medium"></span>
                         </h2>
+                        <!-- Filter buttons with data-filter attributes -->
                         <div class="flex gap-2">
-                            <button class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-200">Semua</button>
-                            <button class="px-4 py-2 text-sm bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-xl transition-all duration-200">Aktif</button>
-                            <button class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-200">Selesai</button>
+                            <button class="filter-btn active px-4 py-2 text-sm bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-xl transition-all duration-200 border border-blue-300 font-medium" data-filter="all">Semua</button>
+                            <button class="filter-btn px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-all duration-200 font-medium" data-filter="active">Aktif</button>
+                            <button class="filter-btn px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-all duration-200 font-medium" data-filter="completed">Selesai</button>
                         </div>
                     </div>
 
@@ -144,7 +146,9 @@
                         : ($task->completed ? 100 : 0);
                         @endphp
 
-                        <div class="border border-gray-200 rounded-xl p-5 transition-all duration-300 hover:border-blue-300 hover:shadow-lg bg-white backdrop-blur-sm" id="task-item-{{ $task->id }}">
+                        <div class="border border-gray-200 rounded-xl p-5 transition-all duration-300 hover:border-blue-300 hover:shadow-lg bg-white backdrop-blur-sm task-item" 
+                             id="task-item-{{ $task->id }}" 
+                             data-task-status="{{ $task->completed ? 'completed' : 'active' }}">
                             <div class="flex items-start gap-4">
                                 <form action="{{ route('tasks.toggle', $task->id) }}" method="POST" class="task-toggle-form">
                                     @csrf
@@ -259,6 +263,22 @@
                             </div>
                         </div>
                         @endforeach
+
+                        <!-- Empty state for no filtered results -->
+                        <div id="filter-empty-state" class="hidden text-center py-12">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="p-4 bg-gray-100 rounded-full mb-4">
+                                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-600 mb-2" id="empty-state-title">Tidak ada tugas</h3>
+                                <p class="text-gray-500 mb-4" id="empty-state-description">Tidak ada tugas yang sesuai dengan filter yang dipilih.</p>
+                                <button onclick="resetFilter()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium">
+                                    Tampilkan Semua Tugas
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -386,6 +406,7 @@
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/id.js'></script>
 
+<!-- ORIGINAL JAVASCRIPT CODE (unchanged) -->
 <script>
     // Global State Management
     let appState = {
@@ -396,15 +417,197 @@
         isUpdating: false,
         totalTasks: {{ $totalTasks }},
         completedTasks: {{ $tasks->where('completed', true)->count() }},
-        allTasksCompleted: false
+        allTasksCompleted: false,
+        currentFilter: 'all', // Add filter state
+        filteredTasksCount: {{ $totalTasks }} // Add filtered count
     };
 
     // Initialize application
     document.addEventListener('DOMContentLoaded', function() {
         initializeCalendar();
         initializeEventDelegation();
+        initializeTaskFilter(); // Add filter initialization
         checkAllTasksCompleted();
     });
+
+    // ===== TASK FILTER FUNCTIONS =====
+    function initializeTaskFilter() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const filter = this.getAttribute('data-filter');
+                setActiveFilter(filter);
+                filterTasks(filter);
+            });
+        });
+        
+        // Initial filter application
+        filterTasks('all');
+    }
+
+    function setActiveFilter(filter) {
+        appState.currentFilter = filter;
+        
+        // Remove active class from all buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active', 'bg-blue-100', 'text-blue-600', 'border-blue-300');
+            btn.classList.add('bg-gray-100', 'text-gray-600');
+        });
+        
+        // Add active class to clicked button
+        const activeButton = document.querySelector(`[data-filter="${filter}"]`);
+        if (activeButton) {
+            activeButton.classList.add('active', 'bg-blue-100', 'text-blue-600', 'border-blue-300');
+            activeButton.classList.remove('bg-gray-100', 'text-gray-600');
+        }
+    }
+
+    function filterTasks(filter) {
+        const taskItems = document.querySelectorAll('.task-item');
+        const emptyState = document.getElementById('filter-empty-state');
+        const filteredCount = document.getElementById('filtered-count');
+        
+        let visibleCount = 0;
+        
+        taskItems.forEach(item => {
+            const taskStatus = item.getAttribute('data-task-status');
+            let shouldShow = false;
+            
+            switch(filter) {
+                case 'all':
+                    shouldShow = true;
+                    break;
+                case 'active':
+                    shouldShow = taskStatus === 'active';
+                    break;
+                case 'completed':
+                    shouldShow = taskStatus === 'completed';
+                    break;
+            }
+            
+            if (shouldShow) {
+                showTaskItem(item);
+                visibleCount++;
+            } else {
+                hideTaskItem(item);
+            }
+        });
+        
+        // Update filtered count
+        appState.filteredTasksCount = visibleCount;
+        updateFilteredCountDisplay(filter, visibleCount);
+        
+        // Show/hide empty state
+        if (visibleCount === 0) {
+            showEmptyState(filter);
+        } else {
+            hideEmptyState();
+        }
+    }
+
+    function showTaskItem(item) {
+        item.style.display = 'block';
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(20px)';
+        
+        // Trigger reflow
+        item.offsetHeight;
+        
+        item.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        item.style.opacity = '1';
+        item.style.transform = 'translateY(0)';
+    }
+
+    function hideTaskItem(item) {
+        item.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+            item.style.display = 'none';
+        }, 300);
+    }
+
+    function updateFilteredCountDisplay(filter, count) {
+        const filteredCount = document.getElementById('filtered-count');
+        
+        if (filter === 'all') {
+            filteredCount.classList.add('hidden');
+        } else {
+            filteredCount.classList.remove('hidden');
+            const filterLabels = {
+                'active': 'Aktif',
+                'completed': 'Selesai'
+            };
+            filteredCount.textContent = `${count} ${filterLabels[filter]}`;
+        }
+    }
+
+    function showEmptyState(filter) {
+        const emptyState = document.getElementById('filter-empty-state');
+        const title = document.getElementById('empty-state-title');
+        const description = document.getElementById('empty-state-description');
+        
+        const messages = {
+            'all': {
+                title: 'Belum ada tugas',
+                description: 'Mulai dengan membuat tugas pertama Anda.'
+            },
+            'active': {
+                title: 'Tidak ada tugas aktif',
+                description: 'Semua tugas telah diselesaikan atau belum ada tugas yang dibuat.'
+            },
+            'completed': {
+                title: 'Belum ada tugas selesai',
+                description: 'Selesaikan tugas untuk melihatnya di sini.'
+            }
+        };
+        
+        title.textContent = messages[filter].title;
+        description.textContent = messages[filter].description;
+        
+        emptyState.style.display = 'block';
+        emptyState.style.opacity = '0';
+        emptyState.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            emptyState.style.transition = 'all 0.3s ease-out';
+            emptyState.style.opacity = '1';
+            emptyState.style.transform = 'translateY(0)';
+        }, 10);
+        
+        emptyState.classList.remove('hidden');
+    }
+
+    function hideEmptyState() {
+        const emptyState = document.getElementById('filter-empty-state');
+        
+        emptyState.style.transition = 'all 0.3s ease-out';
+        emptyState.style.opacity = '0';
+        emptyState.style.transform = 'translateY(-20px)';
+        
+        setTimeout(() => {
+            emptyState.classList.add('hidden');
+            emptyState.style.display = 'none';
+        }, 300);
+    }
+
+    function resetFilter() {
+        setActiveFilter('all');
+        filterTasks('all');
+    }
+
+    // Update filter when task status changes
+    function updateTaskFilter(taskId, newStatus) {
+        const taskItem = document.getElementById(`task-item-${taskId}`);
+        if (taskItem) {
+            taskItem.setAttribute('data-task-status', newStatus);
+            
+            // Re-apply current filter
+            filterTasks(appState.currentFilter);
+        }
+    }
 
     // ===== CALENDAR FUNCTIONS =====
     function initializeCalendar() {
@@ -617,6 +820,9 @@
                 updateCalendarEvent(taskId, data.task.completed);
                 updateSummaryUI(data);
                 
+                // Update filter display
+                updateTaskFilter(taskId, data.task.completed ? 'completed' : 'active');
+                
                 showNotification('Tugas berhasil diperbarui!', 'success');
                 checkAllTasksCompleted();
             } else {
@@ -670,6 +876,9 @@
                 // Update calendar and summary
                 updateCalendarEvent(taskId, data.task.completed);
                 updateSummaryUI(data);
+                
+                // Update filter display
+                updateTaskFilter(taskId, data.task.completed ? 'completed' : 'active');
                 
                 showNotification('Subtugas berhasil diperbarui!', 'success');
                 checkAllTasksCompleted();
@@ -1523,1298 +1732,31 @@
         outline-offset: 2px;
         box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
     }
-</style>
-@push('scripts')
-<!-- FullCalendar CSS -->
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
-<!-- FullCalendar JS -->
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/id.js'></script>
 
-<script>
-    // Global variables and state management
-    let tasksData = @json($tasks);
-    let calendar;
-    let modalUpdateTimer;
-    let isModalOpen = false;
-    let currentModalTaskId = null;
-    let isUpdating = false; // Prevent infinite loops
-
-    // Enhanced state management
-    let appState = {
-        totalTasks: {{ $totalTasks }},
-        completedTasks: {{ $tasks->where('completed', true)->count() }},
-        allTasksCompleted: false,
-        modalState: {
-            taskId: null,
-            lastUpdate: null
-        }
-    };
-
-    // Initialize application
-    document.addEventListener('DOMContentLoaded', function() {
-        initializeCalendar();
-        initializeEventListeners();
-        initializeModalEventDelegation();
-        checkAllTasksCompleted();
-    });
-
-    // Initialize calendar with enhanced features
-    function initializeCalendar() {
-        var calendarEl = document.getElementById('calendar');
-        calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'id',
-            headerToolbar: false,
-            height: 600,
-            displayEventTime: false,
-            events: generateCalendarEvents(),
-            eventClick: function(info) {
-                info.jsEvent.preventDefault();
-                openTaskModal(info.event.id);
-            },
-            eventDidMount: function(info) {
-                info.el.style.cursor = 'pointer';
-                info.el.addEventListener('mouseenter', function() {
-                    this.style.transform = 'scale(1.02)';
-                    this.style.transition = 'transform 0.2s ease';
-                });
-                info.el.addEventListener('mouseleave', function() {
-                    this.style.transform = 'scale(1)';
-                });
-            }
-        });
-        
-        calendar.render();
-        updateCalendarTitle(calendar);
-        setupCalendarNavigation();
-    }
-
-    // Generate calendar events with completion-based styling
-    function generateCalendarEvents() {
-        return tasksData.map(task => ({
-            id: task.id.toString(),
-            title: task.title,
-            start: task.start_date,
-            end: new Date(new Date(task.end_date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            extendedProps: {
-                description: task.description,
-                priority: task.priority,
-                completed: task.completed,
-                url: `/tasks/${task.id}/edit`
-            },
-            backgroundColor: getTaskColor(task),
-            borderColor: getTaskColor(task),
-            textColor: '#fff',
-            className: task.completed ? 'completed-task' : 'active-task'
-        }));
-    }
-
-    // Get task color based on priority and completion
-    function getTaskColor(task) {
-        if (task.completed) {
-            return '#9ca3af';
-        }
-        
-        switch(task.priority) {
-            case 'urgent': return '#ef4444';
-            case 'high': return '#f97316';
-            case 'medium': return '#eab308';
-            case 'low': return '#22c55e';
-            default: return '#3b82f6';
-        }
-    }
-
-    // Setup calendar navigation
-    function setupCalendarNavigation() {
-        document.getElementById('prev-month').addEventListener('click', function() {
-            calendar.prev();
-            updateCalendarTitle(calendar);
-        });
-        
-        document.getElementById('next-month').addEventListener('click', function() {
-            calendar.next();
-            updateCalendarTitle(calendar);
-        });
-        
-        document.getElementById('month-view').addEventListener('click', function() {
-            calendar.changeView('dayGridMonth');
-            updateCalendarTitle(calendar);
-            this.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
-            document.getElementById('week-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
-        });
-        
-        document.getElementById('week-view').addEventListener('click', function() {
-            calendar.changeView('timeGridWeek');
-            updateCalendarTitle(calendar);
-            this.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
-            document.getElementById('month-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
-        });
-    }
-
-    // Initialize event listeners with event delegation for better performance
-    function initializeEventListeners() {
-        // Use event delegation for dynamic content
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('task-checkbox') && !e.target.classList.contains('task-checkbox-modal')) {
-                handleTaskToggle(e.target);
-            } else if (e.target.classList.contains('subtask-checkbox') && !e.target.classList.contains('subtask-checkbox-modal')) {
-                handleSubtaskToggle(e.target);
-            }
-        });
-
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.subtask-toggle-btn')) {
-                toggleSubtasks(e.target.closest('.subtask-toggle-btn'));
-            } else if (e.target.closest('.subtask-parent-toggle-btn')) {
-                toggleSubtaskParent(e.target.closest('.subtask-parent-toggle-btn'));
-            } else if (e.target.closest('.task-title')) {
-                const taskId = e.target.closest('.task-title').getAttribute('data-task-id');
-                if (taskId) openTaskModal(taskId);
-            } else if (e.target.closest('.subtask-parent-title')) {
-                const subtaskId = e.target.closest('.subtask-parent-title').getAttribute('data-subtask-id');
-                const toggleBtn = document.querySelector(`[data-subtask-id="${subtaskId}"].subtask-parent-toggle-btn`);
-                if (toggleBtn) toggleSubtaskParent(toggleBtn);
-            }
-        });
-
-        // Modal event handling
-        document.getElementById('taskModal').addEventListener('click', function(e) {
-            if (e.target === this) closeTaskModal();
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeTaskModal();
-        });
-    }
-
-    // Initialize modal event delegation
-    function initializeModalEventDelegation() {
-        const modal = document.getElementById('taskModal');
-        
-        modal.addEventListener('change', function(e) {
-            if (e.target.classList.contains('task-checkbox-modal')) {
-                handleModalTaskToggle(e.target);
-            } else if (e.target.classList.contains('subtask-checkbox-modal')) {
-                handleModalSubtaskToggle(e.target);
-            }
-        });
-
-        modal.addEventListener('click', function(e) {
-            if (e.target.closest('.subtask-parent-toggle-btn-modal')) {
-                toggleModalSubtaskParent(e.target.closest('.subtask-parent-toggle-btn-modal'));
-            }
-        });
-    }
-
-    // Enhanced task toggle with real-time synchronization
-    function handleTaskToggle(checkbox) {
-        if (isUpdating) return;
-        
-        const taskId = checkbox.getAttribute('data-task-id');
-        const form = checkbox.closest('form');
-        const url = form.getAttribute('action');
-        const isCompleted = checkbox.checked;
-        
-        performTaskUpdate(taskId, url, isCompleted, form, 'task');
-    }
-
-    // Enhanced subtask toggle with real-time synchronization
-    function handleSubtaskToggle(checkbox) {
-        if (isUpdating) return;
-        
-        const subtaskId = checkbox.getAttribute('data-sub-task-id');
-        const taskId = checkbox.getAttribute('data-task-id');
-        const form = checkbox.closest('form');
-        const url = form.getAttribute('action');
-        const isCompleted = checkbox.checked;
-        
-        performSubtaskUpdate(subtaskId, taskId, url, isCompleted, form, 'subtask');
-    }
-
-    // Modal task toggle handler
-    function handleModalTaskToggle(checkbox) {
-        if (isUpdating) return;
-        
-        const taskId = checkbox.getAttribute('data-task-id');
-        const form = checkbox.closest('form');
-        const url = form.getAttribute('action');
-        const isCompleted = checkbox.checked;
-        
-        performTaskUpdate(taskId, url, isCompleted, form, 'modal-task');
-    }
-
-    // Modal subtask toggle handler
-    function handleModalSubtaskToggle(checkbox) {
-        if (isUpdating) return;
-        
-        const subtaskId = checkbox.getAttribute('data-sub-task-id');
-        const taskId = checkbox.getAttribute('data-task-id');
-        const form = checkbox.closest('form');
-        const url = form.getAttribute('action');
-        const isCompleted = checkbox.checked;
-        
-        performSubtaskUpdate(subtaskId, taskId, url, isCompleted, form, 'modal-subtask');
-    }
-
-    // Unified task update function
-    function performTaskUpdate(taskId, url, isCompleted, form, source) {
-        isUpdating = true;
-        showLoadingIndicator();
-        showAutoSaveIndicator();
-        
-        const token = form.querySelector('input[name="_token"]').value;
-        
-        fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': token,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                completed: isCompleted
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update global data first
-                updateTasksData(taskId, data);
-                
-                // Apply all UI updates synchronously
-                syncTaskUIUpdates(taskId, data, source);
-                
-                // Update summary and calendar
-                updateSummaryUI(data);
-                updateCalendarEvent(taskId, data.task.completed);
-                updateAppState(data);
-                
-                showNotification('Tugas berhasil diperbarui!', 'success');
-                checkAllTasksCompleted();
-            } else {
-                revertCheckboxState(taskId, !isCompleted, source);
-                showNotification('Gagal memperbarui tugas!', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            revertCheckboxState(taskId, !isCompleted, source);
-            showNotification('Terjadi kesalahan!', 'error');
-        })
-        .finally(() => {
-            isUpdating = false;
-            hideLoadingIndicator();
-            hideAutoSaveIndicator();
-        });
-    }
-
-    // Unified subtask update function
-    function performSubtaskUpdate(subtaskId, taskId, url, isCompleted, form, source) {
-        isUpdating = true;
-        showLoadingIndicator();
-        showAutoSaveIndicator();
-        
-        const token = form.querySelector('input[name="_token"]').value;
-        
-        fetch(url, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': token,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                completed: isCompleted
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update global data first
-                updateTasksData(taskId, data);
-                
-                // Apply all UI updates synchronously
-                syncSubtaskUIUpdates(subtaskId, taskId, data, source);
-                
-                // Update summary and calendar
-                updateSummaryUI(data);
-                updateCalendarEvent(taskId, data.task.completed);
-                updateAppState(data);
-                
-                showNotification('Subtugas berhasil diperbarui!', 'success');
-                checkAllTasksCompleted();
-            } else {
-                revertSubtaskCheckboxState(subtaskId, !isCompleted, source);
-                showNotification('Gagal memperbarui subtugas!', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            revertSubtaskCheckboxState(subtaskId, !isCompleted, source);
-            showNotification('Terjadi kesalahan!', 'error');
-        })
-        .finally(() => {
-            isUpdating = false;
-            hideLoadingIndicator();
-            hideAutoSaveIndicator();
-        });
-    }
-
-    // Synchronize task UI updates across all views
-    function syncTaskUIUpdates(taskId, data, source) {
-        // Update main view task
-        updateMainTaskUI(taskId, data);
-        
-        // Update modal view task if open
-        if (isModalOpen && currentModalTaskId == taskId) {
-            updateModalTaskUI(taskId, data);
-            updateModalSubtasksUI(taskId, data.task.completed);
-            updateModalProgress(taskId);
-        }
-        
-        // Update all subtasks UI
-        updateAllSubtasksUI(taskId, data.task.completed);
-    }
-
-    // Synchronize subtask UI updates across all views
-    function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
-        // Update main view subtask
-        updateSubtaskUI(subtaskId, data);
-        
-        // Update modal view subtask if open
-        if (isModalOpen && currentModalTaskId == taskId) {
-            updateModalSubtaskUI(subtaskId, data);
-            updateModalTaskUI(taskId, data);
-            updateModalProgress(taskId);
-        }
-        
-        // Update task progress
-        updateTaskProgressUI(taskId, data);
-        updateMainTaskUI(taskId, data);
-    }
-
-    // Revert checkbox states on error
-    function revertCheckboxState(taskId, originalState, source) {
-        const mainCheckbox = document.querySelector(`[data-task-id="${taskId}"].task-checkbox:not(.task-checkbox-modal)`);
-        const modalCheckbox = document.querySelector(`[data-task-id="${taskId}"].task-checkbox-modal`);
-        
-        if (mainCheckbox) mainCheckbox.checked = originalState;
-        if (modalCheckbox) modalCheckbox.checked = originalState;
-    }
-
-    function revertSubtaskCheckboxState(subtaskId, originalState, source) {
-        const mainCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"].subtask-checkbox:not(.subtask-checkbox-modal)`);
-        const modalCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"].subtask-checkbox-modal`);
-        
-        if (mainCheckbox) mainCheckbox.checked = originalState;
-        if (modalCheckbox) modalCheckbox.checked = originalState;
-    }
-
-    // Enhanced modal with real-time updates
-    function openTaskModal(taskId) {
-        const task = tasksData.find(t => t.id == taskId);
-        if (!task) {
-            showNotification('Memuat data terbaru...', 'info');
-            window.location.reload();
-            return;
-        }
-
-        isModalOpen = true;
-        currentModalTaskId = taskId;
-        appState.modalState.taskId = taskId;
-        appState.modalState.lastUpdate = Date.now();
-
-        const modalContent = document.getElementById('taskModalContent');
-        
-        let priorityText = '';
-        let priorityClass = '';
-        switch(task.priority) {
-            case 'urgent':
-                priorityText = 'Sangat Mendesak';
-                priorityClass = 'bg-red-100 text-red-800 border border-red-300';
-                break;
-            case 'high':
-                priorityText = 'Tinggi';
-                priorityClass = 'bg-orange-100 text-orange-800 border border-orange-300';
-                break;
-            case 'medium':
-                priorityText = 'Sedang';
-                priorityClass = 'bg-yellow-100 text-yellow-800 border border-yellow-300';
-                break;
-            case 'low':
-                priorityText = 'Rendah';
-                priorityClass = 'bg-green-100 text-green-800 border border-green-300';
-                break;
-        }
-
-        const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
-            !task.sub_tasks.some(parent => parent.parent_id === st.id)
-        ) : [];
-        const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
-        const subtaskTotal = leafSubTasks.length;
-        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
-
-        let subtasksHtml = '';
-        if (task.sub_tasks && task.sub_tasks.length > 0) {
-            subtasksHtml = `
-                <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                    <div class="flex justify-between items-center mb-3">
-                        <h5 class="font-medium text-gray-800 flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
-                            </svg>
-                            Subtugas (<span id="modal-subtask-count">${subtaskCompleted}/${subtaskTotal}</span>)
-                        </h5>
-                        <div class="flex items-center gap-2">
-                            <div class="w-20 h-2 bg-white rounded-full overflow-hidden shadow-inner">
-                                <div id="modal-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500" style="width: ${progressPercentage}%"></div>
-                            </div>
-                            <span id="modal-progress-percentage" class="text-xs font-semibold text-blue-600">${progressPercentage}%</span>
-                        </div>
-                    </div>
-                    <div class="space-y-1 max-h-40 overflow-y-auto">
-                        ${renderModalSubtasks(task.sub_tasks, null, task)}
-                    </div>
-                </div>
-            `;
-        }
-
-        modalContent.innerHTML = `
-            <div class="flex items-start gap-3 mb-4">
-                <form action="/tasks/${task.id}/toggle" method="POST" class="task-toggle-form-modal">
-                    <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                    <input type="hidden" name="_method" value="PATCH">
-                    <input type="checkbox"
-                        class="task-checkbox-modal w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                        data-task-id="${task.id}"
-                        ${task.completed ? 'checked' : ''}>
-                </form>
-                <div class="flex-1">
-                    <h4 class="font-bold text-lg mb-2 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}" id="modal-task-title-${task.id}">
-                        ${task.title}
-                    </h4>
-                    <div class="flex items-center gap-2 mb-3 flex-wrap">
-                        <span class="px-2 py-1 text-xs rounded-lg font-medium ${priorityClass}">
-                            ${priorityText}
-                        </span>
-                        ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg font-medium border border-gray-300">Selesai</span>' : ''}
-                        ${subtaskTotal > 0 ? `<span id="modal-progress-badge" class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">${progressPercentage}% Progress</span>` : ''}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div class="flex items-center gap-2 mb-1">
-                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <span class="text-xs font-medium text-gray-600">Tanggal Mulai</span>
-                    </div>
-                    <span class="font-semibold text-gray-800 text-sm">${formatDateString(task.start_date)}</span>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <div class="flex items-center gap-2 mb-1">
-                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <span class="text-xs font-medium text-gray-600">Tanggal Selesai</span>
-                    </div>
-                    <span class="font-semibold text-gray-800 text-sm">${formatDateString(task.end_date)}</span>
-                </div>
-            </div>
-            
-            <div class="mb-4">
-                <h5 class="font-medium text-gray-800 mb-2 flex items-center gap-2 text-sm">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Deskripsi
-                </h5>
-                <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <p class="text-gray-700 leading-relaxed text-sm">${task.description || 'Tidak ada deskripsi tersedia'}</p>
-                </div>
-            </div>
-
-            ${subtasksHtml}
-            
-            <div class="flex gap-2 pt-4 border-t border-gray-200">
-                <a href="/tasks/${task.id}/edit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
-                    Edit Tugas
-                </a>
-                <button onclick="closeTaskModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
-                    Tutup
-                </button>
-            </div>
-        `;
-        
-        // Show modal with animation
-        const modal = document.getElementById('taskModal');
-        modal.classList.remove('hidden');
-        modal.style.opacity = '0';
-        modal.style.transform = 'scale(0.95)';
-        
-        setTimeout(() => {
-            modal.style.opacity = '1';
-            modal.style.transform = 'scale(1)';
-            modal.style.transition = 'all 0.3s ease-out';
-        }, 10);
-    }
-
-    // Render modal subtasks with proper event handling
-    function renderModalSubtasks(subtasks, parentId = null, task) {
-        let html = '';
-        
-        const filteredSubtasks = subtasks.filter(st => st.parent_id === parentId);
-        
-        filteredSubtasks.forEach(subTask => {
-            const isParent = subtasks.some(st => st.parent_id === subTask.id);
-            
-            if (isParent) {
-                html += `
-                    <div class="subtask-parent-modal bg-white rounded-lg p-2 border border-gray-200" data-subtask-id="${subTask.id}">
-                        <div class="flex items-center gap-2 py-1">
-                            <button class="subtask-parent-toggle-btn-modal text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50" 
-                                    data-subtask-id="${subTask.id}" 
-                                    data-expanded="true">
-                                <svg class="w-3 h-3 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <span class="text-xs font-semibold text-gray-700">${subTask.title}</span>
-                        </div>
-                        <div class="subtask-children-modal pl-6 mt-1 border-l-2 border-blue-100" id="modal-subtask-children-${subTask.id}">
-                            ${renderModalSubtasks(subtasks, subTask.id, task)}
-                        </div>
-                    </div>
-                `;
-            } else {
-                const lineClass = subTask.completed ? 'line-through text-gray-400' : 'text-gray-700';
-                html += `
-                    <div class="subtask-item-modal flex items-center gap-2 py-1 px-2 bg-white rounded border border-gray-200 hover:border-blue-300 transition-all duration-200" data-subtask-id="${subTask.id}">
-                        <form action="/subtasks/${subTask.id}/toggle" method="POST" class="subtask-toggle-form-modal">
-                            <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                            <input type="hidden" name="_method" value="PATCH">
-                            <input type="checkbox"
-                                class="subtask-checkbox-modal w-3 h-3 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                                data-sub-task-id="${subTask.id}"
-                                data-task-id="${task.id}"
-                                ${subTask.completed ? 'checked' : ''}>
-                        </form>
-                        <span class="text-xs ${lineClass} subtask-text-modal flex-1">${subTask.title}</span>
-                    </div>
-                `;
-            }
-        });
-
-        return html;
-    }
-
-    // Update calendar event appearance
-    function updateCalendarEvent(taskId, completed) {
-        if (calendar) {
-            const event = calendar.getEventById(taskId.toString());
-            if (event) {
-                const taskIndex = tasksData.findIndex(t => t.id == taskId);
-                if (taskIndex !== -1) {
-                    tasksData[taskIndex].completed = completed;
-                    
-                    event.setProp('backgroundColor', getTaskColor(tasksData[taskIndex]));
-                    event.setProp('borderColor', getTaskColor(tasksData[taskIndex]));
-                    event.setProp('className', completed ? 'completed-task' : 'active-task');
-                    event.setExtendedProp('completed', completed);
-                }
-            }
-        }
-    }
-
-    // Check if all tasks are completed
-    function checkAllTasksCompleted() {
-        const allCompleted = tasksData.every(task => task.completed);
-        const hasActiveTasks = tasksData.length > 0;
-        
-        if (allCompleted && hasActiveTasks && !appState.allTasksCompleted) {
-            appState.allTasksCompleted = true;
-            updateCalendarCompletionIndicator(true);
-        } else if (!allCompleted && appState.allTasksCompleted) {
-            appState.allTasksCompleted = false;
-            updateCalendarCompletionIndicator(false);
-        }
-    }
-
-    // Update calendar completion indicator
-    function updateCalendarCompletionIndicator(show) {
-        const indicator = document.getElementById('calendar-completion-indicator');
-        if (show) {
-            indicator.classList.remove('hidden');
-        } else {
-            indicator.classList.add('hidden');
-        }
-    }
-
-    // Update app state
-    function updateAppState(data) {
-        if (data.totalTasks !== undefined) {
-            appState.totalTasks = data.totalTasks;
-        }
-        if (data.completedTasks !== undefined) {
-            appState.completedTasks = data.completedTasks;
-        }
-    }
-
-    // Enhanced modal progress update with real-time sync
-    function updateModalProgress(taskId) {
-        if (!isModalOpen || currentModalTaskId != taskId) return;
-        
-        const task = tasksData.find(t => t.id == taskId);
-        if (!task || !task.sub_tasks) return;
-        
-        const leafSubTasks = task.sub_tasks.filter(st => 
-            !task.sub_tasks.some(parent => parent.parent_id === st.id)
-        );
-        
-        const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
-        const subtaskTotal = leafSubTasks.length;
-        const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
-        
-        // Update modal progress elements
-        const progressBar = document.getElementById('modal-progress-bar');
-        if (progressBar) {
-            progressBar.style.width = `${progressPercentage}%`;
-        }
-        
-        const progressPercentageEl = document.getElementById('modal-progress-percentage');
-        if (progressPercentageEl) {
-            progressPercentageEl.textContent = `${progressPercentage}%`;
-        }
-        
-        const subtaskCount = document.getElementById('modal-subtask-count');
-        if (subtaskCount) {
-            subtaskCount.textContent = `${subtaskCompleted}/${subtaskTotal}`;
-        }
-        
-        const progressBadge = document.getElementById('modal-progress-badge');
-        if (progressBadge) {
-            progressBadge.textContent = `${progressPercentage}% Progress`;
-        }
-    }
-
-    // Enhanced toggle functions with smooth animations
-    function toggleSubtasks(button) {
-        const taskId = button.getAttribute('data-task-id');
-        const subtasksContainer = document.getElementById(`subtasks-container-${taskId}`);
-        const icon = button.querySelector('svg');
-        const isExpanded = button.getAttribute('data-expanded') === 'true';
-
-        if (isExpanded) {
-            subtasksContainer.style.maxHeight = subtasksContainer.scrollHeight + 'px';
-            subtasksContainer.offsetHeight;
-            subtasksContainer.style.maxHeight = '0';
-            subtasksContainer.style.opacity = '0';
-            subtasksContainer.style.transform = 'translateY(-10px)';
-            
-            icon.style.transform = 'rotate(-90deg)';
-            button.setAttribute('data-expanded', 'false');
-            
-            setTimeout(() => {
-                if (button.getAttribute('data-expanded') === 'false') {
-                    subtasksContainer.style.display = 'none';
-                }
-            }, 300);
-        } else {
-            subtasksContainer.style.display = 'block';
-            subtasksContainer.style.maxHeight = '0';
-            subtasksContainer.style.opacity = '0';
-            subtasksContainer.style.transform = 'translateY(-10px)';
-            
-            subtasksContainer.offsetHeight;
-            
-            subtasksContainer.style.maxHeight = subtasksContainer.scrollHeight + 'px';
-            subtasksContainer.style.opacity = '1';
-            subtasksContainer.style.transform = 'translateY(0)';
-            
-            icon.style.transform = 'rotate(0deg)';
-            button.setAttribute('data-expanded', 'true');
-            
-            setTimeout(() => {
-                if (button.getAttribute('data-expanded') === 'true') {
-                    subtasksContainer.style.maxHeight = '';
-                }
-            }, 300);
-        }
-    }
-
-    function toggleSubtaskParent(button) {
-        const subtaskId = button.getAttribute('data-subtask-id');
-        const childrenContainer = document.getElementById(`subtask-children-${subtaskId}`);
-        const icon = button.querySelector('svg');
-        const isExpanded = button.getAttribute('data-expanded') === 'true';
-
-        if (isExpanded) {
-            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
-            childrenContainer.offsetHeight;
-            childrenContainer.style.maxHeight = '0';
-            childrenContainer.style.opacity = '0';
-            childrenContainer.style.transform = 'translateY(-10px)';
-            
-            icon.style.transform = 'rotate(-90deg)';
-            button.setAttribute('data-expanded', 'false');
-            
-            setTimeout(() => {
-                if (button.getAttribute('data-expanded') === 'false') {
-                    childrenContainer.style.display = 'none';
-                }
-            }, 300);
-        } else {
-            childrenContainer.style.display = 'block';
-            childrenContainer.style.maxHeight = '0';
-            childrenContainer.style.opacity = '0';
-            childrenContainer.style.transform = 'translateY(-10px)';
-            
-            childrenContainer.offsetHeight;
-            
-            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
-            childrenContainer.style.opacity = '1';
-            childrenContainer.style.transform = 'translateY(0)';
-            
-            icon.style.transform = 'rotate(0deg)';
-            button.setAttribute('data-expanded', 'true');
-            
-            setTimeout(() => {
-                if (button.getAttribute('data-expanded') === 'true') {
-                    childrenContainer.style.maxHeight = '';
-                }
-            }, 300);
-        }
-    }
-
-    function toggleModalSubtaskParent(button) {
-        const subtaskId = button.getAttribute('data-subtask-id');
-        const childrenContainer = document.getElementById(`modal-subtask-children-${subtaskId}`);
-        const icon = button.querySelector('svg');
-        const isExpanded = button.getAttribute('data-expanded') === 'true';
-
-        if (isExpanded) {
-            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
-            childrenContainer.offsetHeight;
-            childrenContainer.style.maxHeight = '0';
-            childrenContainer.style.opacity = '0';
-            childrenContainer.style.transform = 'translateY(-10px)';
-            
-            icon.style.transform = 'rotate(-90deg)';
-            button.setAttribute('data-expanded', 'false');
-            
-            setTimeout(() => {
-                if (button.getAttribute('data-expanded') === 'false') {
-                    childrenContainer.style.display = 'none';
-                }
-            }, 300);
-        } else {
-            childrenContainer.style.display = 'block';
-            childrenContainer.style.maxHeight = '0';
-            childrenContainer.style.opacity = '0';
-            childrenContainer.style.transform = 'translateY(-10px)';
-            
-            childrenContainer.offsetHeight;
-            
-            childrenContainer.style.maxHeight = childrenContainer.scrollHeight + 'px';
-            childrenContainer.style.opacity = '1';
-            childrenContainer.style.transform = 'translateY(0)';
-            
-            icon.style.transform = 'rotate(0deg)';
-            button.setAttribute('data-expanded', 'true');
-            
-            setTimeout(() => {
-                if (button.getAttribute('data-expanded') === 'true') {
-                    childrenContainer.style.maxHeight = '';
-                }
-            }, 300);
-        }
-    }
-
-    // Enhanced UI update functions with real-time synchronization
-    function updateMainTaskUI(taskId, data) {
-        if (isUpdating) return;
-        
-        const mainTaskTitle = document.querySelector(`#task-item-${taskId} .task-title`);
-        const mainTaskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
-        
-        if (mainTaskCheckbox) {
-            mainTaskCheckbox.checked = data.task.completed;
-        }
-        
-        if (mainTaskTitle) {
-            if (data.task.completed) {
-                mainTaskTitle.classList.add('line-through', 'text-gray-400');
-            } else {
-                mainTaskTitle.classList.remove('line-through', 'text-gray-400');
-            }
-        }
-        
-        // Update progress if available
-        if (data.progressPercentage !== undefined) {
-            updateTaskProgressUI(taskId, data);
-        }
-    }
-
-    function updateModalTaskUI(taskId, data) {
-        if (!isModalOpen || currentModalTaskId != taskId) return;
-        
-        const modalTaskTitle = document.getElementById(`modal-task-title-${taskId}`);
-        const modalTaskCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
-        
-        if (modalTaskCheckbox) {
-            modalTaskCheckbox.checked = data.task.completed;
-        }
-        
-        if (modalTaskTitle) {
-            if (data.task.completed) {
-                modalTaskTitle.classList.add('line-through', 'text-gray-400');
-            } else {
-                modalTaskTitle.classList.remove('line-through', 'text-gray-400');
-            }
-        }
-    }
-
-    function updateSubtaskUI(subtaskId, data) {
-        const subtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]:not(.subtask-checkbox-modal)`);
-        if (!subtaskCheckbox) return;
-        
-        const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
-        
-        subtaskCheckbox.checked = data.subtask.completed;
-        
-        if (data.subtask.completed) {
-            subtaskText.classList.add('line-through', 'text-gray-400');
-            subtaskText.classList.remove('text-gray-700');
-        } else {
-            subtaskText.classList.remove('line-through', 'text-gray-400');
-            subtaskText.classList.add('text-gray-700');
-        }
-    }
-
-    function updateModalSubtaskUI(subtaskId, data) {
-        if (!isModalOpen) return;
-        
-        const modalSubtaskCheckbox = document.querySelector(`.subtask-checkbox-modal[data-sub-task-id="${subtaskId}"]`);
-        const modalSubtaskText = modalSubtaskCheckbox?.parentElement.nextElementSibling;
-        
-        if (modalSubtaskCheckbox) {
-            modalSubtaskCheckbox.checked = data.subtask.completed;
-        }
-        
-        if (modalSubtaskText) {
-            if (data.subtask.completed) {
-                modalSubtaskText.classList.add('line-through', 'text-gray-400');
-                modalSubtaskText.classList.remove('text-gray-700');
-            } else {
-                modalSubtaskText.classList.remove('line-through', 'text-gray-400');
-                modalSubtaskText.classList.add('text-gray-700');
-            }
-        }
-    }
-
-    function updateTaskProgressUI(taskId, data) {
-        const taskItem = document.getElementById(`task-item-${taskId}`);
-        if (!taskItem) return;
-        
-        const progressPercentage = taskItem.querySelector('.task-progress-percentage');
-        const subtaskProgressText = taskItem.querySelector('.subtask-progress-text');
-        const subtaskProgressBar = taskItem.querySelector('.subtask-progress-bar');
-        
-        if (progressPercentage && data.progressPercentage !== undefined) {
-            progressPercentage.textContent = `${data.progressPercentage}%`;
-        }
-        
-        if (subtaskProgressText && data.subtaskCompleted !== undefined && data.subtaskTotal !== undefined) {
-            subtaskProgressText.textContent = `Subtugas (${data.subtaskCompleted}/${data.subtaskTotal})`;
-        }
-        
-        if (subtaskProgressBar && data.progressPercentage !== undefined) {
-            subtaskProgressBar.style.width = `${data.progressPercentage}%`;
-        }
-    }
-
-    function updateAllSubtasksUI(taskId, isCompleted) {
-        const taskContainer = document.getElementById(`task-item-${taskId}`);
-        if (!taskContainer) return;
-        
-        const subtaskCheckboxes = taskContainer.querySelectorAll('.subtask-checkbox');
-        
-        subtaskCheckboxes.forEach(subtaskCheckbox => {
-            subtaskCheckbox.checked = isCompleted;
-            
-            const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
-            if (isCompleted) {
-                subtaskText.classList.add('line-through', 'text-gray-400');
-                subtaskText.classList.remove('text-gray-700');
-            } else {
-                subtaskText.classList.remove('line-through', 'text-gray-400');
-                subtaskText.classList.add('text-gray-700');
-            }
-        });
-    }
-
-    function updateModalSubtasksUI(taskId, isCompleted) {
-        if (!isModalOpen || currentModalTaskId != taskId) return;
-        
-        const modalSubtaskCheckboxes = document.querySelectorAll(`.subtask-checkbox-modal[data-task-id="${taskId}"]`);
-        
-        modalSubtaskCheckboxes.forEach(subtaskCheckbox => {
-            subtaskCheckbox.checked = isCompleted;
-            
-            const subtaskText = subtaskCheckbox.parentElement.nextElementSibling;
-            if (isCompleted) {
-                subtaskText.classList.add('line-through', 'text-gray-400');
-                subtaskText.classList.remove('text-gray-700');
-            } else {
-                subtaskText.classList.remove('line-through', 'text-gray-400');
-                subtaskText.classList.add('text-gray-700');
-            }
-        });
-    }
-
-    function updateSummaryUI(data) {
-        if (data.totalTasks !== undefined) {
-            document.getElementById('total-tasks-count').textContent = data.totalTasks;
-        }
-        
-        if (data.completedTasks !== undefined) {
-            document.getElementById('completed-tasks-count').textContent = data.completedTasks;
-        }
-        
-        if (data.overallProgress !== undefined) {
-            document.getElementById('overall-progress-percentage').textContent = `${data.overallProgress}%`;
-        }
-    }
-
-    // Enhanced data update function with proper synchronization
-    function updateTasksData(taskId, data) {
-        const taskIndex = tasksData.findIndex(t => t.id == taskId);
-        if (taskIndex === -1) return;
-        
-        // Update task completion status
-        tasksData[taskIndex].completed = data.task.completed;
-        
-        // Update specific subtask if exists in data
-        if (data.subtask && tasksData[taskIndex].sub_tasks) {
-            const subtaskIndex = tasksData[taskIndex].sub_tasks.findIndex(st => st.id == data.subtask.id);
-            if (subtaskIndex !== -1) {
-                tasksData[taskIndex].sub_tasks[subtaskIndex].completed = data.subtask.completed;
-            }
-        }
-        
-        // Update all subtasks if task completion changed
-        if (data.task.completed !== undefined && tasksData[taskIndex].sub_tasks) {
-            tasksData[taskIndex].sub_tasks.forEach(st => {
-                st.completed = data.task.completed;
-            });
-        }
-        
-        // Recalculate progress
-        if (tasksData[taskIndex].sub_tasks) {
-            const leafSubTasks = tasksData[taskIndex].sub_tasks.filter(st => 
-                !tasksData[taskIndex].sub_tasks.some(parent => parent.parent_id === st.id)
-            );
-            const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
-            const subtaskTotal = leafSubTasks.length;
-            tasksData[taskIndex].progressPercentage = subtaskTotal > 0 
-                ? Math.round((subtaskCompleted / subtaskTotal) * 100) 
-                : (tasksData[taskIndex].completed ? 100 : 0);
-        }
-    }
-
-    // Utility functions
-    function showLoadingIndicator() {
-        document.getElementById('loading-indicator').classList.remove('hidden');
-    }
-    
-    function hideLoadingIndicator() {
-        document.getElementById('loading-indicator').classList.add('hidden');
-    }
-
-    function showAutoSaveIndicator() {
-        const indicator = document.getElementById('modal-auto-save-indicator');
-        if (indicator) {
-            indicator.classList.remove('hidden');
-            clearTimeout(modalUpdateTimer);
-            modalUpdateTimer = setTimeout(() => {
-                indicator.classList.add('hidden');
-            }, 2000);
-        }
-    }
-
-    function hideAutoSaveIndicator() {
-        const indicator = document.getElementById('modal-auto-save-indicator');
-        if (indicator) {
-            indicator.classList.add('hidden');
-        }
-    }
-    
-    function showNotification(message, type = 'success') {
-        const container = document.getElementById('notification-container');
-        const notification = document.createElement('div');
-        
-        let bgColor, icon;
-        switch(type) {
-            case 'success':
-                bgColor = 'from-green-500 to-green-600';
-                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-                break;
-            case 'error':
-                bgColor = 'from-red-500 to-red-600';
-                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                break;
-            case 'info':
-                bgColor = 'from-blue-500 to-blue-600';
-                icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-                break;
-        }
-        
-        notification.className = `bg-gradient-to-r ${bgColor} text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 flex items-center gap-2 max-w-xs`;
-        notification.innerHTML = `
-            ${icon}
-            <span class="font-medium text-sm">${message}</span>
-        `;
-        
-        notification.style.transform = 'translateX(100%)';
-        notification.style.opacity = '0';
-        
-        container.appendChild(notification);
-        
-        setTimeout(() => {
-            notification.style.transform = 'translateX(0)';
-            notification.style.opacity = '1';
-        }, 10);
-        
-        setTimeout(() => {
-            notification.style.transform = 'translateX(100%)';
-            notification.style.opacity = '0';
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }, 3000);
-    }
-    
-    function updateCalendarTitle(calendar) {
-        const view = calendar.view;
-        let title = '';
-        
-        if (view.type === 'dayGridMonth') {
-            title = view.currentStart.toLocaleDateString('id-ID', { 
-                month: 'long', 
-                year: 'numeric' 
-            });
-        } else if (view.type === 'timeGridWeek') {
-            const start = view.currentStart;
-            const end = new Date(view.currentEnd);
-            end.setDate(end.getDate() - 1);
-            
-            const startMonth = start.toLocaleDateString('id-ID', { month: 'short' });
-            const endMonth = end.toLocaleDateString('id-ID', { month: 'short' });
-            
-            if (startMonth === endMonth) {
-                title = `${start.getDate()} - ${end.getDate()} ${startMonth} ${start.getFullYear()}`;
-            } else {
-                title = `${start.getDate()} ${startMonth} - ${end.getDate()} ${endMonth} ${start.getFullYear()}`;
-            }
-        }
-        
-        document.getElementById('calendar-title').textContent = title;
-    }
-    
-    function formatDateString(dateString) {
-        return new Date(dateString).toLocaleDateString('id-ID', { 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric' 
-        });
-    }
-    
-    function closeTaskModal() {
-        const modal = document.getElementById('taskModal');
-        modal.style.opacity = '0';
-        modal.style.transform = 'scale(0.95)';
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.style.opacity = '';
-            modal.style.transform = '';
-            modal.style.transition = '';
-            isModalOpen = false;
-            currentModalTaskId = null;
-            appState.modalState.taskId = null;
-        }, 300);
-    }
-</script>
-
-<style>
-    /* Enhanced CSS with modern animations and effects */
-    .vertical-tree {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .subtask-parent {
-        margin-bottom: 0.75rem;
-    }
-    
-    .subtask-children {
+    /* Filter animation styles */
+    .filter-btn {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        padding-left: 2rem;
+        border: 1px solid transparent;
     }
-    
-    .subtask-item {
-        margin-bottom: 0.5rem;
-        transition: all 0.2s ease-in-out;
+
+    .filter-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    
-    .subtask-item:hover {
-        transform: translateX(4px);
+
+    .filter-btn.active {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
     }
-    
-    .subtask-toggle-btn svg,
-    .subtask-parent-toggle-btn svg {
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .task-subtasks-container {
+
+    /* Task item filter animations */
+    .task-item {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-    }
-    
-    .task-title,
-    .subtask-parent-title {
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
     }
 
-    /* Modal specific styles */
-    .subtask-parent-modal {
-        margin-bottom: 0.5rem;
-    }
-    
-    .subtask-children-modal {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        padding-left: 1.5rem;
-    }
-    
-    .subtask-item-modal {
-        margin-bottom: 0.25rem;
-        transition: all 0.2s ease-in-out;
-    }
-
-    .subtask-item-modal:hover {
-        transform: translateX(2px);
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
-    }
-
-    /* Enhanced progress bar animation */
-    .subtask-progress-bar {
-        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Backdrop blur support */
-    .backdrop-blur-sm {
-        backdrop-filter: blur(4px);
-    }
-
-    /* Custom scrollbar */
-    .overflow-y-auto::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 2px;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 2px;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
-
-    /* Enhanced hover effects */
-    .hover\:scale-105:hover {
-        transform: scale(1.05);
-    }
-
-    /* Gradient text support */
-    .bg-clip-text {
-        -webkit-background-clip: text;
-        background-clip: text;
-    }
-
-    /* Enhanced shadow effects */
-    .shadow-2xl {
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    }
-
-    /* Pulse animation for completion indicator */
-    @keyframes pulse {
-        0%, 100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    .animate-pulse {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-   
-    /* Focus styles */
-    .focus\:ring-2:focus {
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-    }
-
-    /* Auto-save indicator animation */
-    .animate-bounce {
-        animation: bounce 1s infinite;
-    }
-
-    @keyframes bounce {
-        0%, 20%, 53%, 80%, 100% {
-            transform: translate3d(0,0,0);
-        }
-        40%, 43% {
-            transform: translate3d(0, -30px, 0);
-        }
-        70% {
-            transform: translate3d(0, -15px, 0);
-        }
-        90% {
-            transform: translate3d(0, -4px, 0);
-        }
-    }
-
-    /* Prevent layout shift during updates */
-    .task-item, .subtask-item, .subtask-item-modal {
-        min-height: fit-content;
-        will-change: transform;
-    }
-
-    /* Smooth state transitions */
-    .task-checkbox, .subtask-checkbox, .task-checkbox-modal, .subtask-checkbox-modal {
-        transition: all 0.2s ease-in-out;
-    }
-
-    /* Enhanced focus states for accessibility */
-    .task-checkbox:focus, .subtask-checkbox:focus, 
-    .task-checkbox-modal:focus, .subtask-checkbox-modal:focus {
-        outline: 2px solid #3b82f6;
-        outline-offset: 2px;
+    /* Empty state animations */
+    #filter-empty-state {
+        transition: all 0.3s ease-out;
     }
 </style>
-
 @endpush
