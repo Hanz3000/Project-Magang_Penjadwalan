@@ -154,8 +154,8 @@
                                         </div>
                                     </div>
                                     <div class="relative">
-                                        <input id="start_time" name="start_time" type="time" 
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                        <input id="start_time" name="start_time" type="text" readonly
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -181,8 +181,8 @@
                                         </div>
                                     </div>
                                     <div class="relative">
-                                        <input id="end_time" name="end_time" type="time" 
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                        <input id="end_time" name="end_time" type="text" readonly
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -297,7 +297,7 @@
             <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
         </div>
         
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true"></span>
         
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
             <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -366,9 +366,199 @@
     </div>
 </div>
 
+<!-- Time Picker Modal -->
+<div id="time-picker-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-6 bg-gradient-to-b from-blue-50 to-white">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Pilih Waktu</h3>
+                    <button id="close-time-picker" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center items-center gap-4 mb-6">
+                    <div class="relative flex flex-col items-center">
+                        <div class="w-20 h-40 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-100">
+                            <div id="hour-list" class="flex flex-col items-center py-2">
+                                <!-- Hours will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <span class="absolute top-1/2 left-1/2 transform -translate-y-1/2 -translate-x-full text-gray-500 text-xl mr-2">:</span>
+                    </div>
+                    <div class="relative flex flex-col items-center">
+                        <div class="w-20 h-40 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-100">
+                            <div id="minute-list" class="flex flex-col items-center py-2">
+                                <!-- Minutes will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-4">
+                    <button id="cancel-time" class="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors duration-200">Batal</button>
+                    <button id="ok-time" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('styles')
+<style>
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #3B82F6 #E5E7EB;
+}
+.scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: #E5E7EB;
+    border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #3B82F6;
+    border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #2563EB;
+}
+.time-option {
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.time-option:hover {
+    background-color: #EFF6FF;
+}
+.time-option.selected {
+    background-color: #DBEAFE;
+    font-weight: 600;
+}
+</style>
+@endpush
+
 @push('scripts')
 <script>
 let subtaskIdCounter = 0;
+let currentTimeInput = null;
+
+// Get today's date in YYYY-MM-DD format
+const today = new Date().toISOString().split('T')[0];
+
+// Time Picker Functions
+function openTimePicker(inputElement) {
+    currentTimeInput = inputElement;
+    const currentValue = inputElement.value || '21:15';
+    const [hours, minutes] = currentValue.split(':').map(Number);
+    
+    populateTimeLists(hours, minutes);
+    document.getElementById('time-picker-modal').classList.remove('hidden');
+}
+
+function closeTimePicker() {
+    document.getElementById('time-picker-modal').classList.add('hidden');
+    currentTimeInput = null;
+}
+
+function populateTimeLists(selectedHour, selectedMinute) {
+    const hourList = document.getElementById('hour-list');
+    const minuteList = document.getElementById('minute-list');
+    
+    // Populate hours (0-23)
+    hourList.innerHTML = '';
+    for (let i = 0; i <= 23; i++) {
+        const hourDiv = document.createElement('div');
+        hourDiv.className = `time-option ${i === selectedHour ? 'selected' : ''}`;
+        hourDiv.textContent = i.toString().padStart(2, '0');
+        hourDiv.dataset.value = i;
+        hourDiv.addEventListener('click', function() {
+            document.querySelectorAll('#hour-list .time-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+        hourList.appendChild(hourDiv);
+    }
+    
+    // Populate minutes (0-59)
+    minuteList.innerHTML = '';
+    for (let i = 0; i <= 59; i++) {
+        const minuteDiv = document.createElement('div');
+        minuteDiv.className = `time-option ${i === selectedMinute ? 'selected' : ''}`;
+        minuteDiv.textContent = i.toString().padStart(2, '0');
+        minuteDiv.dataset.value = i;
+        minuteDiv.addEventListener('click', function() {
+            document.querySelectorAll('#minute-list .time-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+        minuteList.appendChild(minuteDiv);
+    }
+    
+    // Auto-scroll to selected values
+    const selectedHourElement = hourList.querySelector(`.time-option[data-value="${selectedHour}"]`);
+    const selectedMinuteElement = minuteList.querySelector(`.time-option[data-value="${selectedMinute}"]`);
+    
+    if (selectedHourElement) {
+        hourList.scrollTop = selectedHourElement.offsetTop - hourList.offsetHeight / 2 + selectedHourElement.offsetHeight / 2;
+    }
+    if (selectedMinuteElement) {
+        minuteList.scrollTop = selectedMinuteElement.offsetTop - minuteList.offsetHeight / 2 + selectedMinuteElement.offsetHeight / 2;
+    }
+}
+
+function setTimeFromPicker() {
+    if (!currentTimeInput) return;
+    
+    const selectedHour = document.querySelector('#hour-list .time-option.selected')?.dataset.value || '0';
+    const selectedMinute = document.querySelector('#minute-list .time-option.selected')?.dataset.value || '0';
+    
+    currentTimeInput.value = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+    closeTimePicker();
+}
+
+// Initialize Time Picker and Date Restrictions
+document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date for end date input based on start date
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    // Ensure end date is not before start date
+    startDateInput.addEventListener('change', function() {
+        endDateInput.setAttribute('min', this.value);
+    });
+
+    // Set up time picker inputs
+    document.querySelectorAll('.time-picker-input').forEach(input => {
+        input.addEventListener('click', function() {
+            openTimePicker(this);
+        });
+    });
+    
+    document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
+    document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
+    document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
+    
+    // Set default time to current time
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTime = `${hours}:${minutes}`;
+    
+    if (!document.getElementById('start_time').value) {
+        document.getElementById('start_time').value = currentTime;
+    }
+    
+    if (!document.getElementById('end_time').value) {
+        const endTime = new Date(now.getTime() + 60 * 60 * 1000);
+        const endHours = String(endTime.getHours()).padStart(2, '0');
+        const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+        document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
+    }
+});
 
 // Category Management Functions
 function openCategoryModal() {
@@ -640,27 +830,8 @@ document.getElementById('task-form').addEventListener('submit', function(e) {
     }
 });
 
-// Set default time to current time
+// Priority selection functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Set default time to current time if not set
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const currentTime = `${hours}:${minutes}`;
-    
-    if (!document.getElementById('start_time').value) {
-        document.getElementById('start_time').value = currentTime;
-    }
-    
-    if (!document.getElementById('end_time').value) {
-        // Default end time is 1 hour after start time
-        const endTime = new Date(now.getTime() + 60 * 60 * 1000);
-        const endHours = String(endTime.getHours()).padStart(2, '0');
-        const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
-        document.getElementById('end_time').value = `${endHours}:${minutes}`;
-    }
-
-    // Priority selection functionality
     const priorityOptions = document.querySelectorAll('.priority-option input[type="radio"]');
     
     priorityOptions.forEach(option => {
