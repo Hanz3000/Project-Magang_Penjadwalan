@@ -237,17 +237,26 @@
                                     </button>
                                 </div>
                             </div>
-                            <div id="subtasks-container" class="p-6 space-y-3 min-h-[120px] bg-gray-50">
-                                <div class="text-center text-gray-500 text-sm py-8" id="no-subtasks">
-                                    <div class="flex flex-col items-center">
-                                        <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                        <span class="font-medium text-gray-400">Belum ada subtask</span>
-                                        <span class="text-gray-400 text-xs mt-1">Klik tombol "Tambah Subtask" untuk mulai menambahkan</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <div id="subtasks-container" class="relative p-6 space-y-3 min-h-[120px] bg-gray-50 overflow-x-auto">
+    <!-- Scroll Indicator -->
+    <div id="scroll-indicator" class="absolute top-2 right-2 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm hidden z-10">
+        ← Scroll untuk melihat lebih banyak
+    </div>
+
+    <!-- Subtasks Scroll Container -->
+    <div class="subtasks-scroll-container min-w-full">
+        <div class="text-center text-gray-500 text-sm py-8" id="no-subtasks">
+            <div class="flex flex-col items-center">
+                <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 17v-2a4 4 0 00-4-4H5a4 4 0 000 8h1a4 4 0 004-4zm0 0h6m0 0v2a4 4 0 004 4h1a4 4 0 000-8h-1a4 4 0 00-4 4v2z" />
+                </svg>
+                <span class="text-gray-400 text-xs mt-1">Klik tombol "Tambah Subtask" untuk mulai menambahkan</span>
+            </div>
+        </div>
+    </div>
+</div>
+
                         </div>
                     </div>
                 </div>
