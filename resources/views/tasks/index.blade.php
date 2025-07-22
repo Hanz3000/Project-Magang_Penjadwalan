@@ -495,6 +495,26 @@ function initializeCalendar() {
             info.jsEvent.preventDefault();
             openTaskModal(info.event.id);
         },
+        // Dalam fungsi initializeCalendar(), tambahkan:
+eventContent: function(arg) {
+    const isCompleted = arg.event.extendedProps.completed;
+    const isAllDay = arg.event.allDay;
+    
+    if (isAllDay) {
+        const title = isCompleted ? `<span style="text-decoration: line-through">${arg.event.title}</span>` : arg.event.title;
+        return { html: title };
+    } else {
+        const timeText = isCompleted ? `<span style="text-decoration: line-through">${arg.timeText}</span>` : arg.timeText;
+        const titleText = isCompleted ? `<span style="text-decoration: line-through">${arg.event.title}</span>` : arg.event.title;
+        
+        return {
+            html: `<div class="fc-event-main-frame">
+                ${arg.timeText ? `<div class="fc-event-time">${timeText}</div>` : ''}
+                <div class="fc-event-title">${titleText}</div>
+            </div>`
+        };
+    }
+},
         eventMouseEnter: function(info) {
             showTaskTooltip(info);
         },
@@ -555,7 +575,7 @@ function generateCalendarEvents() {
 }
 
 function getTaskColor(task) {
-    if (task.completed) return '#9ca3af';
+    if (task.completed) return '#9ca3af'; // Warna abu-abu solid untuk yang selesai
     switch(task.priority) {
         case 'urgent': return '#ef4444';
         case 'high': return '#f97316';
@@ -1102,10 +1122,12 @@ function syncTaskUIUpdates(taskId, data, source) {
     
     if (mainTitle) {
         if (task.completed) {
-            mainTitle.classList.add('line-through', 'text-gray-400');
-        } else {
-            mainTitle.classList.remove('line-through', 'text-gray-400');
-        }
+    mainTitle.classList.add('line-through');
+    mainTitle.style.color = '#9ca3af';
+} else {
+    mainTitle.classList.remove('line-through');
+    mainTitle.style.color = '';
+}
     }
     
     // Update modal if open
@@ -1118,11 +1140,13 @@ function syncTaskUIUpdates(taskId, data, source) {
         }
         
         if (modalTitle) {
-            if (task.completed) {
-                modalTitle.classList.add('line-through', 'text-gray-400');
-            } else {
-                modalTitle.classList.remove('line-through', 'text-gray-400');
-            }
+           if (task.completed) {
+    mainTitle.classList.add('line-through');
+    mainTitle.style.color = '#9ca3af';
+} else {
+    mainTitle.classList.remove('line-through');
+    mainTitle.style.color = '';
+}
         }
         
         // Update all modal subtasks if task is toggled
@@ -1217,11 +1241,11 @@ function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
 // ===== HELPER FUNCTIONS =====
 function updateTextStyle(element, completed) {
     if (completed) {
-        element.classList.add('line-through', 'text-gray-400');
-        element.classList.remove('text-gray-700');
+        element.classList.add('line-through');
+        element.style.color = '#9ca3af';
     } else {
-        element.classList.remove('line-through', 'text-gray-400');
-        element.classList.add('text-gray-700');
+        element.classList.remove('line-through');
+        element.style.color = '';
     }
 }
 
@@ -2093,11 +2117,11 @@ function formatDateString(dateString) {
         border-left-color: #22c55e !important;
     }
 
-    /* Completed task styling */
-    .fc-event.completed-task {
-        opacity: 0.7;
-        text-decoration: line-through;
-    }
+    /* Menjadi ini: */
+.completed-task {
+    color: #9ca3af !important;
+    text-decoration: line-through;
+}
 
     /* Improved responsive design */
     @media (max-width: 768px) {
@@ -2116,6 +2140,13 @@ function formatDateString(dateString) {
             font-size: 11px;
         }
     }
+
+    /* Tambahkan ini ke bagian CSS Anda */
+.fc-event.completed-task .fc-event-time,
+.fc-event.completed-task .fc-event-title {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
 </style>
 @endpush
 
