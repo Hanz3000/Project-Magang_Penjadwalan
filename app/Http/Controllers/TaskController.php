@@ -172,15 +172,37 @@ public function update(Request $request, Task $task)
         'subtasks.*.title' => 'required|string|max:255',
         'subtasks.*.parent_id' => 'nullable',
         'subtasks.*.id' => 'nullable|exists:sub_tasks,id', // Validasi jika ID subtask ada
+        'full_day' => 'nullable|in:true,false,1,0,on',
     ]);
+
+    // Jika full_day dicentang, override jam
+    if ($request->has('full_day')) {
+        $request->merge([
+            'start_time' => '00:00',
+            'end_time' => '23:59',
+        ]);
+    }
+
+    // Gabungkan subtask baru ke array subtasks
+    $subtasks = $request->input('subtasks', []);
+    $newSubtasks = $request->input('new_subtasks', []);
+
+    foreach ($newSubtasks as $tempId => $newSubtask) {
+        $subtasks[$tempId] = [
+            'title' => $newSubtask['title'],
+            'parent_id' => $newSubtask['parent_id'] ?? null,
+        ];
+    }
+
+    $request->merge(['subtasks' => $subtasks]);
 
     // Gunakan DB Transaction untuk memastikan semua operasi berhasil atau tidak sama sekali
     DB::transaction(function () use ($request, $task) {
         // 1. Update data Task utama
         $task->update($request->only([
-            'title', 'description', 'category_id', 'priority',
-            'start_date', 'end_date', 'start_time', 'end_time'
-        ]));
+    'title', 'description', 'category_id', 'priority',
+    'start_date', 'end_date', 'start_time', 'end_time'
+]));
 
         $subtasksFromRequest = $request->input('subtasks', []);
         $existingSubtaskIds = $task->subTasks()->pluck('id')->toArray();
