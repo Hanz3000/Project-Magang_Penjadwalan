@@ -172,7 +172,7 @@ public function update(Request $request, Task $task)
         'subtasks.*.title' => 'required|string|max:255',
         'subtasks.*.parent_id' => 'nullable',
         'subtasks.*.id' => 'nullable|exists:sub_tasks,id', // Validasi jika ID subtask ada
-        'full_day' => 'nullable|in:true,false,1,0,on',
+        'full_day' => 'nullable|boolean',
     ]);
 
     // Jika full_day dicentang, override jam
