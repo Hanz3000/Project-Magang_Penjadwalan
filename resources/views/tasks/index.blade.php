@@ -30,43 +30,89 @@
                 <!-- Calendar section with modern styling -->
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            Kalender Tugas
-                            <span id="calendar-completion-indicator" class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium border border-green-300 animate-pulse">
-                                🎉 Semua tugas selesai!
-                            </span>
-                        </h2>
-                        <div class="flex items-center gap-3">
-                            <button id="prev-month" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                                </svg>
-                            </button>
-                            <span id="calendar-title" class="text-lg font-semibold text-gray-800 min-w-[200px] text-center"></span>
-                            <button id="next-month" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                            <button id="today-btn" class="px-4 py-2 text-sm rounded-lg transition-all duration-200 bg-white text-blue-600 shadow-sm font-medium border border-blue-300 ml-2 hover:bg-blue-100">
-                                Hari Ini
-                            </button>
-                            <div class="flex bg-gray-100 p-1 rounded-xl ml-4">
-                                <button class="px-4 py-2 text-sm rounded-lg transition-all duration-200 fc-dayGridMonth-button text-gray-600 hover:text-gray-800 font-medium" id="month-view">
-                                    Bulan
-                                </button>
-                                <button class="px-4 py-2 text-sm rounded-lg transition-all duration-200 fc-timeGridWeek-button bg-white text-blue-600 shadow-sm font-medium" id="week-view">
-                                    Minggu
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+    <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        Kalender Tugas
+        <span id="calendar-completion-indicator"
+            class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium border border-green-300 animate-pulse">
+            🎉 Semua tugas selesai!
+        </span>
+    </h2>
+    <div class="flex items-center gap-3">
+        <button id="prev-month"
+            class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+        </button>
+        <button id="month-year-selector"
+            class="text-lg font-semibold text-gray-800 min-w-[200px] text-center hover:bg-gray-100 px-3 py-1 rounded-lg transition-all duration-200">
+            <span id="calendar-title"></span>
+            <svg class="w-4 h-4 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+        <button id="next-month"
+            class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        </button>
+        <div class="flex bg-gray-100 p-1 rounded-xl ml-2">
+            <button id="today-btn"
+                class="px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium text-blue-600 bg-white shadow-sm hover:bg-blue-100">
+                Hari Ini
+            </button>
+            <button id="month-view"
+                class="px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium text-blue-600 bg-white shadow-sm hover:bg-blue-100 ml-2">
+                Bulan
+            </button>
+            <button id="week-view"
+                class="px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium text-gray-600 hover:text-gray-800 ml-2">
+                Minggu
+            </button>
+        </div>
+    </div>
+</div>
+
                     <div id="calendar" style="height: 600px;" class="rounded-xl overflow-hidden border border-gray-200 shadow-inner"></div>
                 </div>
 
+
+                <!-- Month Year Picker Modal -->
+<div id="monthYearPickerModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">Pilih Bulan</h3>
+            <button onclick="closeMonthYearPicker()" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-4 gap-2 mb-4" id="month-selector">
+                <!-- Months will be populated by JavaScript -->
+            </div>
+            <div class="flex justify-between items-center mb-4">
+                <button id="prev-year" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <span id="current-year" class="text-lg font-semibold text-gray-800"></span>
+                <button id="next-year" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>3
                 <!-- Task list section with enhanced design and ACTIVE FILTER -->
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
                     <div class="flex justify-between items-center mb-6">
@@ -198,11 +244,11 @@ $html .= '</form>';
                                                     
                                                     <div class="flex items-center gap-3 text-sm text-gray-500 mt-2">
                                                         <div class="flex items-center gap-1">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                                            </svg>
-                                                            <span>{{ $task['start_date_formatted'] }} - {{ $task['end_date_formatted'] }}</span>
-                                                        </div>
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+    </svg>
+    <span>{{ $task['start_date_formatted'] }} - {{ $task['end_date_formatted'] }}</span>
+</div>
                                                         <span class="text-xs text-gray-300">•</span>
                                                         <div class="flex items-center gap-1">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,12 +258,14 @@ $html .= '</form>';
                                                         </div>
                                                         @if($subtaskTotal > 0)
                                                         <span class="text-xs text-gray-300">•</span>
-                                                        <div class="flex items-center gap-1">
-                                                            <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z"></path>
-                                                            </svg>
-                                                            <span class="text-blue-600 font-medium task-progress-percentage">{{ $progressPercentage }}%</span>
-                                                        </div>
+                                                        <div class="flex items-center gap-1 text-blue-600">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 3v18h18M9 17V9m4 8v-5m4 5v-9" />
+    </svg>
+    <span class="font-medium task-progress-percentage">{{ $progressPercentage }}%</span>
+</div>
+
                                                         @endif
                                                     </div>
                                                 </div>
@@ -333,23 +381,28 @@ $html .= '</form>';
                     </div>
                 </div>
 
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-6">Prioritas</h2>
-                    <div class="space-y-4">
-                        @foreach(['urgent' => 'Sangat mendesak', 'high' => 'Tinggi', 'medium' => 'Sedang', 'low' => 'Rendah'] as $key => $label)
-                        <div>
-                            <div class="flex justify-between text-sm text-gray-600 mb-2">
-                                <span class="font-medium">{{ $label }}</span>
-                                <span>{{ $priorityCounts[$key] ?? 0 }} Tugas</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-gradient-to-r @if($key == 'urgent') from-red-500 to-red-600 @elseif($key == 'high') from-orange-500 to-orange-600 @elseif($key == 'medium') from-yellow-500 to-yellow-600 @else from-green-500 to-green-600 @endif h-2 rounded-full transition-all duration-500"
-                                    style="width: {{ $totalTasks > 0 ? (($priorityCounts[$key] ?? 0) / $totalTasks) * 100 : 0 }}%"></div>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
+               
+<div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-6">Prioritas</h2>
+    <div class="space-y-4">
+        @foreach(['urgent' => 'Urgent', 'high' => 'Tinggi', 'medium' => 'Sedang', 'low' => 'Rendah'] as $key => $label)
+        <div>
+            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                <span class="font-medium">{{ $label }}</span>
+                <span>{{ $priorityCounts[$key] ?? 0 }} Tugas</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-gradient-to-r 
+                    @if($key == 'urgent') from-red-500 to-red-600 
+                    @elseif($key == 'high') from-yellow-500 to-yellow-600 
+                    @elseif($key == 'medium') from-blue-500 to-blue-600 
+                    @else from-green-500 to-green-600 @endif h-2 rounded-full transition-all duration-500"
+                    style="width: {{ $totalTasks > 0 ? (($priorityCounts[$key] ?? 0) / $totalTasks) * 100 : 0 }}%"></div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
 
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
                     <div class="flex justify-between items-center mb-6">
@@ -473,7 +526,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeCalendar() {
     const calendarEl = document.getElementById('calendar');
     appState.calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek', // Start with week view
+        initialView: 'dayGridMonth', // Start with week view
         locale: 'id',
         headerToolbar: false,
         height: 600,
@@ -544,6 +597,8 @@ eventContent: function(arg) {
 function generateCalendarEvents() {
     return appState.tasksData.map(task => {
         const color = getTaskColor(task);
+        const isAllDay = !task.start_time || !task.end_time;
+
         const eventData = {
             id: task.id.toString(),
             title: task.title,
@@ -555,16 +610,18 @@ function generateCalendarEvents() {
                 completed: task.completed,
                 startTime: task.start_time,
                 endTime: task.end_time,
-                isAllDay: !task.start_time || !task.end_time
+                isAllDay: isAllDay
             },
             className: `priority-${task.priority} ${task.completed ? 'completed-task' : 'active-task'}`,
             backgroundColor: color,
             borderColor: color,
-            allDay: !task.start_time || !task.end_time
+            textColor: '#fff',               // Tambahan agar teks terlihat jelas di warna gelap
+            allDay: isAllDay,
+            display: 'block'                // ✅ Inilah kunci agar tampilannya selalu blok warna
         };
 
         // Koreksi endDate untuk all-day event
-        if (!task.start_time && !task.end_time) {
+        if (isAllDay) {
             const endDate = new Date(task.end_date);
             endDate.setDate(endDate.getDate() + 1);
             eventData.end = endDate.toISOString().split('T')[0];
@@ -574,13 +631,16 @@ function generateCalendarEvents() {
     });
 }
 
+
 function getTaskColor(task) {
     if (task.completed) return '#9ca3af'; // Warna abu-abu solid untuk yang selesai
+    
+    // Warna lebih cerah untuk event di hari yang sama
     switch(task.priority) {
-        case 'urgent': return '#ef4444';
-        case 'high': return '#f97316';
-        case 'medium': return '#eab308';
-        case 'low': return '#22c55e';
+        case 'urgent': return '#ef4444'; // merah (urgent)
+        case 'high': return '#eab308';   // kuning (tinggi)
+        case 'medium': return '#3b82f6'; // biru (sedang)
+        case 'low': return '#22c55e';    // hijau (rendah)
         default: return '#3b82f6';
     }
 }
@@ -595,11 +655,11 @@ function showTaskTooltip(info) {
     if (!task) return;
 
     const priorityLabels = {
-        'urgent': 'Sangat Mendesak',
-        'high': 'Tinggi', 
-        'medium': 'Sedang',
-        'low': 'Rendah'
-    };
+    'urgent': 'Urgent',
+    'high': 'Tinggi', 
+    'medium': 'Sedang',
+    'low': 'Rendah'
+};
 
     const timeInfo = task.start_time && task.end_time 
         ? `<div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
@@ -663,8 +723,8 @@ function hideTaskTooltip() {
 function getPriorityBadgeClass(priority) {
     switch(priority) {
         case 'urgent': return 'bg-red-100 text-red-800';
-        case 'high': return 'bg-orange-100 text-orange-800';
-        case 'medium': return 'bg-yellow-100 text-yellow-800';
+        case 'high': return 'bg-yellow-100 text-yellow-800';
+        case 'medium': return 'bg-blue-100 text-blue-800';
         case 'low': return 'bg-green-100 text-green-800';
         default: return 'bg-blue-100 text-blue-800';
     }
@@ -1838,6 +1898,90 @@ function formatDateString(dateString) {
         year: 'numeric' 
     });
 }
+
+// Month Year Picker Functions
+function initializeMonthYearPicker() {
+    const monthNames = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    
+    const monthSelector = document.getElementById('month-selector');
+    const currentYearEl = document.getElementById('current-year');
+    let currentYear = new Date().getFullYear();
+    
+    // Populate months
+    monthNames.forEach((month, index) => {
+        const monthBtn = document.createElement('button');
+        monthBtn.className = 'py-2 px-3 text-sm font-medium rounded-lg hover:bg-blue-100 transition-all duration-200';
+        monthBtn.textContent = month.substring(0, 3);
+        monthBtn.dataset.month = index;
+        monthBtn.addEventListener('click', () => {
+            selectMonthYear(index, currentYear);
+        });
+        monthSelector.appendChild(monthBtn);
+    });
+    
+    // Update year display
+    function updateYearDisplay() {
+        currentYearEl.textContent = currentYear;
+    }
+    
+    // Navigation
+    document.getElementById('prev-year').addEventListener('click', () => {
+        currentYear--;
+        updateYearDisplay();
+    });
+    
+    document.getElementById('next-year').addEventListener('click', () => {
+        currentYear++;
+        updateYearDisplay();
+    });
+    
+    // Open modal when month/year selector is clicked
+    document.getElementById('month-year-selector').addEventListener('click', openMonthYearPicker);
+    
+    // Initialize
+    updateYearDisplay();
+}
+
+function openMonthYearPicker() {
+    const modal = document.getElementById('monthYearPickerModal');
+    modal.classList.remove('hidden');
+    modal.style.opacity = '0';
+    modal.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        modal.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+        modal.style.transition = 'all 0.3s ease-out';
+    }, 10);
+}
+
+function closeMonthYearPicker() {
+    const modal = document.getElementById('monthYearPickerModal');
+    modal.style.opacity = '0';
+    modal.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.style.opacity = '';
+        modal.style.transform = '';
+        modal.style.transition = '';
+    }, 300);
+}
+
+function selectMonthYear(month, year) {
+    const date = new Date(year, month, 1);
+    appState.calendar.gotoDate(date);
+    updateCalendarTitle();
+    closeMonthYearPicker();
+}
+
+// Panggil fungsi inisialisasi di DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMonthYearPicker();
+});
 </script>
 
 <style>
@@ -2099,23 +2243,22 @@ function formatDateString(dateString) {
         transition: all 0.2s ease-out;
     }
 
-    /* Event priority indicators */
-    .fc-event.priority-urgent {
-        border-left-color: #ef4444 !important;
-        
-    }
+    /* Update the event priority indicators */
+.fc-event.priority-urgent {
+    border-left-color: #ef4444 !important;
+}
 
-    .fc-event.priority-high {
-        border-left-color: #f97316 !important;
-    }
+.fc-event.priority-high {
+    border-left-color: #eab308 !important;
+}
 
-    .fc-event.priority-medium {
-        border-left-color: #eab308 !important;
-    }
+.fc-event.priority-medium {
+    border-left-color: #3b82f6 !important;
+}
 
-    .fc-event.priority-low {
-        border-left-color: #22c55e !important;
-    }
+.fc-event.priority-low {
+    border-left-color: #22c55e !important;
+}
 
     /* Menjadi ini: */
 .completed-task {
@@ -2147,6 +2290,50 @@ function formatDateString(dateString) {
     text-decoration: line-through;
     opacity: 0.7;
 }
+   /* Style angka tanggal hari ini jadi lingkaran biru */
+    .fc-day-today .fc-daygrid-day-number {
+        background-color: #2563eb; /* biru-600 */
+        color: white;
+        border-radius: 9999px;
+        padding: 2px 8px;
+        font-weight: bold;
+        display: inline-block;
+    }
+
+    /* Border biru di seluruh kotak hari ini */
+    .fc-day-today {
+        border: 2px solid #2563eb !important;
+        background-color: #f0f9ff !important; /* sedikit biru muda */
+    }
+
+    /* Hilangkan efek highlight default FullCalendar */
+    .fc-day-today:not(.fc-selected) {
+        background-color: transparent !important;
+    }
+
+    /* Tambahkan ke bagian CSS Anda */
+.fc-daygrid-event {
+    z-index: 5 !important; /* Pastikan event di atas grid */
+    margin: 1px 2px !important; /* Beri sedikit jarak */
+}
+
+.fc-event {
+    border-left-width: 5px !important;
+    border-left-style: solid !important;
+    border-radius: 4px;
+}
+
+/* Pastikan event yang bertumpuk tetap terlihat */
+.fc-daygrid-block-event {
+    position: relative;
+    z-index: 5;
+}
+
+/* Highlight lebih kuat untuk event di hari yang sama */
+.fc-daygrid-day-events {
+    min-height: 20px; /* Pastikan ada ruang untuk event */
+}
+
 </style>
 @endpush
 
