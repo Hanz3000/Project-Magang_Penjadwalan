@@ -202,7 +202,7 @@
                                     </div>
                                     <div class="relative">
                                         <input id="start_time" name="start_time" type="text" readonly
-                                               value="{{ old('start_time', $task->start_time ? $task->start_time->format('H:i') : '') }}"
+                                               value="{{ old('start_time', $task->start_time ? $task->start_time->format('H:i') : '00:00') }}"
                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('start_time') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +220,7 @@
                             </div>
                             
                             <!-- End Date & Time -->
-                            <div>
+                            < cores>
                                 <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
                                     Tanggal Selesai <span class="text-red-500">*</span>
                                 </label>
@@ -237,7 +237,7 @@
                                     </div>
                                     <div class="relative">
                                         <input id="end_time" name="end_time" type="text" readonly
-                                               value="{{ old('end_time', $task->end_time ? $task->end_time->format('H:i') : '') }}"
+                                               value="{{ old('end_time', $task->end_time ? $task->end_time->format('H:i') : '23:59') }}"
                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('end_time') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,7 +257,8 @@
                         <!-- Full Day Button -->
                         <div class="mt-4">
                             <label class="inline-flex items-center">
-                                <input type="checkbox" id="full_day_toggle" name="full_day" class="form-checkbox h-5 w-5 text-blue-600" {{ old('full_day', $task->full_day) ? 'checked' : '' }}>
+                                <input type="checkbox" id="full_day_toggle" name="full_day" class="form-checkbox h-5 w-5 text-blue-600" 
+                                      {{ $task->full_day ? 'checked' : '' }}>
                                 <span class="ml-2 text-gray-700">Sehari Penuh</span>
                             </label>
                         </div>
@@ -509,7 +510,6 @@ const today = new Date().toISOString().split('T')[0];
 // Time Picker Functions
 function openTimePicker(inputElement) {
     currentTimeInput = inputElement;
-    // Use the input's current value or default to '00:00' if empty
     const currentValue = inputElement.value || '00:00';
     const [hours, minutes] = currentValue.split(':').map(Number) || [0, 0];
     
@@ -570,69 +570,57 @@ function setTimeFromPicker() {
     const selectedMinute = document.querySelector('#minute-list .time-option.selected')?.dataset.value || '0';
     
     currentTimeInput.value = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+    document.getElementById('full_day_toggle').checked = false;
+    document.getElementById('start_time').disabled = false;
+    document.getElementById('end_time').disabled = false;
     closeTimePicker();
 }
 
 // Initialize Time Picker and Full Day Toggle
 document.addEventListener('DOMContentLoaded', function() {
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
     const startTimeInput = document.getElementById('start_time');
     const endTimeInput = document.getElementById('end_time');
     const fullDayToggle = document.getElementById('full_day_toggle');
-
-    // Set minimum date for end_date based on start_date
-    startDateInput.addEventListener('change', function() {
-        endDateInput.setAttribute('min', this.value);
-    });
-
-    // Initialize time picker inputs
-    document.querySelectorAll('.time-picker-input').forEach(input => {
-        input.addEventListener('click', function() {
-            if (!this.disabled) {
-                openTimePicker(this);
-            }
-        });
-    });
-    
-    document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
-    document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
-    document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
-
-    // Initialize time inputs based on task data
-    if (!startTimeInput.value) {
-        startTimeInput.value = '00:00';
-    }
-    if (!endTimeInput.value) {
-        endTimeInput.value = '23:59';
-    }
-
-    // Handle full day toggle
-    fullDayToggle.addEventListener('change', function() {
-        if (this.checked) {
-            startTimeInput.value = '00:00';
-            endTimeInput.value = '23:59';
-            startTimeInput.disabled = true;
-            endTimeInput.disabled = true;
-        } else {
-            startTimeInput.disabled = false;
-            endTimeInput.disabled = false;
-            // Restore original or default time if available
-            startTimeInput.value = startTimeInput.dataset.originalTime || '00:00';
-            endTimeInput.value = endTimeInput.dataset.originalTime || '23:59';
-        }
-    });
 
     // Store original time values for restoration
     startTimeInput.dataset.originalTime = startTimeInput.value;
     endTimeInput.dataset.originalTime = endTimeInput.value;
 
-    // Initialize full day toggle state
-    if (fullDayToggle.checked) {
-        startTimeInput.value = '00:00';
-        endTimeInput.value = '23:59';
+    // Auto-check full day if times are default full day times
+    if (startTimeInput.value === '00:00' && endTimeInput.value === '23:59') {
+        fullDayToggle.checked = true;
         startTimeInput.disabled = true;
         endTimeInput.disabled = true;
+    }
+
+    // Full day toggle change handler
+    fullDayToggle.addEventListener('change', function() {
+        if (this.checked) {
+            // Save current time before overriding
+            startTimeInput.dataset.originalTime = startTimeInput.value;
+            endTimeInput.dataset.originalTime = endTimeInput.value;
+
+            startTimeInput.value = '00:00';
+            endTimeInput.value = '23:59';
+            startTimeInput.disabled = true;
+            endTimeInput.disabled = true;
+        } else {
+            // Restore time and make editable
+            startTimeInput.disabled = false;
+            endTimeInput.disabled = false;
+            startTimeInput.value = startTimeInput.dataset.originalTime || '00:00';
+            endTimeInput.value = endTimeInput.dataset.originalTime || '23:59';
+            
+            // Make time inputs clickable for time picker
+            startTimeInput.addEventListener('click', () => openTimePicker(startTimeInput));
+            endTimeInput.addEventListener('click', () => openTimePicker(endTimeInput));
+        }
+    });
+
+    // Initialize time picker click handlers if not full day
+    if (!fullDayToggle.checked) {
+        startTimeInput.addEventListener('click', () => openTimePicker(startTimeInput));
+        endTimeInput.addEventListener('click', () => openTimePicker(endTimeInput));
     }
 });
 
@@ -651,9 +639,7 @@ function getIndentLevel(element) {
 
 function addSubtask(parentElement = null) {
     const noSubtasksMsg = document.getElementById('no-subtasks');
-    if (noSubtasksMsg) {
-        noSubtasksMsg.style.display = 'none';
-    }
+    if (noSubtasksMsg) noSubtasksMsg.style.display = 'none';
 
     const parentId = parentElement?.dataset.id || null;
     const indentLevel = getIndentLevel(parentElement);
@@ -722,9 +708,7 @@ function removeSubtask(element) {
         const subtasks = container.querySelectorAll('.subtask-item');
         if (subtasks.length === 0) {
             const noSubtasksMsg = document.getElementById('no-subtasks');
-            if (noSubtasksMsg) {
-                noSubtasksMsg.style.display = 'block';
-            }
+            if (noSubtasksMsg) noSubtasksMsg.style.display = 'block';
         }
     }
 }
