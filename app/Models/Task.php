@@ -36,7 +36,7 @@ class Task extends Model
 
     public function subTasks()
     {
-        return $this->hasMany(SubTask::class)->orderBy('id');
+        return $this->hasMany(SubTask::class)->orderBy('parent_id')->orderBy('created_at');
     }
 
     public function getDurationDaysAttribute()

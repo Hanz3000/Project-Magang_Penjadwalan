@@ -299,7 +299,7 @@
                         <div class="mt-4">
                             <label class="inline-flex items-center">
                                 <input type="checkbox" id="full_day_toggle" name="full_day" value="1"
-    class="form-checkbox h-5 w-5 text-blue-600" {{ $task->full_day ? 'checked' : '' }}>
+                                    class="form-checkbox h-5 w-5 text-blue-600" {{ $task->full_day ? 'checked' : '' }}>
                                 <span class="ml-2 text-gray-700">Sehari Penuh</span>
                             </label>
                         </div>
@@ -345,8 +345,7 @@
                                                 d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
                                             </path>
                                         </svg>
-                                        <span class="text-sm font-medium text-indigo-700">Daftar Subtask (Maksimal 6
-                                            level)</span>
+                                        <span class="text-sm font-medium text-indigo-700">Daftar Subtask</span>
                                     </div>
                                     <button type="button" id="add-subtask-button" onclick="addSubtask(null)"
                                         class="inline-flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-sm font-medium shadow-sm">
@@ -370,168 +369,17 @@
                                 <!-- Subtasks Scroll Container -->
                                 <div class="subtasks-scroll-container min-w-full">
                                     @if ($task->subTasks && $task->subTasks->count() > 0)
-                                        @foreach ($task->subTasks->where('parent_id', null) as $index => $subtask)
-                                            <div class="subtask-item" data-id="{{ $subtask->id }}">
-                                                <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
-                                                    style="margin-left: 0px;">
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="flex-1">
-                                                            <input type="hidden"
-                                                                name="subtasks[{{ $index }}][id]"
-                                                                value="{{ $subtask->id }}">
-                                                            <input type="text"
-                                                                name="subtasks[{{ $index }}][title]"
-                                                                value="{{ $subtask->title }}"
-                                                                placeholder="Masukkan nama subtask"
-                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                                                required>
-                                                            <input type="hidden"
-                                                                name="subtasks[{{ $index }}][parent_id]"
-                                                                value="{{ $subtask->parent_id ?? '' }}">
-                                                        </div>
-                                                        <div class="flex gap-2">
-                                                            <button type="button"
-                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                                                onclick="addSubtask(this.closest('.subtask-item'))"
-                                                                title="Tambah Sub-subtask">
-                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
-                                                                    viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
-                                                                    </path>
-                                                                </svg>
-                                                            </button>
-                                                            <button type="button"
-                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
-                                                                title="Hapus Subtask">
-                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
-                                                                    viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mt-3 space-y-3 child-container">
-                                                        @foreach ($task->subTasks->where('parent_id', $subtask->id) as $childIndex => $childSubtask)
-                                                            <div class="subtask-item" data-id="{{ $childSubtask->id }}">
-                                                                <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
-                                                                    style="margin-left: 20px;">
-                                                                    <div class="flex items-center gap-3">
-                                                                        <div class="flex-1">
-                                                                            <input type="hidden"
-                                                                                name="subtasks[{{ $index }}_{{ $childIndex }}][id]"
-                                                                                value="{{ $childSubtask->id }}">
-                                                                            <input type="text"
-                                                                                name="subtasks[{{ $index }}_{{ $childIndex }}][title]"
-                                                                                value="{{ $childSubtask->title }}"
-                                                                                placeholder="Masukkan nama subtask"
-                                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                                                                required>
-                                                                            <input type="hidden"
-                                                                                name="subtasks[{{ $index }}_{{ $childIndex }}][parent_id]"
-                                                                                value="{{ $childSubtask->parent_id ?? '' }}">
-                                                                        </div>
-                                                                        <div class="flex gap-2">
-                                                                            <button type="button"
-                                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                                                                onclick="addSubtask(this.closest('.subtask-item'))"
-                                                                                title="Tambah Sub-subtask">
-                                                                                <svg class="w-3 h-3" fill="none"
-                                                                                    stroke="currentColor"
-                                                                                    viewBox="0 0 24 24">
-                                                                                    <path stroke-linecap="round"
-                                                                                        stroke-linejoin="round"
-                                                                                        stroke-width="2"
-                                                                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6">
-                                                                                    </path>
-                                                                                </svg>
-                                                                            </button>
-                                                                            <button type="button"
-                                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
-                                                                                title="Hapus Subtask">
-                                                                                <svg class="w-3 h-3" fill="none"
-                                                                                    stroke="currentColor"
-                                                                                    viewBox="0 0 24 24">
-                                                                                    <path stroke-linecap="round"
-                                                                                        stroke-linejoin="round"
-                                                                                        stroke-width="2"
-                                                                                        d="M6 18L18 6M6 6l12 12"></path>
-                                                                                </svg>
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="mt-3 space-y-3 child-container">
-                                                                        @foreach ($task->subTasks->where('parent_id', $childSubtask->id) as $grandChildIndex => $grandChildSubtask)
-                                                                            <div class="subtask-item"
-                                                                                data-id="{{ $grandChildSubtask->id }}">
-                                                                                <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm"
-                                                                                    style="margin-left: 40px;">
-                                                                                    <div class="flex items-center gap-3">
-                                                                                        <div class="flex-1">
-                                                                                            <input type="hidden"
-                                                                                                name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][id]"
-                                                                                                value="{{ $grandChildSubtask->id }}">
-                                                                                            <input type="text"
-                                                                                                name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][title]"
-                                                                                                value="{{ $grandChildSubtask->title }}"
-                                                                                                placeholder="Masukkan nama subtask"
-                                                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                                                                                required>
-                                                                                            <input type="hidden"
-                                                                                                name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][parent_id]"
-                                                                                                value="{{ $grandChildSubtask->parent_id ?? '' }}">
-                                                                                        </div>
-                                                                                        <div class="flex gap-2">
-                                                                                            <button type="button"
-                                                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                                                                                onclick="addSubtask(this.closest('.subtask-item'))"
-                                                                                                title="Tambah Sub-subtask">
-                                                                                                <svg class="w-3 h-3"
-                                                                                                    fill="none"
-                                                                                                    stroke="currentColor"
-                                                                                                    viewBox="0 0 24 24">
-                                                                                                    <path
-                                                                                                        stroke-linecap="round"
-                                                                                                        stroke-linejoin="round"
-                                                                                                        stroke-width="2"
-                                                                                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6">
-                                                                                                    </path>
-                                                                                                </svg>
-                                                                                            </button>
-                                                                                            <button type="button"
-                                                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
-                                                                                                title="Hapus Subtask">
-                                                                                                <svg class="w-3 h-3"
-                                                                                                    fill="none"
-                                                                                                    stroke="currentColor"
-                                                                                                    viewBox="0 0 24 24">
-                                                                                                    <path
-                                                                                                        stroke-linecap="round"
-                                                                                                        stroke-linejoin="round"
-                                                                                                        stroke-width="2"
-                                                                                                        d="M6 18L18 6M6 6l12 12">
-                                                                                                    </path>
-                                                                                                </svg>
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div
-                                                                                        class="mt-3 space-y-3 child-container">
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                        @endforeach
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        @php
+                                            $subtasksByParent = $task->subTasks->groupBy('parent_id');
+                                            $rootSubtasks = $subtasksByParent->get(null, collect());
+                                        @endphp
+
+                                        @foreach ($rootSubtasks as $subtask)
+                                            @include('tasks.partials.subtask-item', [
+                                                'subtask' => $subtask,
+                                                'subtasksByParent' => $subtasksByParent,
+                                                'level' => 0,
+                                            ])
                                         @endforeach
                                     @else
                                         <div class="text-center text-gray-500 text-sm py-8" id="no-subtasks">
@@ -783,74 +631,73 @@
                 return level;
             }
 
-            function addSubtask(parentElement = null) {
+            function addSubtask(parentElement = null, parentId = null, level = 0) {
                 const noSubtasksMsg = document.getElementById('no-subtasks');
                 if (noSubtasksMsg) noSubtasksMsg.style.display = 'none';
 
-                const parentId = parentElement?.dataset.id || null;
-                const indentLevel = getIndentLevel(parentElement);
-
-                if (indentLevel >= 6) {
+                if (level >= 6) {
                     alert('Maksimal 6 level subtask telah tercapai');
                     return;
                 }
 
                 const subtaskWrapper = document.createElement('div');
-                const currentId = ++subtaskIdCounter;
-                subtaskWrapper.dataset.id = currentId;
+                const tempId = 'new_' + crypto.randomUUID();
+                subtaskWrapper.dataset.id = tempId;
                 subtaskWrapper.className = 'subtask-item';
 
-                const marginLeft = indentLevel * 20;
+                const marginLeft = level * 20;
 
                 subtaskWrapper.innerHTML = `
-                <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
-                    <div class="flex items-center gap-3">
-                        <div class="flex-1">
-                            <input type="text" name="new_subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
-                            <input type="hidden" name="new_subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
-                        </div>
-                        <div class="flex gap-2">
-                            <button type="button"
-                                    class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                    onclick="addSubtask(this.closest('.subtask-item'))"
-                                    title="Tambah Sub-subtask">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                            </button>
-                            <button type="button"
-                                    class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                    onclick="removeSubtask(this.closest('.subtask-item'))"
-                                    title="Hapus Subtask">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
-                        </div>
+            <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
+                <div class="flex items-center gap-3">
+                    <div class="flex-1">
+                        <input type="text" name="subtasks[${tempId}][title]" placeholder="Masukkan nama subtask"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                        <input type="hidden" name="subtasks[${tempId}][parent_id]" value="${parentId ?? ''}">
                     </div>
-                    <div class="mt-3 space-y-3 child-container"></div>
+                    <div class="flex gap-2">
+                        ${level < 5 ? `
+                                                                                <button type="button"
+                                                                                        class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                                                                                        onclick="addSubtask(this.closest('.subtask-item'), '${tempId}', ${level + 1})"
+                                                                                        title="Tambah Sub-subtask">
+                                                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                                                    </svg>
+                                                                                </button>
+                                                                                ` : ''}
+                        <button type="button"
+                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                                onclick="removeSubtask(this.closest('.subtask-item'))"
+                                title="Hapus Subtask">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-            `;
+                <div class="mt-3 space-y-3 child-container"></div>
+            </div>
+        `;
 
-                const container = parentElement?.querySelector('.child-container') || document.querySelector(
-                    '#subtasks-container .subtasks-scroll-container');
-                if (container.firstChild && container.firstChild.id === 'no-subtasks') {
-                    container.insertBefore(subtaskWrapper, container.firstChild.nextSibling);
-                } else {
-                    container.insertBefore(subtaskWrapper, container.firstChild);
-                }
+                const container = parentElement?.querySelector('.child-container') ||
+                    document.getElementById('subtasks-container');
+                container.appendChild(subtaskWrapper);
             }
 
             function removeSubtask(element) {
                 if (confirm('Apakah Anda yakin ingin menghapus subtask ini beserta semua subtask di bawahnya?')) {
                     const subtaskId = element.dataset.id;
-                    if (subtaskId) {
+
+                    // Jika subtask sudah ada di database (bukan baru), tambahkan ke daftar yang dihapus
+                    if (subtaskId && !subtaskId.startsWith('new_')) {
                         deletedSubtasks.push(subtaskId);
                         document.getElementById('deleted_subtasks').value = deletedSubtasks.join(',');
                     }
+
                     element.remove();
 
+                    // Periksa apakah masih ada subtask
                     const container = document.getElementById('subtasks-container');
                     const subtasks = container.querySelectorAll('.subtask-item');
                     if (subtasks.length === 0) {

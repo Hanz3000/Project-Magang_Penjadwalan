@@ -104,15 +104,22 @@ class TaskController extends Controller
             'end_time' => 'nullable|date_format:H:i|required_with:start_time',
             'subtasks' => 'nullable|array',
             'subtasks.*.title' => 'required|string|max:255',
-            'subtasks.*.parent_id' => 'nullable',
+            'subtasks.*.parent_id' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if (is_string($value) && str_starts_with($value, 'new_')) {
+                        return; // Skip validation for temporary IDs
+                    }
+                },
+            ],
             'subtasks.*.is_group' => 'nullable|boolean',
         ]);
 
-        // Additional time validation
+        // Time validation
         if ($request->start_time && $request->end_time) {
             $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $request->start_date . ' ' . $request->start_time);
             $endDateTime = Carbon::createFromFormat('Y-m-d H:i', $request->end_date . ' ' . $request->end_time);
-            
+
             if ($startDateTime->gte($endDateTime)) {
                 return back()->withErrors(['end_time' => 'Waktu selesai harus setelah waktu mulai.'])->withInput();
             }
@@ -129,21 +136,29 @@ class TaskController extends Controller
             'end_time'
         ]));
 
-        // Simpan semua subtasks
+        // Save subtasks
         if ($request->has('subtasks')) {
-            $map = []; // untuk menyimpan id sementara dari front-end ke ID DB
+            $map = []; // Temporary ID to database ID mapping
 
+            // First pass - create all subtasks without parent_id
             foreach ($request->subtasks as $tempId => $subtask) {
-                $newSub = new \App\Models\SubTask();
-                $newSub->task_id = $task->id;
-                $newSub->title = $subtask['title'];
-                $newSub->is_group = isset($subtask['is_group']) ? true : false;
-                $newSub->parent_id = isset($subtask['parent_id']) && $subtask['parent_id'] !== ''
-                    ? $map[$subtask['parent_id']] ?? null
-                    : null;
-                $newSub->save();
-
+                $newSub = $task->subTasks()->create([
+                    'title' => $subtask['title'],
+                    'is_group' => isset($subtask['is_group']) ? true : false,
+                    'parent_id' => null // Set parent_id later
+                ]);
                 $map[$tempId] = $newSub->id;
+            }
+
+            // Second pass - update parent_id relationships
+            foreach ($request->subtasks as $tempId => $subtask) {
+                if (isset($subtask['parent_id']) && $subtask['parent_id'] !== '') {
+                    $parentId = str_starts_with($subtask['parent_id'], 'new_')
+                        ? ($map[$subtask['parent_id']] ?? null)
+                        : $subtask['parent_id'];
+
+                    SubTask::where('id', $map[$tempId])->update(['parent_id' => $parentId]);
+                }
             }
         }
 
@@ -152,113 +167,100 @@ class TaskController extends Controller
 
     public function edit(Task $task)
     {
+        // Load subtasks dengan relasi rekursif
+        $task->load(['subTasks' => function($query) {
+            $query->orderBy('parent_id')->orderBy('created_at');
+        }]);
+
         $categories = Category::all();
         return view('tasks.edit', compact('task', 'categories'));
     }
 
-    // In TaskController.php
-
-public function update(Request $request, Task $task)
-{
-    $request->validate([
-        'title' => 'required|string|max:255',
-        'category_id' => 'required|exists:categories,id',
-        'priority' => 'required|in:urgent,high,medium,low',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-        'start_time' => 'nullable|date_format:H:i',
-        'end_time' => 'nullable|date_format:H:i',
-        'subtasks' => 'nullable|array',
-        'subtasks.*.title' => 'required|string|max:255',
-        'subtasks.*.parent_id' => 'nullable',
-        'subtasks.*.id' => 'nullable|exists:sub_tasks,id', // Validasi jika ID subtask ada
-        'full_day' => 'nullable|boolean',
-    ]);
-
-    // Jika full_day dicentang, override jam
-    if ($request->has('full_day')) {
-        $request->merge([
-            'start_time' => '00:00',
-            'end_time' => '23:59',
+    public function update(Request $request, Task $task)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'category_id' => 'nullable|exists:categories,id',
+            'priority' => 'required|in:urgent,high,medium,low',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+            'full_day' => 'nullable|boolean',
+            'subtasks' => 'nullable|array',
+            'subtasks.*.title' => 'required|string|max:255',
+            'subtasks.*.parent_id' => [
+                'nullable',
+                function ($attribute, $value, $fail) {
+                    if (is_string($value) && str_starts_with($value, 'new_')) {
+                        return; // Skip validation for temporary IDs
+                    }
+                    if ($value && !SubTask::where('id', $value)->exists()) {
+                        $fail('Parent subtask tidak valid.');
+                    }
+                },
+            ],
         ]);
-    }
 
-    // Gabungkan subtask baru ke array subtasks
-    $subtasks = $request->input('subtasks', []);
-    $newSubtasks = $request->input('new_subtasks', []);
+        if ($request->has('full_day')) {
+            $request->merge([
+                'start_time' => '00:00',
+                'end_time' => '23:59',
+            ]);
+        }
 
-    foreach ($newSubtasks as $tempId => $newSubtask) {
-        $subtasks[$tempId] = [
-            'title' => $newSubtask['title'],
-            'parent_id' => $newSubtask['parent_id'] ?? null,
-        ];
-    }
+        DB::transaction(function () use ($request, $task) {
+            // Update main task
+            $task->update($request->only([
+                'title', 'description', 'category_id', 'priority',
+                'start_date', 'end_date', 'start_time', 'end_time'
+            ]));
 
-    $request->merge(['subtasks' => $subtasks]);
+            $existingSubtaskIds = $task->subTasks()->pluck('id')->toArray();
+            $currentSubtaskIds = [];
+            $parentMap = [];
 
-    // Gunakan DB Transaction untuk memastikan semua operasi berhasil atau tidak sama sekali
-    DB::transaction(function () use ($request, $task) {
-        // 1. Update data Task utama
-        $task->update($request->only([
-    'title', 'description', 'category_id', 'priority',
-    'start_date', 'end_date', 'start_time', 'end_time'
-]));
+            if ($request->has('subtasks')) {
+                foreach ($request->subtasks as $tempId => $subtaskData) {
+                    // Handle parent_id - check if it's a temporary ID
+                    $parentId = null;
+                    if (!empty($subtaskData['parent_id'])) {
+                        $parentId = str_starts_with($subtaskData['parent_id'], 'new_')
+                            ? ($parentMap[$subtaskData['parent_id']] ?? null)
+                            : $subtaskData['parent_id'];
+                    }
 
-        $subtasksFromRequest = $request->input('subtasks', []);
-        $existingSubtaskIds = $task->subTasks()->pluck('id')->toArray();
-        $requestSubtaskIds = [];
-        $tempIdToDbIdMap = [];
-
-        // 2. Proses semua subtask dari form (bisa baru atau lama)
-        if (!empty($subtasksFromRequest)) {
-            // Iterasi pertama: buat atau update subtask
-            foreach ($subtasksFromRequest as $tempId => $subtaskData) {
-               $parentId = (!empty($subtaskData['parent_id']) && isset($tempIdToDbIdMap[$subtaskData['parent_id']]))
-    ? $tempIdToDbIdMap[$subtaskData['parent_id']]
-    : null;
-
-
-                // Cek apakah ini subtask yang sudah ada atau baru
-                if (isset($subtaskData['id']) && in_array($subtaskData['id'], $existingSubtaskIds)) {
-                    // --- UPDATE SUBTASK LAMA ---
-                    $subtask = SubTask::find($subtaskData['id']);
-                    $subtask->update([
-                        'title' => $subtaskData['title'],
-                        'parent_id' => $parentId,
-                        // 'completed' => ... (jika ada field completed di form)
-                    ]);
-                    $dbId = $subtask->id;
-                    $requestSubtaskIds[] = $dbId;
-                } else {
-                    // --- BUAT SUBTASK BARU ---
-                    $newSubtask = $task->subTasks()->create([
-                        'title' => $subtaskData['title'],
-                        'parent_id' => $parentId,
-                        'is_group' => false, // Sesuaikan jika perlu
-                    ]);
-                    $dbId = $newSubtask->id;
+                    if (isset($subtaskData['id']) && !str_starts_with($subtaskData['id'], 'new_') && in_array($subtaskData['id'], $existingSubtaskIds)) {
+                        // Update existing subtask
+                        $subtask = SubTask::find($subtaskData['id']);
+                        $subtask->update([
+                            'title' => $subtaskData['title'],
+                            'parent_id' => $parentId
+                        ]);
+                        $currentSubtaskIds[] = $subtask->id;
+                        $parentMap[$tempId] = $subtask->id;
+                    } else {
+                        // Create new subtask
+                        $newSubtask = $task->subTasks()->create([
+                            'title' => $subtaskData['title'],
+                            'parent_id' => $parentId,
+                            'is_group' => false
+                        ]);
+                        $currentSubtaskIds[] = $newSubtask->id;
+                        $parentMap[$tempId] = $newSubtask->id;
+                    }
                 }
-                
-                // Simpan pemetaan dari ID sementara (dari JS) ke ID database
-                $tempIdToDbIdMap[$tempId] = $dbId;
             }
-            
-            // Ambil semua ID subtask yang dikirim dari form (yang sudah ada)
-            $requestSubtaskIds = collect($subtasksFromRequest)
-                ->pluck('id')
-                ->filter() // Hapus nilai null/kosong
-                ->all();
-        }
 
-        // 3. Hapus subtask yang tidak ada lagi di form
-        $subtasksToDelete = array_diff($existingSubtaskIds, $requestSubtaskIds);
-        if (!empty($subtasksToDelete)) {
-            SubTask::destroy($subtasksToDelete);
-        }
-    });
+            // Delete removed subtasks
+            $subtasksToDelete = array_diff($existingSubtaskIds, $currentSubtaskIds);
+            if (!empty($subtasksToDelete)) {
+                SubTask::whereIn('id', $subtasksToDelete)->delete();
+            }
+        });
 
-    return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui!');
-}
+        return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui!');
+    }
 
 
     public function destroy(Task $task)
