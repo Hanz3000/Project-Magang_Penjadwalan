@@ -187,12 +187,12 @@
                             <!-- Start Date & Time -->
                             <div>
                                 <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Tanggal Mulai
+                                    Tanggal Mulai <span class="text-red-500">*</span>
                                 </label>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div class="relative">
-                                        <input id="start_date" name="start_date" type="date" 
-                                               value="{{ old('start_date', $task->start_date ? $task->start_date->format('Y-m-d') : '') }}"
+                                        <input id="start_date" name="start_date" type="date" required
+                                            value="{{ old('start_date', $task->start_date ? $task->start_date->format('Y-m-d') : '') }}"
                                             class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('start_date') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,9 +201,9 @@
                                         </div>
                                     </div>
                                     <div class="relative">
-                                        <input id="start_time" name="start_time" type="time" 
-                                               value="{{ old('start_time', $task->start_time ?? '') }}"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('start_time') border-red-500 @enderror">
+                                        <input id="start_time" name="start_time" type="text" readonly
+                                            value="{{ old('start_time', $task->start_time ?? '') }}"
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('start_time') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -222,12 +222,12 @@
                             <!-- End Date & Time -->
                             <div>
                                 <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Tanggal Selesai
+                                    Tanggal Selesai <span class="text-red-500">*</span>
                                 </label>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div class="relative">
-                                        <input id="end_date" name="end_date" type="date" 
-                                               value="{{ old('end_date', $task->end_date ? $task->end_date->format('Y-m-d') : '') }}"
+                                        <input id="end_date" name="end_date" type="date" required
+                                            value="{{ old('end_date', $task->end_date ? $task->end_date->format('Y-m-d') : '') }}"
                                             class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('end_date') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,9 +236,9 @@
                                         </div>
                                     </div>
                                     <div class="relative">
-                                        <input id="end_time" name="end_time" type="time" 
-                                               value="{{ old('end_time', $task->end_time ?? '') }}"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('end_time') border-red-500 @enderror">
+                                        <input id="end_time" name="end_time" type="text" readonly
+                                            value="{{ old('end_time', $task->end_time ?? '') }}"
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('end_time') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -253,6 +253,13 @@
                                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
+                        </div>
+                        <!-- Full Day Button -->
+                        <div class="mt-4">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" id="full_day_toggle" class="form-checkbox h-5 w-5 text-blue-600" {{ old('full_day', $task->full_day) ? 'checked' : '' }}>
+                                <span class="ml-2 text-gray-700">Sehari Penuh</span>
+                            </label>
                         </div>
                     </div>
 
@@ -291,9 +298,9 @@
                                         <svg class="w-5 h-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                                         </svg>
-                                        <span class="text-sm font-medium text-indigo-700">Daftar Subtask</span>
+                                        <span class="text-sm font-medium text-indigo-700">Daftar Subtask (Maksimal 6 level)</span>
                                     </div>
-                                    <button type="button" onclick="addSubtask(null)"
+                                    <button type="button" id="add-subtask-button" onclick="addSubtask(null)"
                                         class="inline-flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-sm font-medium shadow-sm">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -302,87 +309,128 @@
                                     </button>
                                 </div>
                             </div>
-                            <div id="subtasks-container" class="p-6 space-y-3 min-h-[120px] bg-gray-50">
-                                @if($task->subTasks && $task->subTasks->count() > 0)
-                                    @foreach($task->subTasks->where('parent_id', null) as $index => $subtask)
-                                        <div class="subtask-item bg-white rounded-lg border border-gray-200 p-4 shadow-sm" data-id="{{ $subtask->id }}">
-                                            <div class="flex items-center gap-3">
-                                                <input type="checkbox" 
-                                                       name="subtasks[{{ $index }}][completed]" 
-                                                       value="1"
-                                                       {{ $subtask->completed ? 'checked' : '' }}
-                                                       class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                                                <div class="flex-1">
-                                                    <input type="hidden" name="subtasks[{{ $index }}][id]" value="{{ $subtask->id }}">
-                                                    <input type="text" 
-                                                           name="subtasks[{{ $index }}][title]" 
-                                                           value="{{ $subtask->title }}" 
-                                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                                           placeholder="Masukkan nama subtask" required>
-                                                </div>
-                                                <div class="flex gap-2">
-                                                    <button type="button" 
-                                                        class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                                        onclick="addSubtask(this.closest('.subtask-item'))"
-                                                        title="Tambah Sub-subtask">
-                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                                        </svg>
-                                                    </button>
-                                                    <button type="button" 
-                                                        class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                                        onclick="removeSubtask(this.closest('.subtask-item'))"
-                                                        title="Hapus Subtask">
-                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div class="mt-3 space-y-3 child-container">
-                                                @foreach($task->subTasks->where('parent_id', $subtask->id) as $childIndex => $childSubtask)
-                                                    <div class="subtask-item bg-white rounded-lg border border-gray-200 p-4 shadow-sm" data-id="{{ $childSubtask->id }}" style="margin-left: 20px;">
-                                                        <div class="flex items-center gap-3">
-                                                            <input type="checkbox" 
-                                                                   name="subtasks[{{ $index }}_{{ $childIndex }}][completed]" 
-                                                                   value="1"
-                                                                   {{ $childSubtask->completed ? 'checked' : '' }}
-                                                                   class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                                                            <div class="flex-1">
-                                                                <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}][id]" value="{{ $childSubtask->id }}">
-                                                                <input type="text" 
-                                                                       name="subtasks[{{ $index }}_{{ $childIndex }}][title]" 
-                                                                       value="{{ $childSubtask->title }}" 
-                                                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                                                       placeholder="Masukkan nama subtask" required>
-                                                            </div>
-                                                            <div class="flex gap-2">
-                                                                <button type="button" 
-                                                                    class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                                                    onclick="removeSubtask(this.closest('.subtask-item'))"
-                                                                    title="Hapus Subtask">
-                                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                                    </svg>
-                                                                </button>
-                                                            </div>
+                            <div id="subtasks-container" class="relative p-6 space-y-3 min-h-[120px] bg-gray-50 overflow-x-auto">
+                                <!-- Scroll Indicator -->
+                                <div id="scroll-indicator" class="absolute top-2 right-2 text-xs text-gray-400 bg-white px-2 py-1 rounded shadow-sm hidden z-10">
+                                    ← Scroll untuk melihat lebih banyak
+                                </div>
+
+                                <!-- Subtasks Scroll Container -->
+                                <div class="subtasks-scroll-container min-w-full">
+                                    @if($task->subTasks && $task->subTasks->count() > 0)
+                                        @foreach($task->subTasks->where('parent_id', null) as $index => $subtask)
+                                            <div class="subtask-item" data-id="{{ $subtask->id }}">
+                                                <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: 0px;">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="flex-1">
+                                                            <input type="hidden" name="subtasks[{{ $index }}][id]" value="{{ $subtask->id }}">
+                                                            <input type="text" name="subtasks[{{ $index }}][title]" value="{{ $subtask->title }}" placeholder="Masukkan nama subtask"
+                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                                                            <input type="hidden" name="subtasks[{{ $index }}][parent_id]" value="{{ $subtask->parent_id ?? '' }}">
+                                                        </div>
+                                                        <div class="flex gap-2">
+                                                            <button type="button" 
+                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                                                                onclick="addSubtask(this.closest('.subtask-item'))"
+                                                                title="Tambah Sub-subtask">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                                </svg>
+                                                            </button>
+                                                            <button type="button" 
+                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
+                                                                title="Hapus Subtask">
+                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                </svg>
+                                                            </button>
                                                         </div>
                                                     </div>
-                                                @endforeach
+                                                    <div class="mt-3 space-y-3 child-container">
+                                                        @foreach($task->subTasks->where('parent_id', $subtask->id) as $childIndex => $childSubtask)
+                                                            <div class="subtask-item" data-id="{{ $childSubtask->id }}">
+                                                                <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: 20px;">
+                                                                    <div class="flex items-center gap-3">
+                                                                        <div class="flex-1">
+                                                                            <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}][id]" value="{{ $childSubtask->id }}">
+                                                                            <input type="text" name="subtasks[{{ $index }}_{{ $childIndex }}][title]" value="{{ $childSubtask->title }}" placeholder="Masukkan nama subtask"
+                                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                                                                            <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}][parent_id]" value="{{ $childSubtask->parent_id ?? '' }}">
+                                                                        </div>
+                                                                        <div class="flex gap-2">
+                                                                            <button type="button" 
+                                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                                                                                onclick="addSubtask(this.closest('.subtask-item'))"
+                                                                                title="Tambah Sub-subtask">
+                                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                                                </svg>
+                                                                            </button>
+                                                                            <button type="button" 
+                                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
+                                                                                title="Hapus Subtask">
+                                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                                </svg>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="mt-3 space-y-3 child-container">
+                                                                        @foreach($task->subTasks->where('parent_id', $childSubtask->id) as $grandChildIndex => $grandChildSubtask)
+                                                                            <div class="subtask-item" data-id="{{ $grandChildSubtask->id }}">
+                                                                                <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: 40px;">
+                                                                                    <div class="flex items-center gap-3">
+                                                                                        <div class="flex-1">
+                                                                                            <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][id]" value="{{ $grandChildSubtask->id }}">
+                                                                                            <input type="text" name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][title]" value="{{ $grandChildSubtask->title }}" placeholder="Masukkan nama subtask"
+                                                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                                                                                            <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][parent_id]" value="{{ $grandChildSubtask->parent_id ?? '' }}">
+                                                                                        </div>
+                                                                                        <div class="flex gap-2">
+                                                                                            <button type="button" 
+                                                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                                                                                                onclick="addSubtask(this.closest('.subtask-item'))"
+                                                                                                title="Tambah Sub-subtask">
+                                                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                                                                </svg>
+                                                                                            </button>
+                                                                                            <button type="button" 
+                                                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                                                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
+                                                                                                title="Hapus Subtask">
+                                                                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                                                </svg>
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div class="mt-3 space-y-3 child-container"></div>
+                                                                                </div>
+                                                                            </div>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @else
+                                        <div class="text-center text-gray-500 text-sm py-8" id="no-subtasks">
+                                            <div class="flex flex-col items-center">
+                                                <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                <span class="font-medium text-gray-400">Belum ada subtask</span>
+                                                <span class="text-gray-400 text-xs mt-1">Klik tombol "Tambah Subtask" untuk mulai menambahkan</span>
                                             </div>
                                         </div>
-                                    @endforeach
-                                @else
-                                    <div class="text-center text-gray-500 text-sm py-8" id="no-subtasks">
-                                        <div class="flex flex-col items-center">
-                                            <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            <span class="font-medium text-gray-400">Belum ada subtask</span>
-                                            <span class="text-gray-400 text-xs mt-1">Klik tombol "Tambah Subtask" untuk mulai menambahkan</span>
-                                        </div>
-                                    </div>
-                                @endif
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -411,9 +459,168 @@
     </div>
 </div>
 
+@push('styles')
+<style>
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #3B82F6 #E5E7EB;
+}
+.scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: #E5E7EB;
+    border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #3B82F6;
+    border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #2563EB;
+}
+.time-option {
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.time-option:hover {
+    background-color: #EFF6FF;
+}
+.time-option.selected {
+    background-color: #DBEAFE;
+    font-weight: 600;
+}
+</style>
+@endpush
+
 @push('scripts')
 <script>
 let subtaskIdCounter = {{ $task->subTasks ? $task->subTasks->count() : 0 }};
+let currentTimeInput = null;
+
+// Get today's date in YYYY-MM-DD format
+const today = new Date().toISOString().split('T')[0];
+
+// Time Picker Functions
+function openTimePicker(inputElement) {
+    currentTimeInput = inputElement;
+    const currentValue = inputElement.value || '09:52'; // Default to current time
+    const [hours, minutes] = currentValue.split(':').map(Number);
+    
+    populateTimeLists(hours, minutes);
+    document.getElementById('time-picker-modal').classList.remove('hidden');
+}
+
+function closeTimePicker() {
+    document.getElementById('time-picker-modal').classList.add('hidden');
+    currentTimeInput = null;
+}
+
+function populateTimeLists(selectedHour, selectedMinute) {
+    const hourList = document.getElementById('hour-list');
+    const minuteList = document.getElementById('minute-list');
+    
+    hourList.innerHTML = '';
+    for (let i = 0; i <= 23; i++) {
+        const hourDiv = document.createElement('div');
+        hourDiv.className = `time-option ${i === selectedHour ? 'selected' : ''}`;
+        hourDiv.textContent = i.toString().padStart(2, '0');
+        hourDiv.dataset.value = i;
+        hourDiv.addEventListener('click', function() {
+            document.querySelectorAll('#hour-list .time-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+        hourList.appendChild(hourDiv);
+    }
+    
+    minuteList.innerHTML = '';
+    for (let i = 0; i <= 59; i++) {
+        const minuteDiv = document.createElement('div');
+        minuteDiv.className = `time-option ${i === selectedMinute ? 'selected' : ''}`;
+        minuteDiv.textContent = i.toString().padStart(2, '0');
+        minuteDiv.dataset.value = i;
+        minuteDiv.addEventListener('click', function() {
+            document.querySelectorAll('#minute-list .time-option').forEach(opt => opt.classList.remove('selected'));
+            this.classList.add('selected');
+        });
+        minuteList.appendChild(minuteDiv);
+    }
+    
+    const selectedHourElement = hourList.querySelector(`.time-option[data-value="${selectedHour}"]`);
+    const selectedMinuteElement = minuteList.querySelector(`.time-option[data-value="${selectedMinute}"]`);
+    
+    if (selectedHourElement) {
+        hourList.scrollTop = selectedHourElement.offsetTop - hourList.offsetHeight / 2 + selectedHourElement.offsetHeight / 2;
+    }
+    if (selectedMinuteElement) {
+        minuteList.scrollTop = selectedMinuteElement.offsetTop - minuteList.offsetHeight / 2 + selectedMinuteElement.offsetHeight / 2;
+    }
+}
+
+function setTimeFromPicker() {
+    if (!currentTimeInput) return;
+    
+    const selectedHour = document.querySelector('#hour-list .time-option.selected')?.dataset.value || '0';
+    const selectedMinute = document.querySelector('#minute-list .time-option.selected')?.dataset.value || '0';
+    
+    currentTimeInput.value = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+    closeTimePicker();
+}
+
+// Initialize Time Picker and Full Day Toggle
+document.addEventListener('DOMContentLoaded', function() {
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    startDateInput.addEventListener('change', function() {
+        endDateInput.setAttribute('min', this.value);
+    });
+
+    document.querySelectorAll('.time-picker-input').forEach(input => {
+        input.addEventListener('click', function() {
+            openTimePicker(this);
+        });
+    });
+    
+    document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
+    document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
+    document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
+    
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTime = `${hours}:${minutes}`;
+    
+    if (!document.getElementById('start_time').value) {
+        document.getElementById('start_time').value = currentTime;
+    }
+    
+    if (!document.getElementById('end_time').value) {
+        const endTime = new Date(now.getTime() + 60 * 60 * 1000);
+        const endHours = String(endTime.getHours()).padStart(2, '0');
+        const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+        document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
+    }
+    
+    document.getElementById('full_day_toggle').addEventListener('change', function() {
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+        
+        if (this.checked) {
+            startTimeInput.value = '00:00';
+            endTimeInput.value = '23:59';
+            startTimeInput.disabled = true;
+            endTimeInput.disabled = true;
+        } else {
+            startTimeInput.disabled = false;
+            endTimeInput.disabled = false;
+            if (!startTimeInput.value) startTimeInput.value = currentTime;
+            if (!endTimeInput.value) endTimeInput.value = `${endHours}:${endMinutes}`;
+        }
+    });
+});
 
 // Subtask Management Functions
 function getIndentLevel(element) {
@@ -435,66 +642,70 @@ function addSubtask(parentElement = null) {
     }
 
     const parentId = parentElement?.dataset.id || null;
+    const indentLevel = getIndentLevel(parentElement);
+
+    if (indentLevel >= 6) {
+        alert('Maksimal 6 level subtask telah tercapai');
+        return;
+    }
+
     const subtaskWrapper = document.createElement('div');
     const currentId = ++subtaskIdCounter;
-    subtaskWrapper.dataset.id = 'new_' + currentId;
+    subtaskWrapper.dataset.id = currentId;
     subtaskWrapper.className = 'subtask-item';
 
-    const indentLevel = getIndentLevel(parentElement);
     const marginLeft = indentLevel * 20;
 
     subtaskWrapper.innerHTML = `
-    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
-        <div class="flex items-center gap-3">
-            <input type="checkbox" 
-                   name="new_subtasks[${currentId}][completed]" 
-                   value="1"
-                   class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-            <div class="flex-1">
-                <input type="text" name="new_subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
-                <input type="hidden" name="new_subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
+        <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
+            <div class="flex items-center gap-3">
+                <div class="flex-1">
+                    <input type="text" name="new_subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                    <input type="hidden" name="new_subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" 
+                        class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                        onclick="addSubtask(this.closest('.subtask-item'))"
+                        title="Tambah Sub-subtask">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </button>
+                    <button type="button" 
+                        class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                        onclick="removeSubtask(this.closest('.subtask-item'))"
+                        title="Hapus Subtask">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
-            <div class="flex gap-2">
-                <button type="button" 
-                    class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                    onclick="addSubtask(this.closest('.subtask-item'))"
-                    title="Tambah Sub-subtask">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                </button>
-                <button type="button" 
-                    class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                    onclick="removeSubtask(this.closest('.subtask-item'))"
-                    title="Hapus Subtask">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
+            <div class="mt-3 space-y-3 child-container"></div>
         </div>
-        <div class="mt-3 space-y-3 child-container"></div>
-    </div>
-`;
+    `;
 
-    const container = parentElement?.querySelector('.child-container') || document.getElementById('subtasks-container');
-    container.appendChild(subtaskWrapper);
-    
-    // Focus on the new input
-    const newInput = subtaskWrapper.querySelector('input[type="text"]');
-    newInput.focus();
+    const container = parentElement?.querySelector('.child-container') || document.querySelector('#subtasks-container .subtasks-scroll-container');
+    if (container.firstChild && container.firstChild.id === 'no-subtasks') {
+        container.insertBefore(subtaskWrapper, container.firstChild.nextSibling);
+    } else {
+        container.insertBefore(subtaskWrapper, container.firstChild);
+    }
 }
 
 function removeSubtask(element) {
-    element.remove();
-    
-    const container = document.getElementById('subtasks-container');
-    const subtasks = container.querySelectorAll('.subtask-item');
-    if (subtasks.length === 0) {
-        const noSubtasksMsg = document.getElementById('no-subtasks');
-        if (noSubtasksMsg) {
-            noSubtasksMsg.style.display = 'block';
+    if (confirm('Apakah Anda yakin ingin menghapus subtask ini beserta semua subtask di bawahnya?')) {
+        element.remove();
+        
+        const container = document.getElementById('subtasks-container');
+        const subtasks = container.querySelectorAll('.subtask-item');
+        if (subtasks.length === 0) {
+            const noSubtasksMsg = document.getElementById('no-subtasks');
+            if (noSubtasksMsg) {
+                noSubtasksMsg.style.display = 'block';
+            }
         }
     }
 }
@@ -503,6 +714,10 @@ function removeSubtask(element) {
 document.getElementById('task-form').addEventListener('submit', function(e) {
     const title = document.getElementById('title').value.trim();
     const priority = document.querySelector('input[name="priority"]:checked');
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const startTime = document.getElementById('start_time').value;
+    const endTime = document.getElementById('end_time').value;
     
     if (!title) {
         e.preventDefault();
@@ -517,11 +732,6 @@ document.getElementById('task-form').addEventListener('submit', function(e) {
         return false;
     }
     
-    const startDate = document.getElementById('start_date').value;
-    const endDate = document.getElementById('end_date').value;
-    const startTime = document.getElementById('start_time').value;
-    const endTime = document.getElementById('end_time').value;
-    
     if (startDate && endDate) {
         const startDateTime = new Date(`${startDate}T${startTime || '00:00'}`);
         const endDateTime = new Date(`${endDate}T${endTime || '23:59'}`);
@@ -533,7 +743,6 @@ document.getElementById('task-form').addEventListener('submit', function(e) {
         }
     }
     
-    // Check if any new subtask has empty title
     const newSubtaskInputs = document.querySelectorAll('input[name*="new_subtasks"][name*="[title]"]');
     for (let input of newSubtaskInputs) {
         if (input.value.trim() === '') {
@@ -545,35 +754,43 @@ document.getElementById('task-form').addEventListener('submit', function(e) {
     }
 });
 
-// Date validation
-document.getElementById('start_date').addEventListener('change', function() {
-    const startDate = this.value;
-    const endDateInput = document.getElementById('end_date');
-    if (startDate && endDateInput.value && startDate > endDateInput.value) {
-        endDateInput.value = startDate;
+// Priority selection functionality
+const priorityOptions = document.querySelectorAll('.priority-option input[type="radio"]');
+priorityOptions.forEach(option => {
+    if (option.checked) {
+        const parent = option.closest('.priority-option');
+        const div = parent.querySelector('div');
+        const value = option.value;
+        
+        switch(value) {
+            case 'urgent':
+                div.classList.add('ring-2', 'ring-red-500', 'border-red-500', 'bg-red-100');
+                break;
+            case 'high':
+                div.classList.add('ring-2', 'ring-yellow-500', 'border-yellow-500', 'bg-yellow-100');
+                break;
+            case 'medium':
+                div.classList.add('ring-2', 'ring-blue-500', 'border-blue-500', 'bg-blue-100');
+                break;
+            case 'low':
+                div.classList.add('ring-2', 'ring-green-500', 'border-green-500', 'bg-green-100');
+                break;
+        }
     }
-    endDateInput.min = startDate;
-});
-
-document.getElementById('end_date').addEventListener('change', function() {
-    const endDate = this.value;
-    const startDateInput = document.getElementById('start_date');
-    if (endDate && startDateInput.value && endDate < startDateInput.value) {
-        startDateInput.value = endDate;
-    }
-    startDateInput.max = endDate;
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Priority selection functionality
-    const priorityOptions = document.querySelectorAll('.priority-option input[type="radio"]');
     
-    // Set initial state for checked priority
-    priorityOptions.forEach(option => {
-        if (option.checked) {
-            const parent = option.closest('.priority-option');
+    option.addEventListener('change', function() {
+        priorityOptions.forEach(opt => {
+            const parent = opt.closest('.priority-option');
             const div = parent.querySelector('div');
-            const value = option.value;
+            div.classList.remove('ring-2', 'ring-red-500', 'ring-yellow-500', 'ring-blue-500', 'ring-green-500');
+            div.classList.remove('border-red-500', 'border-yellow-500', 'border-blue-500', 'border-green-500');
+            div.classList.remove('bg-red-100', 'bg-yellow-100', 'bg-blue-100', 'bg-green-100');
+        });
+        
+        if (this.checked) {
+            const parent = this.closest('.priority-option');
+            const div = parent.querySelector('div');
+            const value = this.value;
             
             switch(value) {
                 case 'urgent':
@@ -591,40 +808,47 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-    
-    priorityOptions.forEach(option => {
-        option.addEventListener('change', function() {
-            priorityOptions.forEach(opt => {
-                const parent = opt.closest('.priority-option');
-                const div = parent.querySelector('div');
-                div.classList.remove('ring-2', 'ring-red-500', 'ring-yellow-500', 'ring-blue-500', 'ring-green-500');
-                div.classList.remove('border-red-500', 'border-yellow-500', 'border-blue-500', 'border-green-500');
-                div.classList.remove('bg-red-100', 'bg-yellow-100', 'bg-blue-100', 'bg-green-100');
-            });
-            
-            if (this.checked) {
-                const parent = this.closest('.priority-option');
-                const div = parent.querySelector('div');
-                const value = this.value;
-                
-                switch(value) {
-                    case 'urgent':
-                        div.classList.add('ring-2', 'ring-red-500', 'border-red-500', 'bg-red-100');
-                        break;
-                    case 'high':
-                        div.classList.add('ring-2', 'ring-yellow-500', 'border-yellow-500', 'bg-yellow-100');
-                        break;
-                    case 'medium':
-                        div.classList.add('ring-2', 'ring-blue-500', 'border-blue-500', 'bg-blue-100');
-                        break;
-                    case 'low':
-                        div.classList.add('ring-2', 'ring-green-500', 'border-green-500', 'bg-green-100');
-                        break;
-                }
-            }
-        });
-    });
 });
 </script>
-@endpush
+
+<!-- Time Picker Modal -->
+<div id="time-picker-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-6 bg-gradient-to-b from-blue-50 to-white">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-semibold text-gray-900">Pilih Waktu</h3>
+                    <button id="close-time-picker" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center items-center gap-4 mb-6">
+                    <div class="relative flex flex-col items-center">
+                        <div class="w-20 h-40 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-100">
+                            <div id="hour-list" class="flex flex-col items-center py-2">
+                                <!-- Hours will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <span class="absolute top-1/2 left-1/2 transform -translate-y-1/2 -translate-x-full text-gray-500 text-xl mr-2">:</span>
+                    </div>
+                    <div class="relative flex flex-col items-center">
+                        <div class="w-20 h-40 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-100">
+                            <div id="minute-list" class="flex flex-col items-center py-2">
+                                <!-- Minutes will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-4">
+                    <button id="cancel-time" class="px-4 py-2 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors duration-200">Batal</button>
+                    <button id="ok-time" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
