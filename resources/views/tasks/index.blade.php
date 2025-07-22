@@ -521,6 +521,7 @@ function initializeCalendar() {
 // Fungsi generate event untuk kalender
 function generateCalendarEvents() {
     return appState.tasksData.map(task => {
+        const color = getTaskColor(task);
         const eventData = {
             id: task.id.toString(),
             title: task.title,
@@ -534,7 +535,9 @@ function generateCalendarEvents() {
                 endTime: task.end_time,
                 isAllDay: !task.start_time || !task.end_time
             },
-            className: task.completed ? 'completed-task' : 'active-task',
+            className: `priority-${task.priority} ${task.completed ? 'completed-task' : 'active-task'}`,
+            backgroundColor: color,
+            borderColor: color,
             allDay: !task.start_time || !task.end_time
         };
 
@@ -1956,12 +1959,13 @@ function formatDateString(dateString) {
     .task-item {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
+    
     /* Empty state animations */
     #filter-empty-state {
         transition: all 0.3s ease-out;
     }
 
+    
     /* Enhanced Weekly Calendar Styles */
     .fc-timeGridWeek-view .fc-daygrid-day-frame {
         min-height: 80px;
@@ -2068,6 +2072,7 @@ function formatDateString(dateString) {
     /* Event priority indicators */
     .fc-event.priority-urgent {
         border-left-color: #ef4444 !important;
+        
     }
 
     .fc-event.priority-high {
