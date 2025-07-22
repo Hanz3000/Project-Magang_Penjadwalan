@@ -121,15 +121,15 @@
                                     $lineClass = $subTask['completed'] ? 'line-through text-gray-400' : 'text-gray-700';
 
                                     $html .= '<div class="subtask-item flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-blue-50 transition-all duration-200" data-subtask-id="' . $subTask['id'] . '">';
-                                    $html .= '<form action="' . route('subtasks.toggle', $subTask['id']) . '" method="POST" class="subtask-toggle-form">';
-                                    $html .= csrf_field() . method_field('PATCH');
-                                    $html .= '<input type="checkbox"
-                                        class="subtask-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                                        data-sub-task-id="' . $subTask['id'] . '"
-                                        data-task-id="' . $task['id'] . '"
-                                        data-is-leaf="true"
-                                        data-parent-id="' . $subTask['parent_id'] . '" ' . $checked . '>';
-                                    $html .= '</form>';
+                                   $html .= '<form action="' . route('subtasks.toggle', $subTask['id']) . '" method="POST" class="subtask-toggle-form">';
+$html .= csrf_field() . method_field('PATCH');
+$html .= '<input type="checkbox"
+    class="subtask-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+    data-sub-task-id="' . $subTask['id'] . '"
+    data-task-id="' . $task['id'] . '"
+    data-is-leaf="true"
+    data-parent-id="' . $subTask['parent_id'] . '" ' . $checked . '>';
+$html .= '</form>';
                                     $html .= '<span class="text-sm ' . $lineClass . ' subtask-text flex-1">' . e($subTask['title']) . '</span>';
                                     $html .= '</div>';
                                 }
@@ -437,21 +437,34 @@
 <script>
 // Global State Management
 let appState = {
-    tasksData: @json($tasks), // Aman karena sudah array dari controller
+    tasksData: @json($tasks),
     calendar: null,
     isModalOpen: false,
     currentModalTaskId: null,
     filteredTasksCount: {{ $totalTasks }},
-    tooltip: null
+    tooltip: null,
+    isUpdating: false,
+    allTasksCompleted: false,
+    currentFilter: 'all'
 };
 
-// Initialize application
+// Initialize application with error handling
 document.addEventListener('DOMContentLoaded', function() {
-    initializeCalendar();
-    initializeEventDelegation();
-    initializeTaskFilter();
-    initializeTooltip();
-    checkAllTasksCompleted();
+    try {
+        // First check if FullCalendar is loaded
+        if (typeof FullCalendar === 'undefined') {
+            throw new Error('FullCalendar library not loaded');
+        }
+        
+        initializeCalendar();
+        initializeEventDelegation();
+        initializeTaskFilter();
+        initializeTooltip();
+        checkAllTasksCompleted();
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showNotification('Gagal memuat komponen. Silakan refresh halaman.', 'error');
+    }
 });
 
 // ===== ENHANCED CALENDAR FUNCTIONS =====
@@ -799,12 +812,19 @@ function updateFilteredCountDisplay(filter, count) {
     }
 }
 
+// Enhanced showEmptyState function with null checks
 function showEmptyState(filter) {
     const emptyState = document.getElementById('filter-empty-state');
     const title = document.getElementById('empty-state-title');
     const description = document.getElementById('empty-state-description');
     
-    const messages = {
+    if (!emptyState || !title || !description) {
+        console.error('Empty state elements not found');
+        return;
+    }
+    
+    // Define default messages
+    const defaultMessages = {
         'all': {
             title: 'Belum ada tugas',
             description: 'Mulai dengan membuat tugas pertama Anda.'
@@ -819,9 +839,14 @@ function showEmptyState(filter) {
         }
     };
     
-    title.textContent = messages[filter].title;
-    description.textContent = messages[filter].description;
+    // Get messages for current filter or use defaults
+    const messages = defaultMessages[filter] || defaultMessages.all;
     
+    // Safely update content
+    title.textContent = messages.title;
+    description.textContent = messages.description;
+    
+    // Show with animation
     emptyState.style.display = 'block';
     emptyState.style.opacity = '0';
     emptyState.style.transform = 'translateY(20px)';
@@ -834,7 +859,6 @@ function showEmptyState(filter) {
     
     emptyState.classList.remove('hidden');
 }
-
 function hideEmptyState() {
     const emptyState = document.getElementById('filter-empty-state');
     
@@ -990,8 +1014,19 @@ async function performSubtaskUpdate(checkbox, source) {
     const taskId = checkbox.getAttribute('data-task-id');
     const isCompleted = checkbox.checked;
     const form = checkbox.closest('form');
+    
+    if (!form) {
+        console.error('Form element not found for subtask');
+        return;
+    }
+    
     const url = form.getAttribute('action');
-    const token = form.querySelector('input[name="_token"]').value;
+    const token = form.querySelector('input[name="_token"]')?.value;
+    
+    if (!url || !token) {
+        console.error('Missing URL or CSRF token');
+        return;
+    }
     
     appState.isUpdating = true;
     showLoadingIndicator();
@@ -1007,6 +1042,10 @@ async function performSubtaskUpdate(checkbox, source) {
             },
             body: JSON.stringify({ completed: isCompleted })
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const data = await response.json();
         
@@ -1027,12 +1066,12 @@ async function performSubtaskUpdate(checkbox, source) {
             showNotification('Subtugas berhasil diperbarui!', 'success');
             checkAllTasksCompleted();
         } else {
-            throw new Error('Update failed');
+            throw new Error(data.message || 'Update failed');
         }
     } catch (error) {
         console.error('Error:', error);
         checkbox.checked = !isCompleted;
-        showNotification('Gagal memperbarui subtugas!', 'error');
+        showNotification('Gagal memperbarui subtugas! ' + error.message, 'error');
     } finally {
         appState.isUpdating = false;
         hideLoadingIndicator();
@@ -1523,14 +1562,14 @@ function renderModalSubtasks(subtasks, parentId = null, task) {
             html += `
                 <div class="subtask-item-modal flex items-center gap-2 py-1 px-2 bg-white rounded border border-gray-200 hover:border-blue-300 transition-all duration-200" data-subtask-id="${subTask.id}">
                     <form action="/subtasks/${subTask.id}/toggle" method="POST" class="subtask-toggle-form-modal">
-                        <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                        <input type="hidden" name="_method" value="PATCH">
-                        <input type="checkbox"
-                            class="subtask-checkbox-modal w-3 h-3 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                            data-sub-task-id="${subTask.id}"
-                            data-task-id="${task.id}"
-                            ${subTask.completed ? 'checked' : ''}>
-                    </form>
+        <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+        <input type="hidden" name="_method" value="PATCH">
+        <input type="checkbox"
+            class="subtask-checkbox-modal w-3 h-3 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+            data-sub-task-id="${subTask.id}"
+            data-task-id="${task.id}"
+            ${subTask.completed ? 'checked' : ''}>
+    </form>
                     <span class="text-xs ${lineClass} subtask-text-modal flex-1">${subTask.title}</span>
                 </div>
             `;

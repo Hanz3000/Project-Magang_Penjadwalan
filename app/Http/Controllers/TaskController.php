@@ -156,75 +156,88 @@ class TaskController extends Controller
         return view('tasks.edit', compact('task', 'categories'));
     }
 
-    public function update(Request $request, Task $task)
-    {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
-            'priority' => 'required|in:urgent,high,medium,low',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i',
-            'due_date' => 'nullable|date',
-        ]);
+    // In TaskController.php
 
-        // Additional time validation for updates
-        if ($request->start_time && $request->end_time && $request->start_date && $request->end_date) {
-            $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $request->start_date . ' ' . $request->start_time);
-            $endDateTime = Carbon::createFromFormat('Y-m-d H:i', $request->end_date . ' ' . $request->end_time);
-            
-            if ($startDateTime->gte($endDateTime)) {
-                return back()->withErrors(['end_time' => 'Waktu selesai harus setelah waktu mulai.'])->withInput();
-            }
-        }
+public function update(Request $request, Task $task)
+{
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'category_id' => 'required|exists:categories,id',
+        'priority' => 'required|in:urgent,high,medium,low',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+        'start_time' => 'nullable|date_format:H:i',
+        'end_time' => 'nullable|date_format:H:i',
+        'subtasks' => 'nullable|array',
+        'subtasks.*.title' => 'required|string|max:255',
+        'subtasks.*.parent_id' => 'nullable',
+        'subtasks.*.id' => 'nullable|exists:sub_tasks,id', // Validasi jika ID subtask ada
+    ]);
 
+    // Gunakan DB Transaction untuk memastikan semua operasi berhasil atau tidak sama sekali
+    DB::transaction(function () use ($request, $task) {
+        // 1. Update data Task utama
         $task->update($request->only([
-            'title',
-            'description',
-            'category_id',
-            'priority',
-            'start_time',
-            'end_time',
-            'due_date',
-            'start_date',
-            'end_date'
+            'title', 'description', 'category_id', 'priority',
+            'start_date', 'end_date', 'start_time', 'end_time'
         ]));
 
-        // Handle existing subtasks updates
-        if ($request->has('subtasks')) {
-            foreach ($request->subtasks as $subtaskData) {
-                if (isset($subtaskData['id'])) {
-                    $subtask = $task->subTasks()->find($subtaskData['id']);
-                    if ($subtask) {
-                        $subtask->update([
-                            'title' => $subtaskData['title'],
-                            'completed' => isset($subtaskData['completed']) ? true : false,
-                        ]);
-                    }
-                }
-            }
-        }
+        $subtasksFromRequest = $request->input('subtasks', []);
+        $existingSubtaskIds = $task->subTasks()->pluck('id')->toArray();
+        $requestSubtaskIds = [];
+        $tempIdToDbIdMap = [];
 
-        // Handle new subtasks
-        if ($request->has('new_subtasks')) {
-            foreach ($request->new_subtasks as $newSubtaskData) {
-                if (!empty($newSubtaskData['title'])) {
-                    $task->subTasks()->create([
-                        'title' => $newSubtaskData['title'],
-                        'completed' => isset($newSubtaskData['completed']) ? true : false,
-                        'task_id' => $task->id,
-                        'parent_id' => null, // tidak nested dulu
-                        'is_group' => false
+        // 2. Proses semua subtask dari form (bisa baru atau lama)
+        if (!empty($subtasksFromRequest)) {
+            // Iterasi pertama: buat atau update subtask
+            foreach ($subtasksFromRequest as $tempId => $subtaskData) {
+               $parentId = (!empty($subtaskData['parent_id']) && isset($tempIdToDbIdMap[$subtaskData['parent_id']]))
+    ? $tempIdToDbIdMap[$subtaskData['parent_id']]
+    : null;
+
+
+                // Cek apakah ini subtask yang sudah ada atau baru
+                if (isset($subtaskData['id']) && in_array($subtaskData['id'], $existingSubtaskIds)) {
+                    // --- UPDATE SUBTASK LAMA ---
+                    $subtask = SubTask::find($subtaskData['id']);
+                    $subtask->update([
+                        'title' => $subtaskData['title'],
+                        'parent_id' => $parentId,
+                        // 'completed' => ... (jika ada field completed di form)
                     ]);
+                    $dbId = $subtask->id;
+                    $requestSubtaskIds[] = $dbId;
+                } else {
+                    // --- BUAT SUBTASK BARU ---
+                    $newSubtask = $task->subTasks()->create([
+                        'title' => $subtaskData['title'],
+                        'parent_id' => $parentId,
+                        'is_group' => false, // Sesuaikan jika perlu
+                    ]);
+                    $dbId = $newSubtask->id;
                 }
+                
+                // Simpan pemetaan dari ID sementara (dari JS) ke ID database
+                $tempIdToDbIdMap[$tempId] = $dbId;
             }
+            
+            // Ambil semua ID subtask yang dikirim dari form (yang sudah ada)
+            $requestSubtaskIds = collect($subtasksFromRequest)
+                ->pluck('id')
+                ->filter() // Hapus nilai null/kosong
+                ->all();
         }
 
-        return redirect()->route('tasks.index')
-            ->with('success', 'Task berhasil diperbarui!');
-    }
+        // 3. Hapus subtask yang tidak ada lagi di form
+        $subtasksToDelete = array_diff($existingSubtaskIds, $requestSubtaskIds);
+        if (!empty($subtasksToDelete)) {
+            SubTask::destroy($subtasksToDelete);
+        }
+    });
+
+    return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui!');
+}
+
 
     public function destroy(Task $task)
     {
@@ -352,4 +365,67 @@ class TaskController extends Controller
             ]);
         });
     }
+
+    /**
+ * Toggle subtask completion status
+ */
+/**
+ * Toggle subtask completion status
+ */
+public function toggleSubtask(Request $request, SubTask $subtask)
+{
+    $request->validate([
+        'completed' => 'required|boolean',
+    ]);
+
+    $isCompleted = $request->completed;
+
+    return DB::transaction(function () use ($subtask, $isCompleted) {
+        // Update the subtask
+        $subtask->completed = $isCompleted;
+        $subtask->save();
+
+        // Get the parent task
+        $task = $subtask->task;
+
+        // Check if all leaf subtasks are completed
+        $leafSubTasks = $task->subTasks->filter(function ($st) use ($task) {
+            return $task->subTasks->where('parent_id', $st->id)->count() == 0;
+        });
+
+        $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
+        $subtaskTotal = $leafSubTasks->count();
+
+        // Update task completion status if all leaf subtasks are completed
+        $task->completed = ($subtaskTotal > 0 && $subtaskCompleted === $subtaskTotal);
+        $task->save();
+
+        // Calculate progress percentage
+        $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : ($task->completed ? 100 : 0);
+
+        // Calculate global summary stats
+        $totalTasks = Task::count();
+        $completedTasks = Task::where('completed', true)->count();
+        $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+
+        return response()->json([
+            'success' => true,
+            'subtask' => [
+                'id' => $subtask->id,
+                'completed' => $subtask->completed,
+                'task_id' => $task->id
+            ],
+            'task' => [
+                'id' => $task->id,
+                'completed' => $task->completed
+            ],
+            'progressPercentage' => $progressPercentage,
+            'subtaskCompleted' => $subtaskCompleted,
+            'subtaskTotal' => $subtaskTotal,
+            'totalTasks' => $totalTasks,
+            'completedTasks' => $completedTasks,
+            'overallProgress' => $overallProgress
+        ]);
+    });
+}
 }

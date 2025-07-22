@@ -11,10 +11,12 @@ Route::resource('tasks', TaskController::class);
 Route::resource('subtasks', SubTaskController::class)->except(['index', 'create', 'show']);
 
 Route::patch('/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('tasks.toggle');
-Route::patch('/subtasks/{subtask}/toggle', [SubTaskController::class, 'toggle'])->name('subtasks.toggle');
+
 
 Route::patch('/subtasks/bulk-toggle', [SubTaskController::class, 'bulkToggle'])->name('subtasks.bulk-toggle');
 
 Route::put('/categories/{category}', [CategoryController::class, 'update']);
 // Atau jika pakai resource:
 Route::resource('categories', CategoryController::class)->except(['show']);
+
+Route::patch('/subtasks/{subtask}/toggle', [TaskController::class, 'toggleSubtask'])->name('subtasks.toggle');
