@@ -51,7 +51,9 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                 </svg>
                             </button>
-
+                            <button id="today-btn" class="px-4 py-2 text-sm rounded-lg transition-all duration-200 bg-white text-blue-600 shadow-sm font-medium border border-blue-300 ml-2 hover:bg-blue-100">
+                                Hari Ini
+                            </button>
                             <div class="flex bg-gray-100 p-1 rounded-xl ml-4">
                                 <button class="px-4 py-2 text-sm rounded-lg transition-all duration-200 fc-dayGridMonth-button text-gray-600 hover:text-gray-800 font-medium" id="month-view">
                                     Bulan
@@ -197,7 +199,7 @@ $html .= '</form>';
                                                     <div class="flex items-center gap-3 text-sm text-gray-500 mt-2">
                                                         <div class="flex items-center gap-1">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                                             </svg>
                                                             <span>{{ $task['start_date_formatted'] }} - {{ $task['end_date_formatted'] }}</span>
                                                         </div>
@@ -212,7 +214,7 @@ $html .= '</form>';
                                                         <span class="text-xs text-gray-300">•</span>
                                                         <div class="flex items-center gap-1">
                                                             <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2z"></path>
                                                             </svg>
                                                             <span class="text-blue-600 font-medium task-progress-percentage">{{ $progressPercentage }}%</span>
                                                         </div>
@@ -493,6 +495,26 @@ function initializeCalendar() {
             info.jsEvent.preventDefault();
             openTaskModal(info.event.id);
         },
+        // Dalam fungsi initializeCalendar(), tambahkan:
+eventContent: function(arg) {
+    const isCompleted = arg.event.extendedProps.completed;
+    const isAllDay = arg.event.allDay;
+    
+    if (isAllDay) {
+        const title = isCompleted ? `<span style="text-decoration: line-through">${arg.event.title}</span>` : arg.event.title;
+        return { html: title };
+    } else {
+        const timeText = isCompleted ? `<span style="text-decoration: line-through">${arg.timeText}</span>` : arg.timeText;
+        const titleText = isCompleted ? `<span style="text-decoration: line-through">${arg.event.title}</span>` : arg.event.title;
+        
+        return {
+            html: `<div class="fc-event-main-frame">
+                ${arg.timeText ? `<div class="fc-event-time">${timeText}</div>` : ''}
+                <div class="fc-event-title">${titleText}</div>
+            </div>`
+        };
+    }
+},
         eventMouseEnter: function(info) {
             showTaskTooltip(info);
         },
@@ -521,6 +543,7 @@ function initializeCalendar() {
 // Fungsi generate event untuk kalender
 function generateCalendarEvents() {
     return appState.tasksData.map(task => {
+        const color = getTaskColor(task);
         const eventData = {
             id: task.id.toString(),
             title: task.title,
@@ -534,7 +557,9 @@ function generateCalendarEvents() {
                 endTime: task.end_time,
                 isAllDay: !task.start_time || !task.end_time
             },
-            className: task.completed ? 'completed-task' : 'active-task',
+            className: `priority-${task.priority} ${task.completed ? 'completed-task' : 'active-task'}`,
+            backgroundColor: color,
+            borderColor: color,
             allDay: !task.start_time || !task.end_time
         };
 
@@ -550,7 +575,7 @@ function generateCalendarEvents() {
 }
 
 function getTaskColor(task) {
-    if (task.completed) return '#9ca3af';
+    if (task.completed) return '#9ca3af'; // Warna abu-abu solid untuk yang selesai
     switch(task.priority) {
         case 'urgent': return '#ef4444';
         case 'high': return '#f97316';
@@ -650,6 +675,10 @@ function setupCalendarNavigation() {
         appState.calendar.prev();
         updateCalendarTitle();
     });
+    document.getElementById('today-btn').addEventListener('click', function() {
+    appState.calendar.today();
+    updateCalendarTitle();
+});
     
     document.getElementById('next-month').addEventListener('click', () => {
         appState.calendar.next();
@@ -1093,10 +1122,12 @@ function syncTaskUIUpdates(taskId, data, source) {
     
     if (mainTitle) {
         if (task.completed) {
-            mainTitle.classList.add('line-through', 'text-gray-400');
-        } else {
-            mainTitle.classList.remove('line-through', 'text-gray-400');
-        }
+    mainTitle.classList.add('line-through');
+    mainTitle.style.color = '#9ca3af';
+} else {
+    mainTitle.classList.remove('line-through');
+    mainTitle.style.color = '';
+}
     }
     
     // Update modal if open
@@ -1109,11 +1140,13 @@ function syncTaskUIUpdates(taskId, data, source) {
         }
         
         if (modalTitle) {
-            if (task.completed) {
-                modalTitle.classList.add('line-through', 'text-gray-400');
-            } else {
-                modalTitle.classList.remove('line-through', 'text-gray-400');
-            }
+           if (task.completed) {
+    mainTitle.classList.add('line-through');
+    mainTitle.style.color = '#9ca3af';
+} else {
+    mainTitle.classList.remove('line-through');
+    mainTitle.style.color = '';
+}
         }
         
         // Update all modal subtasks if task is toggled
@@ -1208,11 +1241,11 @@ function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
 // ===== HELPER FUNCTIONS =====
 function updateTextStyle(element, completed) {
     if (completed) {
-        element.classList.add('line-through', 'text-gray-400');
-        element.classList.remove('text-gray-700');
+        element.classList.add('line-through');
+        element.style.color = '#9ca3af';
     } else {
-        element.classList.remove('line-through', 'text-gray-400');
-        element.classList.add('text-gray-700');
+        element.classList.remove('line-through');
+        element.style.color = '';
     }
 }
 
@@ -1416,7 +1449,7 @@ function openTaskModal(taskId) {
         : `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
             <div class="flex items-center gap-2 mb-1">
                 <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
                 <span class="text-xs font-medium text-gray-600">Durasi</span>
             </div>
@@ -1476,7 +1509,7 @@ function openTaskModal(taskId) {
             <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     <span class="text-xs font-medium text-gray-600">Tanggal Mulai</span>
                 </div>
@@ -1485,7 +1518,7 @@ function openTaskModal(taskId) {
             <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     <span class="text-xs font-medium text-gray-600">Tanggal Selesai</span>
                 </div>
@@ -1769,7 +1802,7 @@ function showNotification(message, type = 'success') {
             break;
         case 'info':
             bgColor = 'from-blue-500 to-blue-600';
-            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
             break;
     }
     
@@ -1956,12 +1989,13 @@ function formatDateString(dateString) {
     .task-item {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-
+    
     /* Empty state animations */
     #filter-empty-state {
         transition: all 0.3s ease-out;
     }
 
+    
     /* Enhanced Weekly Calendar Styles */
     .fc-timeGridWeek-view .fc-daygrid-day-frame {
         min-height: 80px;
@@ -2068,6 +2102,7 @@ function formatDateString(dateString) {
     /* Event priority indicators */
     .fc-event.priority-urgent {
         border-left-color: #ef4444 !important;
+        
     }
 
     .fc-event.priority-high {
@@ -2082,11 +2117,11 @@ function formatDateString(dateString) {
         border-left-color: #22c55e !important;
     }
 
-    /* Completed task styling */
-    .fc-event.completed-task {
-        opacity: 0.7;
-        text-decoration: line-through;
-    }
+    /* Menjadi ini: */
+.completed-task {
+    color: #9ca3af !important;
+    text-decoration: line-through;
+}
 
     /* Improved responsive design */
     @media (max-width: 768px) {
@@ -2105,6 +2140,13 @@ function formatDateString(dateString) {
             font-size: 11px;
         }
     }
+
+    /* Tambahkan ini ke bagian CSS Anda */
+.fc-event.completed-task .fc-event-time,
+.fc-event.completed-task .fc-event-title {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
 </style>
 @endpush
 
