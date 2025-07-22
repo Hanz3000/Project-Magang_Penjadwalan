@@ -36,10 +36,7 @@
                 d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
         Kalender Tugas
-        <span id="calendar-completion-indicator"
-            class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium border border-green-300 animate-pulse">
-            🎉 Semua tugas selesai!
-        </span>
+        
     </h2>
     <div class="flex items-center gap-3">
         <button id="prev-month"
@@ -51,10 +48,7 @@
         <button id="month-year-selector"
             class="text-lg font-semibold text-gray-800 min-w-[200px] text-center hover:bg-gray-100 px-3 py-1 rounded-lg transition-all duration-200">
             <span id="calendar-title"></span>
-            <svg class="w-4 h-4 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-        </button>
+                    </button>
         <button id="next-month"
             class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,19 +56,20 @@
             </svg>
         </button>
         <div class="flex bg-gray-100 p-1 rounded-xl ml-2">
-            <button id="today-btn"
-                class="px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium text-blue-600 bg-white shadow-sm hover:bg-blue-100">
-                Hari Ini
-            </button>
-            <button id="month-view"
-                class="px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium text-blue-600 bg-white shadow-sm hover:bg-blue-100 ml-2">
-                Bulan
-            </button>
-            <button id="week-view"
-                class="px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium text-gray-600 hover:text-gray-800 ml-2">
-                Minggu
-            </button>
-        </div>
+    <button id="today-btn"
+        class="toggle-btn px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium ml-0">
+        Hari Ini
+    </button>
+    <button id="month-view"
+        class="toggle-btn px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium ml-2">
+        Bulan
+    </button>
+    <button id="week-view"
+        class="toggle-btn px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium ml-2">
+        Minggu
+    </button>
+</div>
+
     </div>
 </div>
 
@@ -82,37 +77,51 @@
                 </div>
 
 
-                <!-- Month Year Picker Modal -->
-<div id="monthYearPickerModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs">
-        <div class="flex justify-between items-center p-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800">Pilih Bulan</h3>
-            <button onclick="closeMonthYearPicker()" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-all duration-200">
+<!-- Month Year Picker Modal -->
+<div id="monthYearPickerModal"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <!-- Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">Pilih Bulan & Tahun</h3>
+            <button onclick="closeMonthYearPicker()"
+                class="text-gray-500 hover:text-red-500 transition rounded-full p-1 hover:bg-red-50">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
-        <div class="p-4">
-            <div class="grid grid-cols-4 gap-2 mb-4" id="month-selector">
-                <!-- Months will be populated by JavaScript -->
+
+        <!-- Body -->
+        <div class="p-6">
+            <!-- Pilih Bulan -->
+            <div class="grid grid-cols-4 gap-3 mb-6" id="month-selector">
+                <!-- Diisi via JavaScript -->
             </div>
-            <div class="flex justify-between items-center mb-4">
-                <button id="prev-year" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
+
+            <!-- Tahun -->
+            <div class="flex justify-between items-center">
+                <button id="prev-year"
+                    class="p-2 rounded-full border border-gray-300 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
                 <span id="current-year" class="text-lg font-semibold text-gray-800"></span>
-                <button id="next-year" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
+                <button id="next-year"
+                    class="p-2 rounded-full border border-gray-300 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
             </div>
         </div>
     </div>
-</div>3
+</div>
+
                 <!-- Task list section with enhanced design and ACTIVE FILTER -->
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
                     <div class="flex justify-between items-center mb-6">
@@ -122,6 +131,10 @@
                             </svg>
                             List Jadwal dan Tugas
                             <span id="filtered-count" class="hidden ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full font-medium"></span>
+                            <span id="calendar-completion-indicator"
+            class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium border border-green-300 animate-pulse">
+            🎉 Semua tugas selesai!
+        </span>
                         </h2>
                         <!-- Filter buttons with data-filter attributes -->
                         <div class="flex gap-2">
@@ -521,6 +534,29 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification('Gagal memuat komponen. Silakan refresh halaman.', 'error');
     }
 });
+
+// index.js atau <script> di bawah HTML
+document.addEventListener("DOMContentLoaded", function () {
+    const buttons = document.querySelectorAll(".toggle-btn");
+
+    buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+            // Reset semua tombol ke state tidak aktif
+            buttons.forEach((b) => {
+                b.classList.remove("bg-white", "text-blue-600", "shadow-sm", "hover:bg-blue-100");
+                b.classList.add("text-gray-600", "hover:text-gray-800");
+            });
+
+            // Aktifkan tombol yang diklik
+            btn.classList.remove("text-gray-600", "hover:text-gray-800");
+            btn.classList.add("bg-white", "text-blue-600", "shadow-sm", "hover:bg-blue-100");
+        });
+    });
+
+    // Pilih tombol default aktif (misal: today)
+    document.getElementById("today-btn").click();
+});
+
 
 // ===== ENHANCED CALENDAR FUNCTIONS =====
 function initializeCalendar() {
@@ -1983,7 +2019,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMonthYearPicker();
 });
 </script>
-
 <style>
     /* Enhanced CSS with modern animations and effects */
     .vertical-tree {
