@@ -76,7 +76,7 @@
                                     <input id="title" name="title" type="text" 
                                            value="{{ old('title', $task->title) }}" 
                                            placeholder="Masukkan judul tugas" required
-                                        class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('title') border-red-500 @enderror">
+                                           class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('title') border-red-500 @enderror">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -97,7 +97,7 @@
                                 <div class="relative flex items-center gap-2">
                                     <div class="flex-1 relative">
                                         <select id="category_id" name="category_id"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 appearance-none @error('category_id') border-red-500 @enderror">
+                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 appearance-none @error('category_id') border-red-500 @enderror">
                                             <option value="">Pilih Kategori</option>
                                             @foreach($categories as $category)
                                                 <option value="{{ $category->id }}" {{ old('category_id', $task->category_id) == $category->id ? 'selected' : '' }}>
@@ -192,8 +192,8 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     <div class="relative">
                                         <input id="start_date" name="start_date" type="date" required
-                                            value="{{ old('start_date', $task->start_date ? $task->start_date->format('Y-m-d') : '') }}"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('start_date') border-red-500 @enderror">
+                                               value="{{ old('start_date', $task->start_date ? $task->start_date->format('Y-m-d') : '') }}"
+                                               class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('start_date') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -202,8 +202,8 @@
                                     </div>
                                     <div class="relative">
                                         <input id="start_time" name="start_time" type="text" readonly
-                                            value="{{ old('start_time', $task->start_time ?? '') }}"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('start_time') border-red-500 @enderror">
+                                               value="{{ old('start_time', $task->start_time ? $task->start_time->format('H:i') : '') }}"
+                                               class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('start_time') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -227,8 +227,8 @@
                                 <div class="grid grid-cols-2 gap-3">
                                     <div class="relative">
                                         <input id="end_date" name="end_date" type="date" required
-                                            value="{{ old('end_date', $task->end_date ? $task->end_date->format('Y-m-d') : '') }}"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('end_date') border-red-500 @enderror">
+                                               value="{{ old('end_date', $task->end_date ? $task->end_date->format('Y-m-d') : '') }}"
+                                               class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('end_date') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -237,8 +237,8 @@
                                     </div>
                                     <div class="relative">
                                         <input id="end_time" name="end_time" type="text" readonly
-                                            value="{{ old('end_time', $task->end_time ?? '') }}"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('end_time') border-red-500 @enderror">
+                                               value="{{ old('end_time', $task->end_time ? $task->end_time->format('H:i') : '') }}"
+                                               class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('end_time') border-red-500 @enderror">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -257,7 +257,7 @@
                         <!-- Full Day Button -->
                         <div class="mt-4">
                             <label class="inline-flex items-center">
-                                <input type="checkbox" id="full_day_toggle" class="form-checkbox h-5 w-5 text-blue-600" {{ old('full_day', $task->full_day) ? 'checked' : '' }}>
+                                <input type="checkbox" id="full_day_toggle" name="full_day" class="form-checkbox h-5 w-5 text-blue-600" {{ old('full_day', $task->full_day) ? 'checked' : '' }}>
                                 <span class="ml-2 text-gray-700">Sehari Penuh</span>
                             </label>
                         </div>
@@ -272,7 +272,7 @@
                         
                         <div class="relative">
                             <textarea id="description" name="description" rows="4" placeholder="Masukkan deskripsi detail tugas Anda..."
-                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 resize-none @error('description') border-red-500 @enderror">{{ old('description', $task->description) }}</textarea>
+                                      class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 resize-none @error('description') border-red-500 @enderror">{{ old('description', $task->description) }}</textarea>
                             <div class="absolute top-3 left-3 pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
@@ -301,7 +301,7 @@
                                         <span class="text-sm font-medium text-indigo-700">Daftar Subtask (Maksimal 6 level)</span>
                                     </div>
                                     <button type="button" id="add-subtask-button" onclick="addSubtask(null)"
-                                        class="inline-flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-sm font-medium shadow-sm">
+                                            class="inline-flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200 text-sm font-medium shadow-sm">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                         </svg>
@@ -325,22 +325,22 @@
                                                         <div class="flex-1">
                                                             <input type="hidden" name="subtasks[{{ $index }}][id]" value="{{ $subtask->id }}">
                                                             <input type="text" name="subtasks[{{ $index }}][title]" value="{{ $subtask->title }}" placeholder="Masukkan nama subtask"
-                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
                                                             <input type="hidden" name="subtasks[{{ $index }}][parent_id]" value="{{ $subtask->parent_id ?? '' }}">
                                                         </div>
                                                         <div class="flex gap-2">
                                                             <button type="button" 
-                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                                                onclick="addSubtask(this.closest('.subtask-item'))"
-                                                                title="Tambah Sub-subtask">
+                                                                    class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                                                                    onclick="addSubtask(this.closest('.subtask-item'))"
+                                                                    title="Tambah Sub-subtask">
                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                                                 </svg>
                                                             </button>
                                                             <button type="button" 
-                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
-                                                                title="Hapus Subtask">
+                                                                    class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                                                                    onclick="removeSubtask(this.closest('.subtask-item'))"
+                                                                    title="Hapus Subtask">
                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                                 </svg>
@@ -355,22 +355,22 @@
                                                                         <div class="flex-1">
                                                                             <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}][id]" value="{{ $childSubtask->id }}">
                                                                             <input type="text" name="subtasks[{{ $index }}_{{ $childIndex }}][title]" value="{{ $childSubtask->title }}" placeholder="Masukkan nama subtask"
-                                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                                                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
                                                                             <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}][parent_id]" value="{{ $childSubtask->parent_id ?? '' }}">
                                                                         </div>
                                                                         <div class="flex gap-2">
                                                                             <button type="button" 
-                                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                                                                onclick="addSubtask(this.closest('.subtask-item'))"
-                                                                                title="Tambah Sub-subtask">
+                                                                                    class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                                                                                    onclick="addSubtask(this.closest('.subtask-item'))"
+                                                                                    title="Tambah Sub-subtask">
                                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                                                                 </svg>
                                                                             </button>
                                                                             <button type="button" 
-                                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
-                                                                                title="Hapus Subtask">
+                                                                                    class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                                                                                    onclick="removeSubtask(this.closest('.subtask-item'))"
+                                                                                    title="Hapus Subtask">
                                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                                                 </svg>
@@ -385,22 +385,22 @@
                                                                                         <div class="flex-1">
                                                                                             <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][id]" value="{{ $grandChildSubtask->id }}">
                                                                                             <input type="text" name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][title]" value="{{ $grandChildSubtask->title }}" placeholder="Masukkan nama subtask"
-                                                                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                                                                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
                                                                                             <input type="hidden" name="subtasks[{{ $index }}_{{ $childIndex }}_{{ $grandChildIndex }}][parent_id]" value="{{ $grandChildSubtask->parent_id ?? '' }}">
                                                                                         </div>
                                                                                         <div class="flex gap-2">
                                                                                             <button type="button" 
-                                                                                                class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                                                                                onclick="addSubtask(this.closest('.subtask-item'))"
-                                                                                                title="Tambah Sub-subtask">
+                                                                                                    class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                                                                                                    onclick="addSubtask(this.closest('.subtask-item'))"
+                                                                                                    title="Tambah Sub-subtask">
                                                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                                                                                 </svg>
                                                                                             </button>
                                                                                             <button type="button" 
-                                                                                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                                                                                onclick="removeSubtask(this.closest('.subtask-item'))"
-                                                                                                title="Hapus Subtask">
+                                                                                                    class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                                                                                                    onclick="removeSubtask(this.closest('.subtask-item'))"
+                                                                                                    title="Hapus Subtask">
                                                                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                                                                 </svg>
@@ -432,6 +432,8 @@
                                     @endif
                                 </div>
                             </div>
+                            <!-- Hidden input for deleted subtasks -->
+                            <input type="hidden" name="deleted_subtasks" id="deleted_subtasks" value="">
                         </div>
                     </div>
                 </div>
@@ -439,7 +441,7 @@
                 <!-- Action Buttons -->
                 <div class="bg-gray-50 px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <a href="{{ route('tasks.index') }}"
-                        class="inline-flex items-center px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                       class="inline-flex items-center px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
@@ -447,7 +449,7 @@
                     </a>
                     
                     <button type="submit"
-                        class="inline-flex items-center px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl">
+                            class="inline-flex items-center px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
@@ -499,6 +501,7 @@
 <script>
 let subtaskIdCounter = {{ $task->subTasks ? $task->subTasks->count() : 0 }};
 let currentTimeInput = null;
+let deletedSubtasks = [];
 
 // Get today's date in YYYY-MM-DD format
 const today = new Date().toISOString().split('T')[0];
@@ -506,8 +509,9 @@ const today = new Date().toISOString().split('T')[0];
 // Time Picker Functions
 function openTimePicker(inputElement) {
     currentTimeInput = inputElement;
-    const currentValue = inputElement.value || '09:52'; // Default to current time
-    const [hours, minutes] = currentValue.split(':').map(Number);
+    // Use the input's current value or default to '00:00' if empty
+    const currentValue = inputElement.value || '00:00';
+    const [hours, minutes] = currentValue.split(':').map(Number) || [0, 0];
     
     populateTimeLists(hours, minutes);
     document.getElementById('time-picker-modal').classList.remove('hidden');
@@ -536,7 +540,7 @@ function populateTimeLists(selectedHour, selectedMinute) {
     }
     
     minuteList.innerHTML = '';
-    for (let i = 0; i <= 59; i++) {
+    for (let i = 0; i <= 59; i += 1) {
         const minuteDiv = document.createElement('div');
         minuteDiv.className = `time-option ${i === selectedMinute ? 'selected' : ''}`;
         minuteDiv.textContent = i.toString().padStart(2, '0');
@@ -573,41 +577,38 @@ function setTimeFromPicker() {
 document.addEventListener('DOMContentLoaded', function() {
     const startDateInput = document.getElementById('start_date');
     const endDateInput = document.getElementById('end_date');
-    
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    const fullDayToggle = document.getElementById('full_day_toggle');
+
+    // Set minimum date for end_date based on start_date
     startDateInput.addEventListener('change', function() {
         endDateInput.setAttribute('min', this.value);
     });
 
+    // Initialize time picker inputs
     document.querySelectorAll('.time-picker-input').forEach(input => {
         input.addEventListener('click', function() {
-            openTimePicker(this);
+            if (!this.disabled) {
+                openTimePicker(this);
+            }
         });
     });
     
     document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
     document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
     document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
-    
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const currentTime = `${hours}:${minutes}`;
-    
-    if (!document.getElementById('start_time').value) {
-        document.getElementById('start_time').value = currentTime;
+
+    // Initialize time inputs based on task data
+    if (!startTimeInput.value) {
+        startTimeInput.value = '00:00';
     }
-    
-    if (!document.getElementById('end_time').value) {
-        const endTime = new Date(now.getTime() + 60 * 60 * 1000);
-        const endHours = String(endTime.getHours()).padStart(2, '0');
-        const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
-        document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
+    if (!endTimeInput.value) {
+        endTimeInput.value = '23:59';
     }
-    
-    document.getElementById('full_day_toggle').addEventListener('change', function() {
-        const startTimeInput = document.getElementById('start_time');
-        const endTimeInput = document.getElementById('end_time');
-        
+
+    // Handle full day toggle
+    fullDayToggle.addEventListener('change', function() {
         if (this.checked) {
             startTimeInput.value = '00:00';
             endTimeInput.value = '23:59';
@@ -616,10 +617,23 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             startTimeInput.disabled = false;
             endTimeInput.disabled = false;
-            if (!startTimeInput.value) startTimeInput.value = currentTime;
-            if (!endTimeInput.value) endTimeInput.value = `${endHours}:${endMinutes}`;
+            // Restore original or default time if available
+            startTimeInput.value = startTimeInput.dataset.originalTime || '00:00';
+            endTimeInput.value = endTimeInput.dataset.originalTime || '23:59';
         }
     });
+
+    // Store original time values for restoration
+    startTimeInput.dataset.originalTime = startTimeInput.value;
+    endTimeInput.dataset.originalTime = endTimeInput.value;
+
+    // Initialize full day toggle state
+    if (fullDayToggle.checked) {
+        startTimeInput.value = '00:00';
+        endTimeInput.value = '23:59';
+        startTimeInput.disabled = true;
+        endTimeInput.disabled = true;
+    }
 });
 
 // Subtask Management Functions
@@ -661,22 +675,22 @@ function addSubtask(parentElement = null) {
             <div class="flex items-center gap-3">
                 <div class="flex-1">
                     <input type="text" name="new_subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
                     <input type="hidden" name="new_subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
                 </div>
                 <div class="flex gap-2">
                     <button type="button" 
-                        class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                        onclick="addSubtask(this.closest('.subtask-item'))"
-                        title="Tambah Sub-subtask">
+                            class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                            onclick="addSubtask(this.closest('.subtask-item'))"
+                            title="Tambah Sub-subtask">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                     </button>
                     <button type="button" 
-                        class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                        onclick="removeSubtask(this.closest('.subtask-item'))"
-                        title="Hapus Subtask">
+                            class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                            onclick="removeSubtask(this.closest('.subtask-item'))"
+                            title="Hapus Subtask">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -697,6 +711,11 @@ function addSubtask(parentElement = null) {
 
 function removeSubtask(element) {
     if (confirm('Apakah Anda yakin ingin menghapus subtask ini beserta semua subtask di bawahnya?')) {
+        const subtaskId = element.dataset.id;
+        if (subtaskId) {
+            deletedSubtasks.push(subtaskId);
+            document.getElementById('deleted_subtasks').value = deletedSubtasks.join(',');
+        }
         element.remove();
         
         const container = document.getElementById('subtasks-container');
@@ -851,4 +870,5 @@ priorityOptions.forEach(option => {
         </div>
     </div>
 </div>
+@endpush
 @endsection
