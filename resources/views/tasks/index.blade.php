@@ -633,13 +633,16 @@ eventContent: function(arg) {
 function generateCalendarEvents() {
     return appState.tasksData.map(task => {
         const color = getTaskColor(task);
-        const isAllDay = !task.start_time || !task.end_time;
+        // Perbaikan logika: tugas sehari penuh jika tidak ada start_time DAN end_time, 
+        // atau jika start_time adalah 00:00 dan end_time adalah 23:59
+        const isAllDay = !task.start_time || !task.end_time || 
+                         (task.start_time === '00:00' && task.end_time === '23:59');
 
         const eventData = {
             id: task.id.toString(),
             title: task.title,
-            start: task.start_date + (task.start_time ? `T${task.start_time}:00` : ''),
-            end: task.end_date + (task.end_time ? `T${task.end_time}:00` : ''),
+            start: isAllDay ? task.start_date : task.start_date + `T${task.start_time}:00`,
+            end: isAllDay ? task.end_date : task.end_date + `T${task.end_time}:00`,
             extendedProps: {
                 description: task.description,
                 priority: task.priority,
@@ -697,7 +700,8 @@ function showTaskTooltip(info) {
     'low': 'Rendah'
 };
 
-    const timeInfo = task.start_time && task.end_time 
+    const timeInfo = (task.start_time && task.end_time && 
+                      !(task.start_time === '00:00' && task.end_time === '23:59'))
         ? `<div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -1531,8 +1535,9 @@ function openTaskModal(taskId) {
     const subtaskTotal = leafSubTasks.length;
     const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
 
-    // Add time display
-    const timeDisplay = task.start_time && task.end_time 
+    // Add time display - perbaikan logika untuk sehari penuh
+    const timeDisplay = (task.start_time && task.end_time && 
+                        !(task.start_time === '00:00' && task.end_time === '23:59'))
         ? `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
             <div class="flex items-center gap-2 mb-1">
                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
