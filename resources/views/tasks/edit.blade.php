@@ -552,6 +552,8 @@
                 const startTimeInput = document.getElementById('start_time');
                 const endTimeInput = document.getElementById('end_time');
                 const fullDayToggle = document.getElementById('full_day_toggle');
+                const startDateInput = document.getElementById('start_date');
+                const endDateInput = document.getElementById('end_date');
 
                 // Store original time values for restoration
                 startTimeInput.dataset.originalTime = startTimeInput.value;
@@ -612,6 +614,37 @@
                 document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
                 document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
                 document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
+
+                // Validasi tanggal selesai berdasarkan tanggal mulai
+                function updateEndDateMin() {
+                    const startDate = startDateInput.value;
+                    if (startDate) {
+                        endDateInput.setAttribute('min', startDate);
+                        // Jika end_date sudah diisi dan lebih kecil dari start_date, reset
+                        if (endDateInput.value && endDateInput.value < startDate) {
+                            endDateInput.value = startDate;
+                            alert('Tanggal selesai telah disesuaikan agar tidak lebih awal dari tanggal mulai.');
+                        }
+                    } else {
+                        endDateInput.removeAttribute('min');
+                    }
+                }
+
+                // Set initial min attribute for end_date
+                updateEndDateMin();
+
+                // Tambahkan event listener untuk start_date
+                startDateInput.addEventListener('change', updateEndDateMin);
+
+                // Validasi saat end_date berubah
+                endDateInput.addEventListener('change', function() {
+                    const startDate = startDateInput.value;
+                    const endDate = this.value;
+                    if (startDate && endDate && endDate < startDate) {
+                        this.value = startDate;
+                        alert('Tanggal selesai tidak boleh lebih awal dari tanggal mulai.');
+                    }
+                });
             });
 
             // Subtask Management Functions
@@ -646,7 +679,6 @@
 
                 const marginLeft = indentLevel * 20;
 
-                // Hilangkan checkbox, hanya gunakan input teks biasa
                 subtaskWrapper.innerHTML = `
                     <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
                         <div class="flex items-center gap-3">
