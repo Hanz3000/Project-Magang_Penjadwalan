@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12">
-        <div class="max-w-4xl mx-auto px-4">
+        <div class="max-w-4xl mx-auto px-6">
             <!-- Header Card -->
             <div class="mb-8 text-center">
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
@@ -81,8 +81,8 @@
                                     <div class="relative">
                                         <input id="title" name="title" type="text"
                                             value="{{ old('title', $task->title) }}" placeholder="Masukkan judul tugas"
-                                            required
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('title') border-red-500 @enderror">
+                                            required readonly
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('title') border-red-500 @endif">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
@@ -94,7 +94,7 @@
                                     </div>
                                     @error('title')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                    @enderror
+                                    @endif
                                 </div>
 
                                 <!-- Category Selection -->
@@ -106,7 +106,7 @@
                                         <div class="relative flex items-center gap-2">
                                             <div class="flex-1 relative">
                                                 <select id="category_id" name="category_id"
-                                                    class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 appearance-none @error('category_id') border-red-500 @enderror">
+                                                    class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 appearance-none @error('category_id') border-red-500 @endif">
                                                     <option value="">Pilih Kategori</option>
                                                     @foreach ($categories as $category)
                                                         <option value="{{ $category->id }}"
@@ -137,7 +137,7 @@
                                         </div>
                                         @error('category_id')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                        @enderror
+                                        @endif
                                     </div>
                                 @endif
 
@@ -201,7 +201,7 @@
                                     </div>
                                     @error('priority')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                    @enderror
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -223,7 +223,7 @@
                                         <div class="relative">
                                             <input id="start_date" name="start_date" type="date" required
                                                 value="{{ old('start_date', $task->start_date ? $task->start_date->format('Y-m-d') : '') }}"
-                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('start_date') border-red-500 @enderror">
+                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('start_date') border-red-500 @endif">
                                             <div
                                                 class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
@@ -237,10 +237,10 @@
                                         <div class="relative">
                                             <input id="start_time" name="start_time" type="text" readonly
                                                 value="{{ old('start_time', $task->start_time ? $task->start_time->format('H:i') : '00:00') }}"
-                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('start_time') border-red-500 @enderror">
+                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('start_time') border-red-500 @endif">
                                             <div
                                                 class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
+                                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
                                                     viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -250,49 +250,51 @@
                                     </div>
                                     @error('start_date')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                    @enderror
+                                    @endif
                                     @error('start_time')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                    @enderror
+                                    @endif
                                 </div>
 
                                 <!-- End Date & Time -->
-                                <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Tanggal Selesai <span class="text-red-500">*</span>
-                                </label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div class="relative">
-                                        <input id="end_date" name="end_date" type="date" required
-                                            value="{{ old('end_date', $task->end_date ? $task->end_date->format('Y-m-d') : '') }}"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('end_date') border-red-500 @enderror">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                </path>
-                                            </svg>
+                                <div>
+                                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Tanggal Selesai <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="relative">
+                                            <input id="end_date" name="end_date" type="date" required
+                                                value="{{ old('end_date', $task->end_date ? $task->end_date->format('Y-m-d') : '') }}"
+                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('end_date') border-red-500 @endif">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                    </path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="relative">
+                                            <input id="end_time" name="end_time" type="text" readonly
+                                                value="{{ old('end_time', $task->end_time ? $task->end_time->format('H:i') : '23:59') }}"
+                                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('end_time') border-red-500 @endif">
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="relative">
-                                        <input id="end_time" name="end_time" type="text" readonly
-                                            value="{{ old('end_time', $task->end_time ? $task->end_time->format('H:i') : '23:59') }}"
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('end_time') border-red-500 @enderror">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
+                                    @error('end_date')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @endif
+                                    @error('end_time')
+                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                    @endif
                                 </div>
-                                @error('end_date')
-                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                @enderror
-                                @error('end_time')
-                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                @enderror
                             </div>
                         </div>
                         <!-- Full Day Button -->
@@ -306,7 +308,7 @@
                     </div>
 
                     <!-- Description Section -->
-                    <div class="mb-8">
+                    <div class="mb-8 px-8">
                         <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
                             <div class="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
                             Deskripsi
@@ -314,7 +316,7 @@
 
                         <div class="relative">
                             <textarea id="description" name="description" rows="4" placeholder="Masukkan deskripsi detail tugas Anda..."
-                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 resize-none @error('description') border-red-500 @enderror">{{ old('description', $task->description) }}</textarea>
+                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 resize-none @error('description') border-red-500 @endif">{{ old('description', $task->description) }}</textarea>
                             <div class="absolute top-3 left-3 pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
@@ -325,11 +327,11 @@
                         </div>
                         @error('description')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                        @enderror
+                        @endif
                     </div>
 
                     <!-- Subtasks Section -->
-                    <div class="mb-8">
+                    <div class="mb-8 px-8">
                         <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
                             <div class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></div>
                             Subtask Bertingkat
@@ -402,31 +404,30 @@
                             <input type="hidden" name="deleted_subtasks" id="deleted_subtasks" value="">
                         </div>
                     </div>
-            </div>
 
-            <!-- Action Buttons -->
-            <div
-                class="bg-gray-50 px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <a href="{{ route('tasks.index') }}"
-                    class="inline-flex items-center px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Kembali ke Daftar
-                </a>
+                    <!-- Action Buttons -->
+                    <div
+                        class="bg-gray-50 px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <a href="{{ route('tasks.index') }}"
+                            class="inline-flex items-center px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Kembali ke Daftar
+                        </a>
 
-                <button type="submit"
-                    class="inline-flex items-center px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Update Task
-                </button>
+                        <button type="submit"
+                            class="inline-flex items-center px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Update Task
+                        </button>
+                    </div>
+                </form>
             </div>
-            </form>
         </div>
-    </div>
     </div>
 
     @push('styles')
@@ -506,8 +507,7 @@
                     hourDiv.textContent = i.toString().padStart(2, '0');
                     hourDiv.dataset.value = i;
                     hourDiv.addEventListener('click', function() {
-                        document.querySelectorAll('#hour-list .time-option').forEach(opt => opt.classList.remove(
-                            'selected'));
+                        document.querySelectorAll('#hour-list .time-option').forEach(opt => opt.classList.remove('selected'));
                         this.classList.add('selected');
                     });
                     hourList.appendChild(hourDiv);
@@ -520,8 +520,7 @@
                     minuteDiv.textContent = i.toString().padStart(2, '0');
                     minuteDiv.dataset.value = i;
                     minuteDiv.addEventListener('click', function() {
-                        document.querySelectorAll('#minute-list .time-option').forEach(opt => opt.classList.remove(
-                            'selected'));
+                        document.querySelectorAll('#minute-list .time-option').forEach(opt => opt.classList.remove('selected'));
                         this.classList.add('selected');
                     });
                     minuteList.appendChild(minuteDiv);
@@ -531,12 +530,10 @@
                 const selectedMinuteElement = minuteList.querySelector(`.time-option[data-value="${selectedMinute}"]`);
 
                 if (selectedHourElement) {
-                    hourList.scrollTop = selectedHourElement.offsetTop - hourList.offsetHeight / 2 + selectedHourElement
-                        .offsetHeight / 2;
+                    hourList.scrollTop = selectedHourElement.offsetTop - hourList.offsetHeight / 2 + selectedHourElement.offsetHeight / 2;
                 }
                 if (selectedMinuteElement) {
-                    minuteList.scrollTop = selectedMinuteElement.offsetTop - minuteList.offsetHeight / 2 + selectedMinuteElement
-                        .offsetHeight / 2;
+                    minuteList.scrollTop = selectedMinuteElement.offsetTop - minuteList.offsetHeight / 2 + selectedMinuteElement.offsetHeight / 2;
                 }
             }
 
@@ -546,8 +543,7 @@
                 const selectedHour = document.querySelector('#hour-list .time-option.selected')?.dataset.value || '0';
                 const selectedMinute = document.querySelector('#minute-list .time-option.selected')?.dataset.value || '0';
 
-                currentTimeInput.value =
-                    `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+                currentTimeInput.value = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
                 closeTimePicker();
             }
 
@@ -631,58 +627,65 @@
                 return level;
             }
 
-            function addSubtask(parentElement = null, parentId = null, level = 0) {
+            function addSubtask(parentElement = null) {
                 const noSubtasksMsg = document.getElementById('no-subtasks');
                 if (noSubtasksMsg) noSubtasksMsg.style.display = 'none';
 
-                if (level >= 6) {
+                const parentId = parentElement?.dataset.id || null;
+                const indentLevel = getIndentLevel(parentElement);
+
+                if (indentLevel >= 6) {
                     alert('Maksimal 6 level subtask telah tercapai');
                     return;
                 }
 
                 const subtaskWrapper = document.createElement('div');
-                const tempId = 'new_' + crypto.randomUUID();
-                subtaskWrapper.dataset.id = tempId;
+                const currentId = ++subtaskIdCounter;
+                subtaskWrapper.dataset.id = currentId;
                 subtaskWrapper.className = 'subtask-item';
 
-                const marginLeft = level * 20;
+                const marginLeft = indentLevel * 20;
 
+                // Hilangkan checkbox, hanya gunakan input teks biasa
                 subtaskWrapper.innerHTML = `
-            <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
-                <div class="flex items-center gap-3">
-                    <div class="flex-1">
-                        <input type="text" name="subtasks[${tempId}][title]" placeholder="Masukkan nama subtask"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
-                        <input type="hidden" name="subtasks[${tempId}][parent_id]" value="${parentId ?? ''}">
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1">
+                                <input type="text" name="subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
+                                <input type="hidden" name="subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
+                            </div>
+                            <div class="flex gap-2">
+                                ${indentLevel < 5 ? `
+                                    <button type="button"
+                                        class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
+                                        onclick="addSubtask(this.closest('.subtask-item'))"
+                                        title="Tambah Sub-subtask">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        </svg>
+                                    </button>
+                                ` : ''}
+                                <button type="button"
+                                    class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
+                                    onclick="removeSubtask(this.closest('.subtask-item'))"
+                                    title="Hapus Subtask">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-3 space-y-3 child-container"></div>
                     </div>
-                    <div class="flex gap-2">
-                        ${level < 5 ? `
-                                                                                <button type="button"
-                                                                                        class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                                                                                        onclick="addSubtask(this.closest('.subtask-item'), '${tempId}', ${level + 1})"
-                                                                                        title="Tambah Sub-subtask">
-                                                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                                                                    </svg>
-                                                                                </button>
-                                                                                ` : ''}
-                        <button type="button"
-                                class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                                onclick="removeSubtask(this.closest('.subtask-item'))"
-                                title="Hapus Subtask">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="mt-3 space-y-3 child-container"></div>
-            </div>
-        `;
+                `;
 
-                const container = parentElement?.querySelector('.child-container') ||
-                    document.getElementById('subtasks-container');
-                container.appendChild(subtaskWrapper);
+                const container = parentElement?.querySelector('.child-container') || document.querySelector('#subtasks-container .subtasks-scroll-container');
+                if (container.firstChild && container.firstChild.id === 'no-subtasks') {
+                    container.insertBefore(subtaskWrapper, container.firstChild.nextSibling);
+                } else {
+                    container.insertBefore(subtaskWrapper, container.firstChild);
+                }
             }
 
             function removeSubtask(element) {
@@ -740,7 +743,7 @@
                     }
                 }
 
-                const newSubtaskInputs = document.querySelectorAll('input[name*="new_subtasks"][name*="[title]"]');
+                const newSubtaskInputs = document.querySelectorAll('input[name*="subtasks"][name*="[title]"]');
                 for (let input of newSubtaskInputs) {
                     if (input.value.trim() === '') {
                         e.preventDefault();
