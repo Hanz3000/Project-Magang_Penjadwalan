@@ -35,14 +35,17 @@
                                     Judul Tugas <span class="text-red-500">*</span>
                                 </label>
                                 <div class="relative">
-                                    <input id="title" name="title" type="text" placeholder="Masukkan judul tugas" required
-                                        class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                    <input id="title" name="title" type="text" value="{{ old('title') }}" placeholder="Masukkan judul tugas" required
+                                        class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('title') border-red-500 @endif">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                         </svg>
                                     </div>
                                 </div>
+                                @error('title')
+                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                @endif
                             </div>
 
                             <!-- Category Selection -->
@@ -53,10 +56,10 @@
                                 <div class="relative flex items-center gap-2">
                                     <div class="flex-1 relative">
                                         <select id="category_id" name="category_id" required
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 appearance-none">
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 appearance-none @error('category_id') border-red-500 @endif">
                                             <option value="">Pilih Kategori</option>
                                             @foreach($categories as $category)
-                                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                             @endforeach
                                         </select>
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -78,6 +81,9 @@
                                         </svg>
                                     </button>
                                 </div>
+                                @error('category_id')
+                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                @endif
                             </div>
 
                             <!-- Priority Selection -->
@@ -87,7 +93,7 @@
                                 </label>
                                 <div class="grid grid-cols-2 gap-3">
                                     <label class="relative priority-option">
-                                        <input type="radio" name="priority" value="urgent" required class="sr-only peer">
+                                        <input type="radio" name="priority" value="urgent" required class="sr-only peer" {{ old('priority') == 'urgent' ? 'checked' : '' }}>
                                         <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-red-500 peer-checked:border-red-500 peer-checked:bg-red-100 hover:border-red-300 hover:bg-red-100">
                                             <div class="flex items-center justify-center">
                                                 <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
@@ -97,7 +103,7 @@
                                     </label>
 
                                     <label class="relative priority-option">
-                                        <input type="radio" name="priority" value="high" required class="sr-only peer">
+                                        <input type="radio" name="priority" value="high" required class="sr-only peer" {{ old('priority') == 'high' ? 'checked' : '' }}>
                                         <div class="px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-yellow-500 peer-checked:border-yellow-500 peer-checked:bg-yellow-100 hover:border-yellow-300 hover:bg-yellow-100">
                                             <div class="flex items-center justify-center">
                                                 <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
@@ -107,7 +113,7 @@
                                     </label>
 
                                     <label class="relative priority-option">
-                                        <input type="radio" name="priority" value="medium" required class="sr-only peer">
+                                        <input type="radio" name="priority" value="medium" required class="sr-only peer" {{ old('priority') == 'medium' ? 'checked' : '' }}>
                                         <div class="px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-blue-500 peer-checked:border-blue-500 peer-checked:bg-blue-100 hover:border-blue-300 hover:bg-blue-100">
                                             <div class="flex items-center justify-center">
                                                 <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
@@ -117,7 +123,7 @@
                                     </label>
 
                                     <label class="relative priority-option">
-                                        <input type="radio" name="priority" value="low" required class="sr-only peer">
+                                        <input type="radio" name="priority" value="low" required class="sr-only peer" {{ old('priority') == 'low' ? 'checked' : '' }}>
                                         <div class="px-4 py-3 bg-green-50 border border-green-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-green-500 peer-checked:border-green-500 peer-checked:bg-green-100 hover:border-green-300 hover:bg-green-100">
                                             <div class="flex items-center justify-center">
                                                 <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
@@ -126,6 +132,9 @@
                                         </div>
                                     </label>
                                 </div>
+                                @error('priority')
+                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -145,8 +154,8 @@
                                 </label>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div class="relative">
-                                        <input id="start_date" name="start_date" type="date" required
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                        <input id="start_date" name="start_date" type="date" required value="{{ old('start_date', now()->format('Y-m-d')) }}"
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('start_date') border-red-500 @endif">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -154,8 +163,8 @@
                                         </div>
                                     </div>
                                     <div class="relative">
-                                        <input id="start_time" name="start_time" type="text" readonly
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input">
+                                        <input id="start_time" name="start_time" type="text" readonly value="{{ old('start_time', '00:00') }}"
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('start_time') border-red-500 @endif">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -163,6 +172,12 @@
                                         </div>
                                     </div>
                                 </div>
+                                @error('start_date')
+                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                @endif
+                                @error('start_time')
+                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                @endif
                             </div>
                             
                             <!-- End Date & Time -->
@@ -172,8 +187,8 @@
                                 </label>
                                 <div class="grid grid-cols-2 gap-3">
                                     <div class="relative">
-                                        <input id="end_date" name="end_date" type="date" required
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400">
+                                        <input id="end_date" name="end_date" type="date" required value="{{ old('end_date', now()->format('Y-m-d')) }}"
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 @error('end_date') border-red-500 @endif">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -181,8 +196,8 @@
                                         </div>
                                     </div>
                                     <div class="relative">
-                                        <input id="end_time" name="end_time" type="text" readonly
-                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input">
+                                        <input id="end_time" name="end_time" type="text" readonly value="{{ old('end_time', '23:59') }}"
+                                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 time-picker-input @error('end_time') border-red-500 @endif">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -190,12 +205,18 @@
                                         </div>
                                     </div>
                                 </div>
+                                @error('end_date')
+                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                @endif
+                                @error('end_time')
+                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                                @endif
                             </div>
                         </div>
                         <!-- Full Day Button -->
                         <div class="mt-4">
                             <label class="inline-flex items-center">
-                                <input type="checkbox" id="full_day_toggle" class="form-checkbox h-5 w-5 text-blue-600">
+                                <input type="checkbox" id="full_day_toggle" name="full_day" value="1" class="form-checkbox h-5 w-5 text-blue-600" {{ old('full_day') ? 'checked' : '' }}>
                                 <span class="ml-2 text-gray-700">Sehari Penuh</span>
                             </label>
                         </div>
@@ -210,13 +231,16 @@
                         
                         <div class="relative">
                             <textarea id="description" name="description" rows="4" placeholder="Masukkan deskripsi detail tugas Anda..."
-                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 resize-none"></textarea>
+                                class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-gray-400 resize-none @error('description') border-red-500 @endif">{{ old('description') }}</textarea>
                             <div class="absolute top-3 left-3 pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
                                 </svg>
                             </div>
                         </div>
+                        @error('description')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @endif
                     </div>
 
                     <!-- Subtasks Section -->
@@ -440,432 +464,596 @@
     background-color: #DBEAFE;
     font-weight: 600;
 }
+.subtask-date {
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin-top: 2px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+.subtask-date svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+}
 </style>
 @endpush
 
 @push('scripts')
 <script>
-let subtaskIdCounter = 0;
-let currentTimeInput = null;
+document.addEventListener('DOMContentLoaded', function () {
+    let subtaskIdCounter = 0;
+    let currentTimeInput = null;
 
-// Get today's date in YYYY-MM-DD format
-const today = new Date().toISOString().split('T')[0];
-
-// Time Picker Functions
-function openTimePicker(inputElement) {
-    currentTimeInput = inputElement;
-    const currentValue = inputElement.value || '21:15';
-    const [hours, minutes] = currentValue.split(':').map(Number);
-    
-    populateTimeLists(hours, minutes);
-    document.getElementById('time-picker-modal').classList.remove('hidden');
-}
-
-function closeTimePicker() {
-    document.getElementById('time-picker-modal').classList.add('hidden');
-    currentTimeInput = null;
-}
-
-function populateTimeLists(selectedHour, selectedMinute) {
-    const hourList = document.getElementById('hour-list');
-    const minuteList = document.getElementById('minute-list');
-    
-    // Populate hours (0-23)
-    hourList.innerHTML = '';
-    for (let i = 0; i <= 23; i++) {
-        const hourDiv = document.createElement('div');
-        hourDiv.className = `time-option ${i === selectedHour ? 'selected' : ''}`;
-        hourDiv.textContent = i.toString().padStart(2, '0');
-        hourDiv.dataset.value = i;
-        hourDiv.addEventListener('click', function() {
-            document.querySelectorAll('#hour-list .time-option').forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-        });
-        hourList.appendChild(hourDiv);
+    // --- Time Picker Functions ---
+    function openTimePicker(inputElement) {
+        currentTimeInput = inputElement;
+        const currentValue = inputElement.value || '00:00';
+        const [hours, minutes] = currentValue.split(':').map(Number);
+        populateTimeLists(hours, minutes);
+        document.getElementById('time-picker-modal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
     }
-    
-    // Populate minutes (0-59)
-    minuteList.innerHTML = '';
-    for (let i = 0; i <= 59; i++) {
-        const minuteDiv = document.createElement('div');
-        minuteDiv.className = `time-option ${i === selectedMinute ? 'selected' : ''}`;
-        minuteDiv.textContent = i.toString().padStart(2, '0');
-        minuteDiv.dataset.value = i;
-        minuteDiv.addEventListener('click', function() {
-            document.querySelectorAll('#minute-list .time-option').forEach(opt => opt.classList.remove('selected'));
-            this.classList.add('selected');
-        });
-        minuteList.appendChild(minuteDiv);
-    }
-    
-    // Auto-scroll to selected values
-    const selectedHourElement = hourList.querySelector(`.time-option[data-value="${selectedHour}"]`);
-    const selectedMinuteElement = minuteList.querySelector(`.time-option[data-value="${selectedMinute}"]`);
-    
-    if (selectedHourElement) {
-        hourList.scrollTop = selectedHourElement.offsetTop - hourList.offsetHeight / 2 + selectedHourElement.offsetHeight / 2;
-    }
-    if (selectedMinuteElement) {
-        minuteList.scrollTop = selectedMinuteElement.offsetTop - minuteList.offsetHeight / 2 + selectedMinuteElement.offsetHeight / 2;
-    }
-}
 
-function setTimeFromPicker() {
-    if (!currentTimeInput) return;
-    
-    const selectedHour = document.querySelector('#hour-list .time-option.selected')?.dataset.value || '0';
-    const selectedMinute = document.querySelector('#minute-list .time-option.selected')?.dataset.value || '0';
-    
-    currentTimeInput.value = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
-    closeTimePicker();
-}
-
-// Initialize Time Picker and Date Restrictions
-document.addEventListener('DOMContentLoaded', function() {
-    // Set minimum date for end date input based on start date
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
-    
-    // Ensure end date is not before start date
-    startDateInput.addEventListener('change', function() {
-        endDateInput.setAttribute('min', this.value);
-    });
-
-    // Set up time picker inputs
-    document.querySelectorAll('.time-picker-input').forEach(input => {
-        input.addEventListener('click', function() {
-            openTimePicker(this);
-        });
-    });
-    
-    document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
-    document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
-    document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
-    
-    // Set default time to current time
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const currentTime = `${hours}:${minutes}`;
-    
-    if (!document.getElementById('start_time').value) {
-        document.getElementById('start_time').value = currentTime;
+    function closeTimePicker() {
+        document.getElementById('time-picker-modal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+        currentTimeInput = null;
     }
-    
-    if (!document.getElementById('end_time').value) {
-        const endTime = new Date(now.getTime() + 60 * 60 * 1000);
-        const endHours = String(endTime.getHours()).padStart(2, '0');
-        const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
-        document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
-    }
-});
 
-// Category Management Functions
-function openCategoryModal() {
-    document.getElementById('category-modal').classList.remove('hidden');
-}
-
-function closeCategoryModal() {
-    document.getElementById('category-modal').classList.add('hidden');
-}
-
-function addCategory() {
-    const nameInput = document.getElementById('new-category-name');
-    const name = nameInput.value.trim();
-    
-    if (!name) {
-        alert('Nama kategori tidak boleh kosong');
-        return;
-    }
-    
-    fetch('{{ route("categories.store") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            name: name
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const tableBody = document.getElementById('categories-table-body');
-            const newRow = document.createElement('tr');
-            newRow.dataset.id = data.category.id;
-            newRow.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${data.category.name}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button type="button" onclick="editCategory(this)" 
-                        class="text-blue-600 hover:text-blue-900 mr-3">
-                        Edit
-                    </button>
-                    <button type="button" onclick="deleteCategory(${data.category.id})" 
-                        class="text-red-600 hover:text-red-900">
-                        Hapus
-                    </button>
-                </td>
-            `;
-            tableBody.appendChild(newRow);
-            
-            const select = document.getElementById('category_id');
-            const option = document.createElement('option');
-            option.value = data.category.id;
-            option.textContent = data.category.name;
-            select.appendChild(option);
-            
-            nameInput.value = '';
-        } else {
-            alert(data.message || 'Gagal menambahkan kategori');
+    function populateTimeLists(selectedHour, selectedMinute) {
+        const hourList = document.getElementById('hour-list');
+        const minuteList = document.getElementById('minute-list');
+        hourList.innerHTML = '';
+        for (let i = 0; i <= 23; i++) {
+            const hourDiv = document.createElement('div');
+            hourDiv.className = `time-option ${i === selectedHour ? 'selected' : ''}`;
+            hourDiv.textContent = i.toString().padStart(2, '0');
+            hourDiv.dataset.value = i;
+            hourDiv.addEventListener('click', function() {
+                document.querySelectorAll('#hour-list .time-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+            hourList.appendChild(hourDiv);
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat menambahkan kategori');
-    });
-}
+        minuteList.innerHTML = '';
+        for (let i = 0; i <= 59; i += 1) {
+            const minuteDiv = document.createElement('div');
+            minuteDiv.className = `time-option ${i === selectedMinute ? 'selected' : ''}`;
+            minuteDiv.textContent = i.toString().padStart(2, '0');
+            minuteDiv.dataset.value = i;
+            minuteDiv.addEventListener('click', function() {
+                document.querySelectorAll('#minute-list .time-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+            minuteList.appendChild(minuteDiv);
+        }
+        const selectedHourElement = hourList.querySelector(`.time-option[data-value="${selectedHour}"]`);
+        const selectedMinuteElement = minuteList.querySelector(`.time-option[data-value="${selectedMinute}"]`);
+        if (selectedHourElement) {
+            hourList.scrollTop = selectedHourElement.offsetTop - hourList.offsetHeight / 2 + selectedHourElement.offsetHeight / 2;
+        }
+        if (selectedMinuteElement) {
+            minuteList.scrollTop = selectedMinuteElement.offsetTop - minuteList.offsetHeight / 2 + selectedMinuteElement.offsetHeight / 2;
+        }
+    }
 
-function editCategory(button) {
-    const row = button.closest('tr');
-    const id = row.dataset.id;
-    const nameCell = row.querySelector('td:first-child div');
-    const currentName = nameCell.textContent;
-    
-    const newName = prompt('Edit nama kategori:', currentName);
-    if (newName && newName.trim() !== '' && newName !== currentName) {
-        fetch(`/categories/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                name: newName.trim(),
-                _method: 'PUT'
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                nameCell.textContent = newName.trim();
-                
-                const select = document.getElementById('category_id');
-                const option = select.querySelector(`option[value="${id}"]`);
-                if (option) {
-                    option.textContent = newName.trim();
+    function setTimeFromPicker() {
+        if (!currentTimeInput) return;
+        const selectedHour = document.querySelector('#hour-list .time-option.selected')?.dataset.value || '0';
+        const selectedMinute = document.querySelector('#minute-list .time-option.selected')?.dataset.value || '0';
+        currentTimeInput.value = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
+        closeTimePicker();
+    }
+
+    // --- Full Day Toggle & Date Validation ---
+    function toggleTimeInputs(isFullDay) {
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+        if (isFullDay) {
+            if (!startTimeInput.dataset.originalTime) {
+                startTimeInput.dataset.originalTime = startTimeInput.value;
+            }
+            if (!endTimeInput.dataset.originalTime) {
+                endTimeInput.dataset.originalTime = endTimeInput.value;
+            }
+            startTimeInput.value = '00:00';
+            endTimeInput.value = '23:59';
+            startTimeInput.disabled = true;
+            endTimeInput.disabled = true;
+        } else {
+            if (startTimeInput.dataset.originalTime) {
+                startTimeInput.value = startTimeInput.dataset.originalTime;
+            }
+            if (endTimeInput.dataset.originalTime) {
+                endTimeInput.value = endTimeInput.dataset.originalTime;
+            }
+            startTimeInput.disabled = false;
+            endTimeInput.disabled = false;
+        }
+    }
+
+    function validateDates() {
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+        if (!startDateInput.value || !endDateInput.value) return;
+        const startDate = new Date(`${startDateInput.value}T${startTimeInput.value || '00:00'}`);
+        const endDate = new Date(`${endDateInput.value}T${endTimeInput.value || '23:59'}`);
+        if (endDate < startDate) {
+            alert('Tanggal selesai tidak boleh sebelum tanggal mulai');
+            endDateInput.value = startDateInput.value;
+            if (startDateInput.value === endDateInput.value) {
+                const startTime = startTimeInput.value || '00:00';
+                const [hours, minutes] = startTime.split(':').map(Number);
+                let endHours = hours;
+                let endMinutes = minutes + 30;
+                if (endMinutes >= 60) {
+                    endHours += 1;
+                    endMinutes -= 60;
                 }
-            } else {
-                alert(data.message || 'Gagal mengupdate kategori');
+                endTimeInput.value = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan saat mengupdate kategori');
+        }
+        // Update subtask limits after main task date changes
+        setSubtaskDateLimits();
+    }
+
+    // --- Subtask Scroll Indicator ---
+    function setupSubtaskScrollIndicator() {
+        const container = document.getElementById('subtasks-container');
+        const indicator = document.getElementById('scroll-indicator');
+        if (!container || !indicator) return;
+        container.addEventListener('scroll', function() {
+            if (this.scrollLeft > 0) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
         });
     }
-}
 
-function deleteCategory(id) {
-    if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) {
-        return;
-    }
-    
-    fetch(`/categories/${id}`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            _method: 'DELETE'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const row = document.querySelector(`#categories-table-body tr[data-id="${id}"]`);
-            if (row) {
-                row.remove();
-            }
-            
-            const select = document.getElementById('category_id');
-            const option = select.querySelector(`option[value="${id}"]`);
-            if (option) {
-                option.remove();
-            }
-        } else {
-            alert(data.message || 'Gagal menghapus kategori');
+    // --- Subtask Functions ---
+    // Helper to format date for display (YYYY-MM-DD to DD/MM/YYYY)
+    function formatDateDisplay(dateString) {
+        if (!dateString) return '';
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/YYYY
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan saat menghapus kategori');
-    });
-}
-
-// Subtask Management Functions
-function getIndentLevel(element) {
-    let level = 0;
-    let current = element;
-
-    while (current && current.classList.contains('subtask-item')) {
-        level++;
-        current = current.parentElement.closest('.subtask-item');
+        return dateString; // Fallback if format is unexpected
     }
 
-    return level;
-}
-
-function addSubtask(parentElement = null) {
-    const noSubtasksMsg = document.getElementById('no-subtasks');
-    if (noSubtasksMsg) {
-        noSubtasksMsg.style.display = 'none';
+    // Helper to get parent dates (returns YYYY-MM-DD format for inputs)
+    function getParentDates(parentId) {
+        let parentStartDate = document.getElementById('start_date').value;
+        let parentEndDate = document.getElementById('end_date').value;
+        if (parentId) {
+            const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
+            if (parentItem) {
+                const parentStartInput = parentItem.querySelector('input[name$="[start_date]"]');
+                const parentEndInput = parentItem.querySelector('input[name$="[end_date]"]');
+                if (parentStartInput && parentStartInput.value) parentStartDate = parentStartInput.value;
+                if (parentEndInput && parentEndInput.value) parentEndDate = parentEndInput.value;
+            }
+        }
+        return { parentStartDate, parentEndDate };
     }
 
-    const parentId = parentElement?.dataset.id || null;
-    const indentLevel = getIndentLevel(parentElement);
+    // Function to set date limits for all subtasks based on their parents
+    function setSubtaskDateLimits() {
+        document.querySelectorAll('.subtask-item').forEach(item => {
+            const parentIdInput = item.querySelector('input[name$="[parent_id]"]');
+            const parentId = parentIdInput ? parentIdInput.value : null;
+            const { parentStartDate, parentEndDate } = getParentDates(parentId);
+            const startInput = item.querySelector('input[name$="[start_date]"]');
+            const endInput = item.querySelector('input[name$="[end_date]"]');
+            const dateDisplaySpan = item.querySelector('.subtask-date span');
 
-    if (indentLevel >= 6) {
-        alert('Maksimal 6 level subtask telah tercapai');
-        return;
+            if (startInput) {
+                startInput.min = parentStartDate;
+                startInput.max = parentEndDate;
+                if (startInput.value && startInput.value < parentStartDate) startInput.value = parentStartDate;
+                if (startInput.value && startInput.value > parentEndDate) startInput.value = parentEndDate;
+            }
+            if (endInput) {
+                endInput.min = parentStartDate;
+                endInput.max = parentEndDate;
+                if (endInput.value && endInput.value < parentStartDate) endInput.value = parentStartDate;
+                if (endInput.value && endInput.value > parentEndDate) endInput.value = parentEndDate;
+            }
+
+            // Update the displayed date range
+            if (dateDisplaySpan) {
+                const displayStart = formatDateDisplay(startInput?.value || parentStartDate);
+                const displayEnd = formatDateDisplay(endInput?.value || parentEndDate);
+                dateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
+            }
+        });
     }
 
-    const subtaskWrapper = document.createElement('div');
-    const currentId = ++subtaskIdCounter;
-    subtaskWrapper.dataset.id = currentId;
-    subtaskWrapper.className = 'subtask-item';
+    // Function to update date limits for children when a parent's dates change
+    function updateChildSubtaskLimits(parentSubtaskId) {
+        const parentItem = document.querySelector(`.subtask-item[data-id="${parentSubtaskId}"]`);
+        if (!parentItem) return;
+        const parentStartInput = parentItem.querySelector('input[name$="[start_date]"]');
+        const parentEndInput = parentItem.querySelector('input[name$="[end_date]"]');
+        const parentStartDate = parentStartInput ? parentStartInput.value : '';
+        const parentEndDate = parentEndInput ? parentEndInput.value : '';
+        if (!parentStartDate || !parentEndDate) return;
 
-    const marginLeft = indentLevel * 20;
+        // Find direct children
+        const childSubtasks = document.querySelectorAll(`input[name$="[parent_id]"][value="${parentSubtaskId}"]`);
+        childSubtasks.forEach(childInput => {
+            const childItem = childInput.closest('.subtask-item');
+            if (!childItem) return;
+            const childStartInput = childItem.querySelector('input[name$="[start_date]"]');
+            const childEndInput = childItem.querySelector('input[name$="[end_date]"]');
+            if (childStartInput) {
+                childStartInput.min = parentStartDate;
+                childStartInput.max = parentEndDate;
+                if (childStartInput.value < parentStartDate) childStartInput.value = parentStartDate;
+                if (childStartInput.value > parentEndDate) childStartInput.value = parentEndDate;
+            }
+            if (childEndInput) {
+                childEndInput.min = parentStartDate;
+                childEndInput.max = parentEndDate;
+                if (childEndInput.value < parentStartDate) childEndInput.value = parentStartDate;
+                if (childEndInput.value > parentEndDate) childEndInput.value = parentEndDate;
+            }
+            // Update the displayed date range for the child
+            const childDateDisplaySpan = childItem.querySelector('.subtask-date span');
+            if (childDateDisplaySpan) {
+                const displayStart = formatDateDisplay(childStartInput?.value || parentStartDate);
+                const displayEnd = formatDateDisplay(childEndInput?.value || parentEndDate);
+                childDateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
+            }
+            // Recursively update grandchildren
+            const childId = childItem.dataset.id;
+            if (childId) {
+                updateChildSubtaskLimits(childId);
+            }
+        });
+    }
 
-    subtaskWrapper.innerHTML = `
-        <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm" style="margin-left: ${marginLeft}px;">
-            <div class="flex items-center gap-3">
+    // Function to add a new subtask
+    function addSubtask(parentId) {
+        const subtasksContainer = document.querySelector('.subtasks-scroll-container');
+        const noSubtasksMessage = document.getElementById('no-subtasks');
+        if (noSubtasksMessage) {
+            noSubtasksMessage.style.display = 'none';
+        }
+        const subtaskId = 'new-subtask-' + Date.now();
+        let level = 0;
+        if (parentId) {
+            const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
+            if (parentItem) {
+                level = parseInt(parentItem.dataset.level || 0) + 1;
+                if (level >= 6) {
+                    alert('Maksimal level subtask adalah 6');
+                    return;
+                }
+            }
+        }
+        const { parentStartDate, parentEndDate } = getParentDates(parentId);
+        const displayParentStart = formatDateDisplay(parentStartDate);
+        const displayParentEnd = formatDateDisplay(parentEndDate);
+
+        const subtaskElement = document.createElement('div');
+        subtaskElement.className = `subtask-item bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm relative`;
+        subtaskElement.dataset.id = subtaskId;
+        subtaskElement.dataset.level = level;
+        subtaskElement.style.marginLeft = `${level * 16}px`;
+        if (level > 0) {
+            subtaskElement.style.borderLeft = '2px solid #6366F1';
+            subtaskElement.style.paddingLeft = '14px';
+        }
+        subtaskElement.innerHTML = `
+            <div class="flex flex-col md:flex-row md:items-center gap-4">
                 <div class="flex-1">
-                    <input type="text" name="subtasks[${currentId}][title]" placeholder="Masukkan nama subtask"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" required>
-                    <input type="hidden" name="subtasks[${currentId}][parent_id]" value="${parentId ?? ''}">
+                    <div class="flex items-center gap-2">
+                        <input type="text" name="subtasks[${subtaskId}][title]" placeholder="Judul subtask" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Tanggal Mulai</label>
+                            <div class="relative">
+                                <input type="date" name="subtasks[${subtaskId}][start_date]"
+                                    min="${parentStartDate}" max="${parentEndDate}"
+                                    value="${parentStartDate}"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent start-date-input">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Tanggal Selesai</label>
+                            <div class="relative">
+                                <input type="date" name="subtasks[${subtaskId}][end_date]"
+                                    min="${parentStartDate}" max="${parentEndDate}"
+                                    value="${parentEndDate}"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent end-date-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="subtask-date mt-2">
+                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="text-xs">${displayParentStart} - ${displayParentEnd}</span>
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <button type="button" 
-                        class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium"
-                        onclick="addSubtask(this.closest('.subtask-item'))"
-                        title="Tambah Sub-subtask">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="subtasks[${subtaskId}][parent_id]" value="${parentId || ''}">
+                    <button type="button" onclick="addSubtask('${subtaskId}')"
+                        class="p-2 text-indigo-600 hover:text-indigo-800 transition-colors" title="Tambah Child">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                     </button>
-                    <button type="button" 
-                        class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium"
-                        onclick="removeSubtask(this.closest('.subtask-item'))"
-                        title="Hapus Subtask">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    <button type="button" onclick="removeSubtask('${subtaskId}', false)"
+                        class="p-2 text-red-600 hover:text-red-800 transition-colors" title="Hapus">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
                     </button>
                 </div>
             </div>
-            <div class="mt-3 space-y-3 child-container"></div>
-        </div>
-    `;
+        `;
+        subtasksContainer.appendChild(subtaskElement);
 
-    const container = parentElement?.querySelector('.child-container') || document.querySelector('#subtasks-container .subtasks-scroll-container');
-    
-    if (container.firstChild && container.firstChild.id === 'no-subtasks') {
-        container.insertBefore(subtaskWrapper, container.firstChild.nextSibling);
-    } else {
-        container.insertBefore(subtaskWrapper, container.firstChild);
-    }
-}
-
-function removeSubtask(element) {
-    if (confirm('Apakah Anda yakin ingin menghapus subtask ini beserta semua subtask di bawahnya?')) {
-        element.remove();
-        
-        const container = document.getElementById('subtasks-container');
-        const subtasks = container.querySelectorAll('.subtask-item');
-        if (subtasks.length === 0) {
-            const noSubtasksMsg = document.getElementById('no-subtasks');
-            if (noSubtasksMsg) {
-                noSubtasksMsg.style.display = 'block';
+        // Add event listeners for date changes on the new subtask
+        const startDateInput = subtaskElement.querySelector('.start-date-input');
+        const endDateInput = subtaskElement.querySelector('.end-date-input');
+        startDateInput.addEventListener('change', function() {
+            endDateInput.min = this.value;
+            if (endDateInput.value < this.value) {
+                endDateInput.value = this.value;
             }
-        }
+            const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
+            if (dateDisplaySpan) {
+                const displayStart = formatDateDisplay(this.value);
+                const displayEnd = formatDateDisplay(endDateInput.value);
+                dateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
+            }
+            updateChildSubtaskLimits(subtaskId);
+        });
+        endDateInput.addEventListener('change', function() {
+            const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
+            if (dateDisplaySpan) {
+                const displayStart = formatDateDisplay(startDateInput.value);
+                const displayEnd = formatDateDisplay(this.value);
+                dateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
+            }
+            updateChildSubtaskLimits(subtaskId);
+        });
+        checkScrollIndicator();
     }
-}
 
-// Full Day Toggle Functionality
-document.getElementById('full_day_toggle').addEventListener('change', function() {
-    const startTimeInput = document.getElementById('start_time');
-    const endTimeInput = document.getElementById('end_time');
-    
-    if (this.checked) {
-        startTimeInput.value = '00:00';
-        endTimeInput.value = '23:59';
-        startTimeInput.disabled = true;
-        endTimeInput.disabled = true;
-    } else {
-        startTimeInput.disabled = false;
-        endTimeInput.disabled = false;
-    }
-});
-
-// Form validation with time consideration
-document.getElementById('task-form').addEventListener('submit', function(e) {
-    const startDate = document.getElementById('start_date').value;
-    const endDate = document.getElementById('end_date').value;
-    const startTime = document.getElementById('start_time').value;
-    const endTime = document.getElementById('end_time').value;
-    
-    if (startDate && endDate) {
-        const startDateTime = new Date(`${startDate}T${startTime || '00:00'}`);
-        const endDateTime = new Date(`${endDate}T${endTime || '23:59'}`);
-        
-        if (startDateTime > endDateTime) {
-            e.preventDefault();
-            alert('Waktu mulai tidak boleh lebih besar dari waktu selesai');
-            return false;
-        }
-    }
-});
-
-// Priority selection functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const priorityOptions = document.querySelectorAll('.priority-option input[type="radio"]');
-    
-    priorityOptions.forEach(option => {
-        option.addEventListener('change', function() {
-            priorityOptions.forEach(opt => {
-                const parent = opt.closest('.priority-option');
-                const div = parent.querySelector('div');
-                div.classList.remove('ring-2', 'ring-red-500', 'ring-yellow-500', 'ring-blue-500', 'ring-green-500');
-                div.classList.remove('border-red-500', 'border-yellow-500', 'border-blue-500', 'border-green-500');
-                div.classList.remove('bg-red-100', 'bg-yellow-100', 'bg-blue-100', 'bg-green-100');
-            });
-            
-            if (this.checked) {
-                const parent = this.closest('.priority-option');
-                const div = parent.querySelector('div');
-                const value = this.value;
-                
-                switch(value) {
-                    case 'urgent':
-                        div.classList.add('ring-2', 'ring-red-500', 'border-red-500', 'bg-red-100');
-                        break;
-                    case 'high':
-                        div.classList.add('ring-2', 'ring-yellow-500', 'border-yellow-500', 'bg-yellow-100');
-                        break;
-                    case 'medium':
-                        div.classList.add('ring-2', 'ring-blue-500', 'border-blue-500', 'bg-blue-100');
-                        break;
-                    case 'low':
-                        div.classList.add('ring-2', 'ring-green-500', 'border-green-500', 'bg-green-100');
-                        break;
-                }
+    // Function to remove a subtask (including children)
+    function removeSubtask(subtaskId, isExisting = false) {
+        const childSubtasks = document.querySelectorAll(`input[name$="[parent_id]"][value="${subtaskId}"]`);
+        childSubtasks.forEach(childInput => {
+            const childId = childInput.closest('.subtask-item')?.dataset.id;
+            if (childId) {
+                removeSubtask(childId, document.querySelector(`.subtask-item[data-id="${childId}"]`)?.dataset.existing === 'true');
             }
         });
+        const subtaskElement = document.querySelector(`.subtask-item[data-id="${subtaskId}"]`);
+        if (subtaskElement) {
+            subtaskElement.remove();
+        }
+        const subtasksContainer = document.querySelector('.subtasks-scroll-container');
+        if (subtasksContainer && subtasksContainer.querySelectorAll('.subtask-item').length === 0) {
+            const noSubtasksMessage = document.getElementById('no-subtasks');
+            if (noSubtasksMessage) {
+                noSubtasksMessage.style.display = 'block';
+            }
+        }
+        checkScrollIndicator();
+    }
+
+    function checkScrollIndicator() {
+        const container = document.getElementById('subtasks-container');
+        const scrollContainer = document.querySelector('.subtasks-scroll-container');
+        const indicator = document.getElementById('scroll-indicator');
+        if (container && scrollContainer && indicator) {
+            if (scrollContainer.scrollWidth > container.clientWidth) {
+                indicator.classList.remove('hidden');
+            } else {
+                indicator.classList.add('hidden');
+            }
+        }
+    }
+
+    // --- Initialize Event Listeners ---
+    document.querySelectorAll('.time-picker-input').forEach(input => {
+        input.addEventListener('focus', function() {
+            openTimePicker(this);
+        });
     });
+    document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
+    document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
+    document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
+
+    const fullDayToggle = document.getElementById('full_day_toggle');
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    startTimeInput.dataset.originalTime = startTimeInput.value;
+    endTimeInput.dataset.originalTime = endTimeInput.value;
+    if (startTimeInput.value === '00:00' && endTimeInput.value === '23:59') {
+        fullDayToggle.checked = true;
+        toggleTimeInputs(true);
+    }
+    fullDayToggle.addEventListener('change', function() {
+        toggleTimeInputs(this.checked);
+    });
+
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    [startDateInput, endDateInput].forEach(input => {
+        input.addEventListener('change', validateDates);
+    });
+
+    setupSubtaskScrollIndicator();
+    setSubtaskDateLimits();
+
+    // --- Form submission handling ---
+    document.getElementById('task-form').addEventListener('submit', function(e) {
+        validateDates();
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+        if (startDateInput.value && endDateInput.value) {
+            const startDate = new Date(`${startDateInput.value}T${startTimeInput.value || '00:00'}`);
+            const endDate = new Date(`${endDateInput.value}T${endTimeInput.value || '23:59'}`);
+            if (endDate < startDate) {
+                e.preventDefault();
+                alert('Tanggal selesai tidak boleh sebelum tanggal mulai');
+                return false;
+            }
+        }
+        return true;
+    });
+
+    // --- Category Management Functions ---
+    function openCategoryModal() {
+        document.getElementById('category-modal').classList.remove('hidden');
+    }
+
+    function closeCategoryModal() {
+        document.getElementById('category-modal').classList.add('hidden');
+    }
+
+    function addCategory() {
+        const nameInput = document.getElementById('new-category-name');
+        const name = nameInput.value.trim();
+        if (!name) {
+            alert('Nama kategori tidak boleh kosong');
+            return;
+        }
+        fetch('{{ route("categories.store") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ name: name })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('category_id');
+                const option = document.createElement('option');
+                option.value = data.category.id;
+                option.textContent = data.category.name;
+                select.appendChild(option);
+                const tbody = document.getElementById('categories-table-body');
+                const row = document.createElement('tr');
+                row.dataset.id = data.category.id;
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${data.category.name}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button type="button" onclick="editCategory(this)" 
+                            class="text-blue-600 hover:text-blue-900 mr-3">
+                            Edit
+                        </button>
+                        <button type="button" onclick="deleteCategory(${data.category.id})" 
+                            class="text-red-600 hover:text-red-900">
+                            Hapus
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                nameInput.value = '';
+            } else {
+                alert(data.message || 'Terjadi kesalahan');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat menambahkan kategori');
+        });
+    }
+
+    function editCategory(button) {
+        const row = button.closest('tr');
+        const id = row.dataset.id;
+        const nameCell = row.querySelector('td:first-child div');
+        const currentName = nameCell.textContent;
+        const newName = prompt('Edit nama kategori:', currentName);
+        if (newName && newName.trim() !== currentName) {
+            fetch(`/categories/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ name: newName.trim() })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    nameCell.textContent = data.category.name;
+                    const option = document.querySelector(`#category_id option[value="${id}"]`);
+                    if (option) {
+                        option.textContent = data.category.name;
+                    }
+                } else {
+                    alert(data.message || 'Terjadi kesalahan');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat mengedit kategori');
+            });
+        }
+    }
+
+    function deleteCategory(id) {
+        if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) {
+            return;
+        }
+        fetch(`/categories/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector(`#categories-table-body tr[data-id="${id}"]`).remove();
+                const option = document.querySelector(`#category_id option[value="${id}"]`);
+                if (option) {
+                    option.remove();
+                }
+            } else {
+                alert(data.message || 'Terjadi kesalahan');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat menghapus kategori');
+        });
+    }
+
+    // Make functions globally accessible
+    window.addSubtask = addSubtask;
+    window.removeSubtask = removeSubtask;
+    window.openCategoryModal = openCategoryModal;
+    window.closeCategoryModal = closeCategoryModal;
+    window.addCategory = addCategory;
+    window.editCategory = editCategory;
+    window.deleteCategory = deleteCategory;
 });
 </script>
 @endpush

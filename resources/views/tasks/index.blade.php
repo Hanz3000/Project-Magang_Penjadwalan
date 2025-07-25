@@ -289,6 +289,7 @@ $html .= '</form>';
                                                 <button onclick="openTaskModal({{ $task['id'] }})"
                                                         class="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
                                                         title="Lihat">
+                                                        
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -475,6 +476,7 @@ $html .= '</form>';
 <!-- Task Detail Tooltip -->
 <div id="taskTooltip" class="fixed bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 hidden max-w-sm">
     <div id="tooltipContent" class="text-sm">
+        
         <!-- Tooltip content will be populated by JavaScript -->
     </div>
 </div>
@@ -720,6 +722,17 @@ function showTaskTooltip(info) {
                 </span>
                 ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">Selesai</span>' : ''}
             </div>
+            <!-- Ganti bagian tooltipContent di showTaskTooltip -->
+<div class="text-xs text-gray-600">
+    <div class="flex items-center gap-1">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        ${task.start_date ? formatDateString(task.start_date) : 'No start date'} - 
+        ${task.end_date ? formatDateString(task.end_date) : 'No end date'}
+    </div>
+    ${timeInfo}
+</div>
             <div class="text-xs text-gray-600">
                 <div class="flex items-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1506,6 +1519,32 @@ function openTaskModal(taskId) {
     appState.currentModalTaskId = taskId;
 
     const modalContent = document.getElementById('taskModalContent');
+    modalContent.innerHTML = `
+        <div>
+            <h3 class="font-bold text-lg mb-2">${task.title}</h3>
+            <div class="mb-2 text-gray-600">
+                <span><b>Tanggal:</b> ${task.start_date} - ${task.end_date}</span>
+            </div>
+            <div class="mb-2 text-gray-600">
+                <span><b>Deskripsi:</b> ${task.description || '-'}</span>
+            </div>
+            <div class="mb-2 text-gray-600">
+                <span><b>Prioritas:</b> ${task.priority}</span>
+            </div>
+            <div class="mb-2 text-gray-600">
+                <span><b>Subtasks:</b></span>
+                <ul>
+                    ${task.sub_tasks.map(st => `<li>${st.title} (${st.start_date || '-'} - ${st.end_date || '-'})</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
+
+    // Show modal
+    const modalEl = document.getElementById('taskModal');
+    modalEl.classList.remove('hidden');
+    modalEl.style.opacity = '1';
+    modalEl.style.transform = 'scale(1)';
     
     let priorityText = '';
     let priorityClass = '';
@@ -1653,15 +1692,15 @@ function openTaskModal(taskId) {
     `;
     
     // Show modal with animation
-    const modal = document.getElementById('taskModal');
-    modal.classList.remove('hidden');
-    modal.style.opacity = '0';
-    modal.style.transform = 'scale(0.95)';
+    const taskModalEl = document.getElementById('taskModal');
+    taskModalEl.classList.remove('hidden');
+    taskModalEl.style.opacity = '0';
+    taskModalEl.style.transform = 'scale(0.95)';
     
     setTimeout(() => {
-        modal.style.opacity = '1';
-        modal.style.transform = 'scale(1)';
-        modal.style.transition = 'all 0.3s ease-out';
+        taskModalEl.style.opacity = '1';
+        taskModalEl.style.transform = 'scale(1)';
+        taskModalEl.style.transition = 'all 0.3s ease-out';
     }, 10);
 }
 
@@ -1672,6 +1711,13 @@ function renderModalSubtasks(subtasks, parentId = null, task) {
     
     filteredSubtasks.forEach(subTask => {
         const isParent = subtasks.some(st => st.parent_id === subTask.id);
+        const dateInfo = (subTask.start_date || subTask.end_date) ? 
+            `<div class="subtask-date">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                ${subTask.start_date ? formatDateString(subTask.start_date) : ''} ${subTask.end_date ? ' - ' + formatDateString(subTask.end_date) : ''}
+            </div>` : '';
         
         if (isParent) {
             html += `
@@ -1686,6 +1732,7 @@ function renderModalSubtasks(subtasks, parentId = null, task) {
                         </button>
                         <span class="text-xs font-semibold text-gray-700">${subTask.title}</span>
                     </div>
+                    ${dateInfo}
                     <div class="subtask-children-modal pl-6 mt-1 border-l-2 border-blue-100" id="modal-subtask-children-${subTask.id}">
                         ${renderModalSubtasks(subtasks, subTask.id, task)}
                     </div>
@@ -1696,15 +1743,18 @@ function renderModalSubtasks(subtasks, parentId = null, task) {
             html += `
                 <div class="subtask-item-modal flex items-center gap-2 py-1 px-2 bg-white rounded border border-gray-200 hover:border-blue-300 transition-all duration-200" data-subtask-id="${subTask.id}">
                     <form action="/subtasks/${subTask.id}/toggle" method="POST" class="subtask-toggle-form-modal">
-        <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-        <input type="hidden" name="_method" value="PATCH">
-        <input type="checkbox"
-            class="subtask-checkbox-modal w-3 h-3 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-            data-sub-task-id="${subTask.id}"
-            data-task-id="${task.id}"
-            ${subTask.completed ? 'checked' : ''}>
-    </form>
-                    <span class="text-xs ${lineClass} subtask-text-modal flex-1">${subTask.title}</span>
+                        <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                        <input type="hidden" name="_method" value="PATCH">
+                        <input type="checkbox"
+                            class="subtask-checkbox-modal w-3 h-3 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                            data-sub-task-id="${subTask.id}"
+                            data-task-id="${task.id}"
+                            ${subTask.completed ? 'checked' : ''}>
+                    </form>
+                    <div class="flex-1">
+                        <span class="text-xs ${lineClass} subtask-text-modal">${subTask.title}</span>
+                        ${dateInfo}
+                    </div>
                 </div>
             `;
         }
@@ -1714,15 +1764,15 @@ function renderModalSubtasks(subtasks, parentId = null, task) {
 }
 
 function closeTaskModal() {
-    const modal = document.getElementById('taskModal');
-    modal.style.opacity = '0';
-    modal.style.transform = 'scale(0.95)';
+    const modalEl = document.getElementById('taskModal');
+    modalEl.style.opacity = '0';
+    modalEl.style.transform = 'scale(0.95)';
     
     setTimeout(() => {
-        modal.classList.add('hidden');
-        modal.style.opacity = '';
-        modal.style.transform = '';
-        modal.style.transition = '';
+        modalEl.classList.add('hidden');
+        modalEl.style.opacity = '';
+        modalEl.style.transform = '';
+        modalEl.style.transition = '';
         appState.isModalOpen = false;
         appState.currentModalTaskId = null;
     }, 300);
@@ -2076,6 +2126,20 @@ document.addEventListener('DOMContentLoaded', function() {
         overflow: hidden;
         padding-left: 1.5rem;
     }
+    .subtask-date {
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin-top: 2px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.subtask-date svg {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+}
     
     .subtask-item-modal {
         margin-bottom: 0.25rem;

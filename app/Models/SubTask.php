@@ -9,8 +9,12 @@ class SubTask extends Model
 {
     protected $table = 'sub_tasks';
 
-    protected $fillable = ['title', 'task_id', 'parent_id', 'completed', 'is_group'];
-
+    protected $fillable = ['title', 'task_id', 'parent_id', 'completed', 'is_group','start_date','end_date'];
+    protected $casts = [
+        'start_date' => 'date', // Casting ke objek Carbon
+        'end_date' => 'date',
+        'completed' => 'boolean',
+    ];
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
