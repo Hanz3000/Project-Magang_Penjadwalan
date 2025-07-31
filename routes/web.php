@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\SubTaskController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CollaborationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 
@@ -36,5 +37,23 @@ Route::middleware('auth')->group(function () {
     Route::resource('categories', CategoryController::class)->except(['show']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
 
-    
+    // Collaboration Routes
+    Route::prefix('collaboration')->group(function () {
+        Route::get('/invites', [CollaborationController::class, 'getInvites']);
+        Route::get('/invites-page', function () {
+            return view('collaboration.invites');
+        })->name('collaboration.invites');
+        Route::get('/my-tasks', [CollaborationController::class, 'getMyCollaboratedTasks']);
+        Route::get('/pending-revisions', [CollaborationController::class, 'getPendingRevisions']);
+        
+        Route::post('/collaboration/invite/{task}', [CollaborationController::class, 'invite'])
+    ->name('collaboration.invite');
+        Route::post('/invite/{task}', [CollaborationController::class, 'invite'])->name('collaboration.invite');
+        Route::post('/respond/{collaborator}', [CollaborationController::class, 'respondToInvite'])->name('collaboration.respond');
+        Route::post('/submit-revision/{task}', [CollaborationController::class, 'submitRevision'])->name('collaboration.submit-revision');
+        Route::post('/review-revision/{revision}', [CollaborationController::class, 'reviewRevision'])->name('collaboration.review-revision');
+        
+        Route::get('/task-status/{task}', [CollaborationController::class, 'getCollaborationStatus']);
+        Route::delete('/remove/{task}/{collaborator}', [CollaborationController::class, 'removeCollaborator'])->name('collaboration.remove');
+    });
 });

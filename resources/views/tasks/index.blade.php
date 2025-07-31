@@ -16,13 +16,25 @@
                 </div>
                 <p class="text-gray-600">Kelola tugas dan progres dengan timeline yang jelas dan terstruktur</p>
             </div>
-            <a href="{{ route('tasks.create') }}"
-                class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:scale-105">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Tugas Baru
-            </a>
+            <div class="flex gap-3">
+                <!-- Collaboration Invites Button -->
+                <a href="{{ route('collaboration.invites') }}"
+                    class="relative bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Kolaborasi
+                    <span id="invite-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </a>
+                
+                <a href="{{ route('tasks.create') }}"
+                    class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Tugas Baru
+                </a>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -229,11 +241,18 @@
                                                 @endif
                                                 
                                                 <div class="flex-1">
-                                                    <h3 class="font-semibold text-gray-800 {{ $task['completed'] ? 'line-through text-gray-400' : '' }} task-title cursor-pointer hover:text-blue-600 transition-colors duration-200" 
-                                                        data-task-id="{{ $task['id'] }}" 
-                                                        onclick="openTaskModal({{ $task['id'] }})">
-                                                        {{ $task['title'] }}
-                                                    </h3>
+                                                    <div class="flex items-center gap-2 mb-2">
+                                                        <h3 class="font-semibold text-gray-800 {{ $task['completed'] ? 'line-through text-gray-400' : '' }} task-title cursor-pointer hover:text-blue-600 transition-colors duration-200" 
+                                                            data-task-id="{{ $task['id'] }}" 
+                                                            onclick="openTaskModal({{ $task['id'] }})">
+                                                            {{ $task['title'] }}
+                                                        </h3>
+                                                        
+                                                        <!-- Collaboration indicator -->
+                                                        <div class="collaboration-indicators flex gap-1" data-task-id="{{ $task['id'] }}">
+                                                            <!-- Will be populated by JavaScript -->
+                                                        </div>
+                                                    </div>
                                                     
                                                     <div class="flex items-center gap-3 text-sm text-gray-500 mt-2 flex-wrap">
                                                         <div class="flex items-center gap-1">
@@ -264,6 +283,15 @@
                                             </div>
                                             
                                             <div class="flex items-center gap-2">
+                                                <!-- Collaboration button -->
+                                                <button onclick="openCollaborationModal({{ $task['id'] }})"
+                                                        class="text-gray-400 hover:text-green-600 p-2 rounded-lg hover:bg-green-50 transition-all duration-200"
+                                                        title="Kelola Kolaborasi">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                    </svg>
+                                                </button>
+
                                                 <button onclick="openTaskModal({{ $task['id'] }})"
                                                         class="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
                                                         title="Lihat">
@@ -367,6 +395,17 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Pending Revisions -->
+                    <div id="pending-revisions-summary" class="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200 hidden">
+                        <div class="flex items-center gap-2 text-orange-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-sm font-medium">Menunggu Review</span>
+                        </div>
+                        <div class="text-2xl font-bold text-orange-900" id="pending-revisions-count">0</div>
+                    </div>
                 </div>
 
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
@@ -415,6 +454,8 @@
         </div>
     </div>
 </div>
+
+@include('layouts.collaboration-modal')
 
 <!-- Modal -->
 <div id="taskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
@@ -471,18 +512,496 @@
 
 <script>
 let appState = {
-    tasksData: @json($tasks),
+    // Data utama tugas dari backend
+    tasksData: @json($tasks ?? []),
+    calendarEvents: @json($calendarEvents ?? []),
     calendar: null,
     isModalOpen: false,
     currentModalTaskId: null,
-    filteredTasksCount: {{ $totalTasks }},
+    filteredTasksCount: {{ $totalTasks ?? 0 }},
+    totalTasks: {{ $totalTasks ?? 0 }},
+    completedTasks: {{ $completedTasks ?? 0 }},
+    overallProgress: {{ $overallProgress ?? 0 }},
+    allTasksCompleted: {{ ($completedTasks ?? 0) == ($totalTasks ?? 0) ? 'true' : 'false' }},
+    currentFilter: 'all',
+    currentView: 'dayGridMonth',
     tooltip: null,
     isUpdating: false,
-    allTasksCompleted: false,
-    currentFilter: 'all',
-    currentView: 'dayGridMonth'
+    collaborationState: {
+        currentTaskId: null,
+        currentRevisionId: null
+    },
+    pendingRevisions: @json($pendingRevisions ?? [])
 };
 
+// Add collaboration functions
+let collaborationState = {
+    currentTaskId: null,
+    currentRevisionId: null
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize existing functionality
+    console.log('Initializing calendar application...');
+
+    function initializeApp() {
+        if (typeof FullCalendar !== 'undefined') {
+            try {
+                initializeCalendar();
+                initializeEventDelegation();
+                initializeTaskFilter();
+                initializeTooltip();
+                checkAllTasksCompleted();
+                
+                // Initialize collaboration features
+                loadCollaborationIndicators();
+                loadPendingRevisions();
+                checkInviteNotifications();
+                
+                console.log('Calendar application initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize calendar application:', error);
+                showCalendarError('Gagal menginisialisasi aplikasi timeline: ' + error.message);
+            }
+        } else {
+            console.log('FullCalendar not loaded yet, waiting...');
+            setTimeout(initializeApp, 100);
+        }
+    }
+
+    initializeApp();
+});
+
+// Collaboration Functions
+async function loadCollaborationIndicators() {
+    try {
+        // Load collaboration status for each task
+        const taskElements = document.querySelectorAll('.task-item');
+        for (const taskElement of taskElements) {
+            const taskId = taskElement.id.replace('task-item-', '');
+            const response = await fetch(`/collaboration/task-status/${taskId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                updateCollaborationIndicator(taskId, data);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading collaboration indicators:', error);
+    }
+}
+
+function updateCollaborationIndicator(taskId, data) {
+    const container = document.querySelector(`[data-task-id="${taskId}"] .collaboration-indicators`);
+    if (!container) return;
+    
+    let indicators = [];
+    
+    if (data.collaborators && data.collaborators.length > 0) {
+        const approvedCount = data.collaborators.filter(c => c.status === 'approved').length;
+        if (approvedCount > 0) {
+            indicators.push(`
+                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-300 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    ${approvedCount} kolaborator
+                </span>
+            `);
+        }
+    }
+    
+    if (data.pending_revisions_count > 0) {
+        indicators.push(`
+            <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full border border-orange-300 flex items-center gap-1 animate-pulse">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                ${data.pending_revisions_count} menunggu review
+            </span>
+        `);
+    }
+    
+    if (data.is_collaborator && !data.is_owner) {
+        indicators.push(`
+            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full border border-blue-300 flex items-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                Kolaborator
+            </span>
+        `);
+    }
+    
+    container.innerHTML = indicators.join('');
+}
+
+async function loadPendingRevisions() {
+    try {
+        const response = await fetch('/collaboration/pending-revisions');
+        const data = await response.json();
+        
+        if (data.success && data.revisions.length > 0) {
+            const summaryElement = document.getElementById('pending-revisions-summary');
+            const countElement = document.getElementById('pending-revisions-count');
+            
+            if (summaryElement && countElement) {
+                countElement.textContent = data.revisions.length;
+                summaryElement.classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading pending revisions:', error);
+    }
+}
+
+async function checkInviteNotifications() {
+    try {
+        const response = await fetch('/collaboration/invites');
+        const data = await response.json();
+        
+        if (data.success && data.invites.length > 0) {
+            const badge = document.getElementById('invite-badge');
+            if (badge) {
+                badge.textContent = data.invites.length;
+                badge.classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error checking invite notifications:', error);
+    }
+}
+
+// Collaboration Modal Functions
+function openCollaborationModal(taskId) {
+    collaborationState.currentTaskId = taskId;
+    
+    fetch(`/collaboration/task-status/${taskId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderCollaborationModal(data);
+                document.getElementById('collaborationModal').classList.remove('hidden');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Gagal memuat data kolaborasi', 'error');
+        });
+}
+
+function renderCollaborationModal(data) {
+    const content = document.getElementById('collaborationModalContent');
+    
+    let collaboratorsHtml = '';
+    if (data.collaborators && data.collaborators.length > 0) {
+        collaboratorsHtml = `
+            <div class="mb-6">
+                <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    Kolaborator
+                </h4>
+                <div class="space-y-2">
+                    ${data.collaborators.map(collab => `
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span class="text-sm font-medium text-blue-600">${collab.user.name.charAt(0).toUpperCase()}</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-800">${collab.user.name}</div>
+                                    <div class="text-xs text-gray-500">${collab.user.email}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs px-2 py-1 rounded-full ${
+                                    collab.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                    collab.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                }">
+                                    ${collab.status === 'approved' ? '✅ Aktif' : 
+                                      collab.status === 'pending' ? '⏳ Pending' : '❌ Ditolak'}
+                                </span>
+                                ${collab.can_edit ? '<span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">✏️ Dapat Edit</span>' : ''}
+                                ${data.is_owner ? `
+                                    <button onclick="removeCollaborator(${collab.id})" 
+                                            class="text-red-600 hover:text-red-800 p-1 rounded">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    let pendingRevisionsHtml = '';
+    if (data.pending_revisions_count > 0 && data.is_owner) {
+        pendingRevisionsHtml = `
+            <div class="mb-6">
+                <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Menunggu Review (${data.pending_revisions_count})
+                </h4>
+                <button onclick="loadPendingRevisionsModal()" 
+                        class="w-full p-3 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 transition-colors text-left">
+                    <div class="flex items-center justify-between">
+                        <span class="text-orange-800 text-sm font-medium">Lihat usulan perubahan yang menunggu review</span>
+                        <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </button>
+            </div>
+        `;
+    }
+    
+    content.innerHTML = `
+        ${data.is_owner ? `
+            <div class="mb-6">
+                <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                    </svg>
+                    Undang Kolaborator
+                </h4>
+                <button onclick="openInviteModal()" 
+                        class="w-full p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50 transition-all duration-200 text-gray-600 hover:text-green-600">
+                    <div class="flex flex-col items-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                        </svg>
+                        <span class="font-medium">Undang kolaborator baru</span>
+                        <span class="text-xs">Berikan akses edit dengan sistem review</span>
+                    </div>
+                </button>
+            </div>
+        ` : ''}
+        
+        ${collaboratorsHtml}
+        ${pendingRevisionsHtml}
+        
+        ${!collaboratorsHtml && !data.is_owner ? `
+            <div class="text-center py-8 text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <p>Belum ada kolaborator untuk tugas ini</p>
+            </div>
+        ` : ''}
+    `;
+}
+
+function closeCollaborationModal() {
+    document.getElementById('collaborationModal').classList.add('hidden');
+    collaborationState.currentTaskId = null;
+}
+
+// Invite Modal Functions
+function openInviteModal() {
+    document.getElementById('inviteModal').classList.remove('hidden');
+}
+
+function closeInviteModal() {
+    document.getElementById('inviteModal').classList.add('hidden');
+    document.getElementById('inviteForm').reset();
+}
+
+// Handle invite form submission
+if (document.getElementById('inviteForm')) {
+    document.getElementById('inviteForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const data = {
+            email: formData.get('email'),
+            can_edit: formData.has('can_edit')
+        };
+        
+        try {
+            const response = await fetch(`/collaboration/invite/${collaborationState.currentTaskId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification('Undangan berhasil dikirim!', 'success');
+                closeInviteModal();
+                // Refresh collaboration modal
+                openCollaborationModal(collaborationState.currentTaskId);
+            } else {
+                showNotification(result.error || 'Gagal mengirim undangan', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Terjadi kesalahan', 'error');
+        }
+    });
+}
+
+async function removeCollaborator(collaboratorId) {
+    if (!confirm('Hapus kolaborator ini?')) return;
+    
+    try {
+        const response = await fetch(`/collaboration/remove/${collaborationState.currentTaskId}/${collaboratorId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Kolaborator berhasil dihapus', 'success');
+            openCollaborationModal(collaborationState.currentTaskId); // Refresh
+        } else {
+            showNotification(data.error || 'Gagal menghapus kolaborator', 'error');
+        }
+    } catch (error) {
+        showNotification('Terjadi kesalahan', 'error');
+    }
+}
+
+// Revision Review Functions
+async function loadPendingRevisionsModal() {
+    try {
+        const response = await fetch('/collaboration/pending-revisions');
+        const data = await response.json();
+        
+        if (data.success) {
+            renderRevisionModal(data.revisions);
+            document.getElementById('revisionModal').classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Error loading revisions:', error);
+        showNotification('Gagal memuat data revisi', 'error');
+    }
+}
+
+function renderRevisionModal(revisions) {
+    const content = document.getElementById('revisionModalContent');
+    
+    if (revisions.length === 0) {
+        content.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <p>Tidak ada usulan perubahan yang menunggu review</p>
+            </div>
+        `;
+        return;
+    }
+    
+    content.innerHTML = revisions.map(revision => `
+        <div class="border border-gray-200 rounded-xl p-4 mb-4">
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h4 class="font-semibold text-gray-800">${revision.task.title}</h4>
+                    <p class="text-sm text-gray-600">
+                        Usulan dari: <span class="font-medium">${revision.collaborator.name}</span>
+                    </p>
+                    <p class="text-xs text-gray-500">
+                        ${new Date(revision.created_at).toLocaleDateString('id-ID', { 
+                            day: 'numeric', 
+                            month: 'long', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
+                    </p>
+                </div>
+                <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+                    ${revision.revision_type === 'create' ? '➕ Tambah' : 
+                      revision.revision_type === 'update' ? '✏️ Edit' : '🗑️ Hapus'}
+                </span>
+            </div>
+            
+            <div class="space-y-2 text-sm mb-4">
+                ${Object.keys(revision.proposed_data).map(key => {
+                    const original = revision.original_data?.[key];
+                    const proposed = revision.proposed_data[key];
+                    
+                    if (original !== proposed) {
+                        return `
+                            <div class="flex gap-4">
+                                <div class="flex-1">
+                                    <span class="font-medium">${key}:</span>
+                                    <div class="text-red-600 line-through">${original || 'Tidak ada'}</div>
+                                    <div class="text-green-600 font-medium">${proposed || 'Tidak ada'}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return '';
+                }).join('')}
+            </div>
+            
+            <div class="flex gap-2">
+                <button onclick="reviewRevision(${revision.id}, 'approve')" 
+                        class="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                    ✅ Setujui
+                </button>
+                <button onclick="reviewRevision(${revision.id}, 'reject')" 
+                        class="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+                    ❌ Tolak
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function closeRevisionModal() {
+    document.getElementById('revisionModal').classList.add('hidden');
+}
+
+async function reviewRevision(revisionId, action) {
+    const notes = action === 'reject' ? prompt('Alasan penolakan (opsional):') : null;
+    
+    try {
+        const response = await fetch(`/collaboration/review-revision/${revisionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ 
+                action, 
+                notes: notes || null 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+            loadPendingRevisionsModal(); // Refresh
+            loadPendingRevisions(); // Update summary
+            loadCollaborationIndicators(); // Update indicators
+        } else {
+            showNotification(data.error || 'Gagal memproses review', 'error');
+        }
+    } catch (error) {
+        showNotification('Terjadi kesalahan', 'error');
+    }
+}
+
+// Add the existing calendar and task management functions here...
 function showCalendarError(message) {
     console.error('Calendar error:', message);
     const errorElement = document.getElementById('calendar-error');
@@ -2360,31 +2879,6 @@ function hideAutoSaveIndicator() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing calendar application...');
-
-    function initializeApp() {
-        if (typeof FullCalendar !== 'undefined') {
-            try {
-                initializeCalendar();
-                initializeEventDelegation();
-                initializeTaskFilter();
-                initializeTooltip();
-                checkAllTasksCompleted();
-                
-                console.log('Calendar application initialized successfully');
-            } catch (error) {
-                console.error('Failed to initialize calendar application:', error);
-                showCalendarError('Gagal menginisialisasi aplikasi timeline: ' + error.message);
-            }
-        } else {
-            console.log('FullCalendar not loaded yet, waiting...');
-            setTimeout(initializeApp, 100);
-        }
-    }
-
-    initializeApp();
-});
 </script>
 
 <style>

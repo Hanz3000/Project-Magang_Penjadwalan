@@ -19,7 +19,8 @@ class Task extends Model
         'end_date',
         'start_time',
         'end_time',
-        'completed'
+        'completed',
+        'user_id'
     ];
 
     protected $casts = [
@@ -34,9 +35,34 @@ class Task extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function subTasks()
     {
         return $this->hasMany(SubTask::class)->orderBy('parent_id')->orderBy('created_at');
+    }
+
+    public function collaborators(): HasMany
+    {
+        return $this->hasMany(TaskCollaborator::class);
+    }
+
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(TaskRevision::class);
+    }
+
+    public function approvedCollaborators(): HasMany
+    {
+        return $this->hasMany(TaskCollaborator::class)->where('status', 'approved');
+    }
+
+    public function pendingRevisions(): HasMany
+    {
+        return $this->hasMany(TaskRevision::class)->where('status', 'pending');
     }
 
     public function getDurationDaysAttribute()
@@ -45,6 +71,41 @@ class Task extends Model
             return $this->start_date->diffInDays($this->end_date) + 1; // +1 to include both start and end days
         }
         return 0;
+    }
+
+    /**
+     * Check if user can edit this task
+     */
+    public function canEdit($userId): bool
+    {
+        // Owner can always edit
+        if ($this->user_id === $userId) {
+            return true;
+        }
+
+        // Check if user is approved collaborator with edit permission
+        return $this->collaborators()
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->where('can_edit', true)
+            ->exists();
+    }
+
+    /**
+     * Check if user can view this task
+     */
+    public function canView($userId): bool
+    {
+        // Owner can always view
+        if ($this->user_id === $userId) {
+            return true;
+        }
+
+        // Check if user is approved collaborator
+        return $this->collaborators()
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->exists();
     }
 
     /**
@@ -92,4 +153,13 @@ class Task extends Model
         }
         return $this->end_date ? $this->end_date->format('Y-m-d') : null;
     }
+    // Di model Task
+public function scopeAccessibleBy($query, $userId)
+{
+    return $query->where('user_id', $userId)
+        ->orWhereHas('collaborators', function($q) use ($userId) {
+            $q->where('user_id', $userId)
+              ->where('status', 'approved');
+        });
+}
 }
