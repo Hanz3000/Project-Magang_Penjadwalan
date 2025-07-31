@@ -3,7 +3,7 @@
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4">
     <div class="max-w-7xl mx-auto">
-        <!-- Header section with modern design -->
+        <!-- Header section -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div class="space-y-2">
                 <div class="flex items-center gap-3">
@@ -14,7 +14,7 @@
                     </div>
                     <h1 class="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">Management Tugas</h1>
                 </div>
-                <p class="text-gray-600">Kelola tugas dan progres dengan lebih teratur dan efisien</p>
+                <p class="text-gray-600">Kelola tugas dan progres dengan timeline yang jelas dan terstruktur</p>
             </div>
             <a href="{{ route('tasks.create') }}"
                 class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:scale-105">
@@ -27,104 +27,78 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
-                <!-- Calendar section with modern styling -->
+                <!-- Calendar section -->
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
-                    <div class="flex justify-between items-center mb-6">
-    <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        Kalender Tugas
-        
-    </h2>
-    <div class="flex items-center gap-3">
-        <button id="prev-month"
-            class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-        </button>
-        <button id="month-year-selector"
-            class="text-lg font-semibold text-gray-800 min-w-[200px] text-center hover:bg-gray-100 px-3 py-1 rounded-lg transition-all duration-200">
-            <span id="calendar-title"></span>
-                    </button>
-        <button id="next-month"
-            class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-        </button>
-        <div class="flex bg-gray-100 p-1 rounded-xl ml-2">
-    <button id="today-btn"
-        class="toggle-btn px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium ml-0">
-        Hari Ini
-    </button>
-    <button id="month-view"
-        class="toggle-btn px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium ml-2">
-        Bulan
-    </button>
-    <button id="week-view"
-        class="toggle-btn px-4 py-2 text-sm rounded-lg transition-all duration-200 font-medium ml-2">
-        Minggu
-    </button>
-</div>
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span id="calendar-title">Timeline Proyek</span>
+                        </h2>
+                        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                            <button id="today-btn" class="px-4 py-2 text-sm bg-white text-blue-600 rounded-lg shadow-sm border border-blue-200 font-medium flex items-center justify-center gap-2 hover:bg-blue-50 transition-all duration-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                Hari Ini
+                            </button>
+                            <div class="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
+                                <button id="day-view" class="view-btn flex-1 sm:flex-none px-3 py-2 text-sm text-gray-600 hover:text-blue-600 rounded-md font-medium transition-all duration-200">
+                                    Harian
+                                </button>
+                                <button id="week-view" class="view-btn flex-1 sm:flex-none px-3 py-2 text-sm text-gray-600 hover:text-blue-600 rounded-md font-medium transition-all duration-200">
+                                    Mingguan
+                                </button>
+                                <button id="month-view" class="view-btn flex-1 sm:flex-none px-3 py-2 text-sm bg-white text-blue-600 rounded-md shadow-sm font-medium active-view transition-all duration-200">
+                                    Bulanan
+                                </button>
+                                <button id="year-view" class="view-btn flex-1 sm:flex-none px-3 py-2 text-sm text-gray-600 hover:text-blue-600 rounded-md font-medium transition-all duration-200">
+                                    Tahunan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
-    </div>
-</div>
-
-                    <div id="calendar" style="height: 600px;" class="rounded-xl overflow-hidden border border-gray-200 shadow-inner"></div>
+                    <div id="calendar-error" class="hidden bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-r-lg">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-red-700" id="calendar-error-message">
+                                    Gagal memuat kalender. Silakan refresh halaman.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="calendar" style="height: 700px;" class="rounded-xl overflow-hidden border border-gray-200 shadow-inner bg-white gantt-timeline"></div>
+                    
+                    <div id="calendar-fallback" class="hidden mt-4">
+                        <div class="text-center py-8 bg-gray-50 rounded-lg">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">Kalender tidak tersedia</h3>
+                            <p class="mt-1 text-sm text-gray-500">Kami tidak dapat memuat tampilan kalender.</p>
+                            <div class="mt-6">
+                                <button onclick="window.location.reload()" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    Refresh Halaman
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-
-<!-- Month Year Picker Modal -->
-<div id="monthYearPickerModal"
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm">
-        <!-- Header -->
-        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800">Pilih Bulan & Tahun</h3>
-            <button onclick="closeMonthYearPicker()"
-                class="text-gray-500 hover:text-red-500 transition rounded-full p-1 hover:bg-red-50">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-
-        <!-- Body -->
-        <div class="p-6">
-            <!-- Pilih Bulan -->
-            <div class="grid grid-cols-4 gap-3 mb-6" id="month-selector">
-                <!-- Diisi via JavaScript -->
-            </div>
-
-            <!-- Tahun -->
-            <div class="flex justify-between items-center">
-                <button id="prev-year"
-                    class="p-2 rounded-full border border-gray-300 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
-                <span id="current-year" class="text-lg font-semibold text-gray-800"></span>
-                <button id="next-year"
-                    class="p-2 rounded-full border border-gray-300 text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 5l7 7-7 7" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-                <!-- Task list section with enhanced design and ACTIVE FILTER -->
+                <!-- Task list section -->
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
-                    <div class="flex justify-between items-center mb-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
@@ -132,35 +106,38 @@
                             List Jadwal dan Tugas
                             <span id="filtered-count" class="hidden ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full font-medium"></span>
                             <span id="calendar-completion-indicator"
-            class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium border border-green-300 animate-pulse">
-            🎉 Semua tugas selesai!
-        </span>
+                                class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium border border-green-300 animate-pulse">
+                                🎉 Semua tugas selesai!
+                            </span>
                         </h2>
-                        <!-- Filter buttons with data-filter attributes -->
-                        <div class="flex gap-2">
-                            <button class="filter-btn active px-4 py-2 text-sm bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-xl transition-all duration-200 border border-blue-300 font-medium" data-filter="all">Semua</button>
-                            <button class="filter-btn px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-all duration-200 font-medium" data-filter="active">Aktif</button>
-                            <button class="filter-btn px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-all duration-200 font-medium" data-filter="completed">Selesai</button>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button class="filter-btn active flex-1 sm:flex-none px-4 py-2 text-sm bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-xl transition-all duration-200 border border-blue-300 font-medium" data-filter="all">Semua</button>
+                            <button class="filter-btn flex-1 sm:flex-none px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-all duration-200 font-medium" data-filter="active">Aktif</button>
+                            <button class="filter-btn flex-1 sm:flex-none px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl transition-all duration-200 font-medium" data-filter="completed">Selesai</button>
                         </div>
                     </div>
 
                     <div class="space-y-4" id="task-list-container">
                         @php
-                        function renderSubtasks($subtasks, $parentId = null, $task = null) {
+                        function renderSubtasks($subtasks, $parentId = null, $task = null, $level = 0) {
                             $html = '';
-
-                            // Pastikan subtasks berupa collection agar bisa pakai where()
                             if (is_array($subtasks)) {
                                 $subtasks = collect($subtasks);
                             }
 
                             foreach ($subtasks->where('parent_id', $parentId) as $subTask) {
                                 $isParent = $subtasks->where('parent_id', $subTask['id'])->count() > 0;
+                                $indentClass = 'ml-' . ($level * 6);
+                                $lineClass = $level > 0 ? 'border-l-2 border-gray-200 pl-4' : '';
 
                                 if ($isParent) {
-                                    // Parent subtask with toggle
-                                    $html .= '<div class="subtask-parent" data-subtask-id="' . $subTask['id'] . '">';
-                                    $html .= '<div class="flex items-center gap-3 py-2">';
+                                    $html .= '<div class="subtask-parent relative ' . $lineClass . '" data-subtask-id="' . $subTask['id'] . '">';
+                                    
+                                    if ($level > 0) {
+                                        $html .= '<div class="absolute left-0 top-0 w-2 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
+                                    }
+                                    
+                                    $html .= '<div class="flex items-center gap-3 py-2 ' . $indentClass . '">';
                                     $html .= '<button class="subtask-parent-toggle-btn text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50" 
                                                 data-subtask-id="' . $subTask['id'] . '" 
                                                 data-expanded="true">
@@ -168,30 +145,40 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                 </svg>
                                             </button>';
+                                    $html .= '<div class="flex items-center gap-2">';
+                                    $html .= '<div class="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0"></div>';
                                     $html .= '<span class="text-sm font-semibold text-gray-700 cursor-pointer subtask-parent-title hover:text-blue-600 transition-colors duration-200" data-subtask-id="' . $subTask['id'] . '">' . e($subTask['title']) . '</span>';
                                     $html .= '</div>';
+                                    $html .= '</div>';
 
-                                    // Children container
-                                    $html .= '<div class="subtask-children pl-8 mt-2 border-l-2 border-blue-100" id="subtask-children-' . $subTask['id'] . '">';
-                                    $html .= renderSubtasks($subtasks, $subTask['id'], $task);
+                                    $html .= '<div class="subtask-children relative border-l-2 border-gray-200 ml-4" id="subtask-children-' . $subTask['id'] . '">';
+                                    $html .= renderSubtasks($subtasks, $subTask['id'], $task, $level + 1);
                                     $html .= '</div>';
                                     $html .= '</div>';
                                 } else {
-                                    // Leaf subtask with checkbox
                                     $checked = $subTask['completed'] ? 'checked' : '';
                                     $lineClass = $subTask['completed'] ? 'line-through text-gray-400' : 'text-gray-700';
 
-                                    $html .= '<div class="subtask-item flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-blue-50 transition-all duration-200" data-subtask-id="' . $subTask['id'] . '">';
-                                   $html .= '<form action="' . route('subtasks.toggle', $subTask['id']) . '" method="POST" class="subtask-toggle-form">';
-$html .= csrf_field() . method_field('PATCH');
-$html .= '<input type="checkbox"
-    class="subtask-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-    data-sub-task-id="' . $subTask['id'] . '"
-    data-task-id="' . $task['id'] . '"
-    data-is-leaf="true"
-    data-parent-id="' . $subTask['parent_id'] . '" ' . $checked . '>';
-$html .= '</form>';
+                                    $html .= '<div class="subtask-item relative flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-blue-50 transition-all duration-200 ' . $indentClass . '" data-subtask-id="' . $subTask['id'] . '">';
+                                    
+                                    if ($level > 0) {
+                                        $html .= '<div class="absolute left-0 top-0 w-4 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
+                                    }
+                                    
+                                    $html .= '<form action="' . route('subtasks.toggle', $subTask['id']) . '" method="POST" class="subtask-toggle-form">';
+                                    $html .= csrf_field() . method_field('PATCH');
+                                    $html .= '<input type="checkbox"
+                                        class="subtask-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                                        data-sub-task-id="' . $subTask['id'] . '"
+                                        data-task-id="' . $task['id'] . '"
+                                        data-is-leaf="true"
+                                        data-parent-id="' . $subTask['parent_id'] . '" ' . $checked . '>';
+                                    $html .= '</form>';
+                                    
+                                    $html .= '<div class="flex items-center gap-2 flex-1">';
+                                    $html .= '<div class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>';
                                     $html .= '<span class="text-sm ' . $lineClass . ' subtask-text flex-1">' . e($subTask['title']) . '</span>';
+                                    $html .= '</div>';
                                     $html .= '</div>';
                                 }
                             }
@@ -202,20 +189,14 @@ $html .= '</form>';
 
                         @foreach($tasks as $task)
                             @php
-                            // Ambil subtasks sebagai collection
-                            $subTasks = $task['sub_tasks'];
-
-                            // Filter subtasks yang tidak punya anak (leaf subtasks)
+                            $subTasks = collect($task['sub_tasks']);
                             $leafSubTasks = $subTasks->filter(function ($subTask) use ($subTasks) {
                                 return !$subTasks->contains(function ($possibleChild) use ($subTask) {
                                     return $possibleChild['parent_id'] === $subTask['id'];
                                 });
                             });
-
-                            // Hitung progres dari leaf subtasks
                             $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
                             $subtaskTotal = $leafSubTasks->count();
-
                             $progressPercentage = $subtaskTotal > 0
                                 ? round(($subtaskCompleted / $subtaskTotal) * 100)
                                 : ($task['completed'] ? 100 : 0);
@@ -238,7 +219,6 @@ $html .= '</form>';
                                         <div class="flex justify-between items-start">
                                             <div class="flex items-center gap-3 flex-1">
                                                 @if(count($task['sub_tasks']) > 0)
-                                                <!-- Toggle button untuk subtasks -->
                                                 <button class="subtask-toggle-btn text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50" 
                                                        data-task-id="{{ $task['id'] }}"
                                                        data-expanded="true">
@@ -255,14 +235,14 @@ $html .= '</form>';
                                                         {{ $task['title'] }}
                                                     </h3>
                                                     
-                                                    <div class="flex items-center gap-3 text-sm text-gray-500 mt-2">
+                                                    <div class="flex items-center gap-3 text-sm text-gray-500 mt-2 flex-wrap">
                                                         <div class="flex items-center gap-1">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-    </svg>
-    <span>{{ $task['start_date_formatted'] }} - {{ $task['end_date_formatted'] }}</span>
-</div>
-                                                        <span class="text-xs text-gray-300">•</span>
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                            </svg>
+                                                            <span>{{ $task['start_date_formatted'] }} → {{ $task['end_date_formatted'] }}</span>
+                                                        </div>
+                                                        <span class="text-xs text-gray-300 hidden sm:inline">•</span>
                                                         <div class="flex items-center gap-1">
                                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -270,26 +250,23 @@ $html .= '</form>';
                                                             <span>{{ $task['durationDays'] }} hari</span>
                                                         </div>
                                                         @if($subtaskTotal > 0)
-                                                        <span class="text-xs text-gray-300">•</span>
+                                                        <span class="text-xs text-gray-300 hidden sm:inline">•</span>
                                                         <div class="flex items-center gap-1 text-blue-600">
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M3 3v18h18M9 17V9m4 8v-5m4 5v-9" />
-    </svg>
-    <span class="font-medium task-progress-percentage">{{ $progressPercentage }}%</span>
-</div>
-
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                                    d="M3 3v18h18M9 17V9m4 8v-5m4 5v-9" />
+                                                            </svg>
+                                                            <span class="font-medium task-progress-percentage">{{ $progressPercentage }}%</span>
+                                                        </div>
                                                         @endif
                                                     </div>
                                                 </div>
                                             </div>
                                             
                                             <div class="flex items-center gap-2">
-                                                <!-- Tombol Lihat -->
                                                 <button onclick="openTaskModal({{ $task['id'] }})"
                                                         class="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
                                                         title="Lihat">
-                                                        
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -298,7 +275,6 @@ $html .= '</form>';
                                                     </svg>
                                                 </button>
 
-                                                <!-- Tombol Edit -->
                                                 <a href="{{ route('tasks.edit', $task['id']) }}"
                                                     class="text-gray-400 hover:text-blue-600 p-2 rounded-lg hover:bg-blue-50 transition-all duration-200"
                                                     title="Edit">
@@ -309,7 +285,6 @@ $html .= '</form>';
                                                     </svg>
                                                 </a>
 
-                                                <!-- Tombol Hapus -->
                                                 <form action="{{ route('tasks.destroy', $task['id']) }}" method="POST" onsubmit="return confirm('Hapus tugas ini?')" class="inline">
                                                     @csrf
                                                     @method('DELETE')
@@ -336,8 +311,8 @@ $html .= '</form>';
                                                     <div class="h-full bg-gradient-to-r from-blue-500 to-blue-600 subtask-progress-bar transition-all duration-500" style="width: {{ $progressPercentage }}%"></div>
                                                 </div>
                                             </div>
-                                            <div class="space-y-1 vertical-tree" id="task-tree-{{ $task['id'] }}">
-                                                {!! renderSubtasks($task['sub_tasks'], null, $task) !!}
+                                            <div class="space-y-1 vertical-tree-structure" id="task-tree-{{ $task['id'] }}">
+                                                {!! renderSubtasks($task['sub_tasks'], null, $task, 0) !!}
                                             </div>
                                         </div>
                                         @endif
@@ -346,7 +321,6 @@ $html .= '</form>';
                             </div>
                         @endforeach
 
-                        <!-- Empty state for no filtered results -->
                         <div id="filter-empty-state" class="hidden text-center py-12">
                             <div class="flex flex-col items-center justify-center">
                                 <div class="p-4 bg-gray-100 rounded-full mb-4">
@@ -365,7 +339,7 @@ $html .= '</form>';
                 </div>
             </div>
 
-            <!-- Right sidebar with enhanced design -->
+            <!-- Right sidebar -->
             <div class="space-y-6">
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
                     <h2 class="text-lg font-semibold text-gray-800 mb-6">Ringkasan</h2>
@@ -395,28 +369,27 @@ $html .= '</form>';
                     </div>
                 </div>
 
-               
-<div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
-    <h2 class="text-lg font-semibold text-gray-800 mb-6">Prioritas</h2>
-    <div class="space-y-4">
-        @foreach(['urgent' => 'Urgent', 'high' => 'Tinggi', 'medium' => 'Sedang', 'low' => 'Rendah'] as $key => $label)
-        <div>
-            <div class="flex justify-between text-sm text-gray-600 mb-2">
-                <span class="font-medium">{{ $label }}</span>
-                <span>{{ $priorityCounts[$key] ?? 0 }} Tugas</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-gradient-to-r 
-                    @if($key == 'urgent') from-red-500 to-red-600 
-                    @elseif($key == 'high') from-yellow-500 to-yellow-600 
-                    @elseif($key == 'medium') from-blue-500 to-blue-600 
-                    @else from-green-500 to-green-600 @endif h-2 rounded-full transition-all duration-500"
-                    style="width: {{ $totalTasks > 0 ? (($priorityCounts[$key] ?? 0) / $totalTasks) * 100 : 0 }}%"></div>
-            </div>
-        </div>
-        @endforeach
-    </div>
-</div>
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-6">Prioritas</h2>
+                    <div class="space-y-4">
+                        @foreach(['urgent' => 'Urgent', 'high' => 'Tinggi', 'medium' => 'Sedang', 'low' => 'Rendah'] as $key => $label)
+                        <div>
+                            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                <span class="font-medium">{{ $label }}</span>
+                                <span>{{ $priorityCounts[$key] ?? 0 }} Tugas</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r 
+                                    @if($key == 'urgent') from-red-500 to-red-600 
+                                    @elseif($key == 'high') from-yellow-500 to-yellow-600 
+                                    @elseif($key == 'medium') from-blue-500 to-blue-600 
+                                    @else from-green-500 to-green-600 @endif h-2 rounded-full transition-all duration-500"
+                                    style="width: {{ $totalTasks > 0 ? (($priorityCounts[$key] ?? 0) / $totalTasks) * 100 : 0 }}%"></div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
 
                 <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
                     <div class="flex justify-between items-center mb-6">
@@ -443,10 +416,9 @@ $html .= '</form>';
     </div>
 </div>
 
-<!-- Enhanced Modal with Real-time Updates -->
+<!-- Modal -->
 <div id="taskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-        <!-- Modal Header -->
         <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -464,24 +436,20 @@ $html .= '</form>';
             </button>
         </div>
         
-        <!-- Modal Content -->
         <div class="overflow-y-auto max-h-[calc(80vh-100px)]">
             <div id="taskModalContent" class="p-4 space-y-4 text-sm text-gray-700">
-                <!-- Content will be populated by JavaScript -->
             </div>
         </div>
     </div>
 </div>
 
-<!-- Task Detail Tooltip -->
+<!-- Tooltip -->
 <div id="taskTooltip" class="fixed bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 hidden max-w-sm">
     <div id="tooltipContent" class="text-sm">
-        
-        <!-- Tooltip content will be populated by JavaScript -->
     </div>
 </div>
 
-<!-- Loading Indicator -->
+<!-- Loading -->
 <div id="loading-indicator" class="fixed inset-0 bg-black/20 backdrop-blur-sm hidden flex justify-center items-center z-40">
     <div class="bg-white rounded-xl shadow-xl px-6 py-4 flex items-center gap-3">
         <svg class="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
@@ -492,20 +460,16 @@ $html .= '</form>';
     </div>
 </div>
 
-<!-- Notification Container -->
+<!-- Notification -->
 <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
 @endsection
 
 @push('scripts')
-<!-- FullCalendar CSS -->
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
-<!-- FullCalendar JS -->
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/id.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/id.global.min.js'></script>
 
 <script>
-// Global State Management
 let appState = {
     tasksData: @json($tasks),
     calendar: null,
@@ -515,243 +479,766 @@ let appState = {
     tooltip: null,
     isUpdating: false,
     allTasksCompleted: false,
-    currentFilter: 'all'
+    currentFilter: 'all',
+    currentView: 'dayGridMonth'
 };
 
-// Initialize application with error handling
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // First check if FullCalendar is loaded
-        if (typeof FullCalendar === 'undefined') {
-            throw new Error('FullCalendar library not loaded');
-        }
-        
-        initializeCalendar();
-        initializeEventDelegation();
-        initializeTaskFilter();
-        initializeTooltip();
-        checkAllTasksCompleted();
-    } catch (error) {
-        console.error('Initialization error:', error);
-        showNotification('Gagal memuat komponen. Silakan refresh halaman.', 'error');
+function showCalendarError(message) {
+    console.error('Calendar error:', message);
+    const errorElement = document.getElementById('calendar-error');
+    const messageElement = document.getElementById('calendar-error-message');
+    
+    if (errorElement && messageElement) {
+        messageElement.textContent = message;
+        errorElement.classList.remove('hidden');
     }
-});
+    
+    const fallback = document.getElementById('calendar-fallback');
+    if (fallback) {
+        fallback.classList.remove('hidden');
+    }
+    
+    const calendar = document.getElementById('calendar');
+    if (calendar) {
+        calendar.style.display = 'none';
+    }
+}
 
-// index.js atau <script> di bawah HTML
-document.addEventListener("DOMContentLoaded", function () {
-    const buttons = document.querySelectorAll(".toggle-btn");
-
-    buttons.forEach((btn) => {
-        btn.addEventListener("click", () => {
-            // Reset semua tombol ke state tidak aktif
-            buttons.forEach((b) => {
-                b.classList.remove("bg-white", "text-blue-600", "shadow-sm", "hover:bg-blue-100");
-                b.classList.add("text-gray-600", "hover:text-gray-800");
-            });
-
-            // Aktifkan tombol yang diklik
-            btn.classList.remove("text-gray-600", "hover:text-gray-800");
-            btn.classList.add("bg-white", "text-blue-600", "shadow-sm", "hover:bg-blue-100");
-        });
-    });
-
-    // Pilih tombol default aktif (misal: today)
-    document.getElementById("today-btn").click();
-});
-
-
-// ===== ENHANCED CALENDAR FUNCTIONS =====
 function initializeCalendar() {
     const calendarEl = document.getElementById('calendar');
-    appState.calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth', // Start with week view
-        locale: 'id',
-        headerToolbar: false,
-        height: 600,
-        allDaySlot: true, // Enable all-day events slot
-        slotMinTime: '00:00:00', // Start at midnight
-        slotMaxTime: '24:00:00', // End at midnight next day
-        slotDuration: '01:00:00', // 1 hour slots
-        slotLabelInterval: '01:00:00', // Show every hour
-        slotLabelFormat: {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false // 24-hour format
-        },
-        expandRows: true,
-        nowIndicator: true, // Show current time indicator
-        scrollTime: '08:00:00', // Scroll to 8 AM by default
-        events: generateCalendarEvents(),
-        eventClick: function(info) {
-            info.jsEvent.preventDefault();
-            openTaskModal(info.event.id);
-        },
-        // Dalam fungsi initializeCalendar(), tambahkan:
-eventContent: function(arg) {
-    const isCompleted = arg.event.extendedProps.completed;
-    const isAllDay = arg.event.allDay;
-    
-    if (isAllDay) {
-        const title = isCompleted ? `<span style="text-decoration: line-through">${arg.event.title}</span>` : arg.event.title;
-        return { html: title };
-    } else {
-        const timeText = isCompleted ? `<span style="text-decoration: line-through">${arg.timeText}</span>` : arg.timeText;
-        const titleText = isCompleted ? `<span style="text-decoration: line-through">${arg.event.title}</span>` : arg.event.title;
-        
-        return {
-            html: `<div class="fc-event-main-frame">
-                ${arg.timeText ? `<div class="fc-event-time">${timeText}</div>` : ''}
-                <div class="fc-event-title">${titleText}</div>
-            </div>`
-        };
+    if (!calendarEl) {
+        console.error('Calendar element not found');
+        showCalendarError('Elemen kalender tidak ditemukan');
+        return;
     }
-},
-        eventMouseEnter: function(info) {
-            showTaskTooltip(info);
-        },
-        eventMouseLeave: function(info) {
-            hideTaskTooltip();
-        },
-        eventDidMount: function(info) {
-            info.el.style.cursor = 'pointer';
-            info.el.addEventListener('mouseenter', function() {
-                this.style.transform = 'scale(1.02)';
-                this.style.transition = 'transform 0.2s ease';
-                this.style.zIndex = '10';
-            });
-            info.el.addEventListener('mouseleave', function() {
-                this.style.transform = 'scale(1)';
-                this.style.zIndex = 'auto';
-            });
+
+    try {
+        if (appState.calendar) {
+            appState.calendar.destroy();
         }
-    });
-    
-    appState.calendar.render();
-    updateCalendarTitle();
-    setupCalendarNavigation();
+
+        appState.calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'id',
+            height: 700,
+            nowIndicator: true,
+            editable: false,
+            selectable: true,
+            selectMirror: true,
+            dayMaxEvents: false,
+            dayMaxEventRows: false,
+            weekends: true,
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: false
+            },
+            views: {
+                dayGridMonth: {
+                    dayMaxEvents: false,
+                    dayMaxEventRows: false,
+                    moreLinkClick: 'none',
+                    eventDisplay: 'block'
+                },
+                timeGridWeek: {
+                    slotMinTime: '06:00:00',
+                    slotMaxTime: '22:00:00',
+                    allDaySlot: true,
+                    slotDuration: '01:00:00',
+                    slotLabelInterval: '02:00:00',
+                    dayMaxEvents: false,
+                    dayMaxEventRows: false
+                },
+                timeGridDay: {
+                    slotMinTime: '06:00:00',
+                    slotMaxTime: '22:00:00',
+                    allDaySlot: true,
+                    slotDuration: '01:00:00',
+                    slotLabelInterval: '02:00:00',
+                    dayMaxEvents: false,
+                    dayMaxEventRows: false
+                },
+                multiMonthYear: {
+                    type: 'multiMonthYear',
+                    duration: { years: 1 },
+                    fixedWeekCount: false,
+                    showNonCurrentDates: false,
+                    dayMaxEvents: false,
+                    dayMaxEventRows: false
+                }
+            },
+            events: function(fetchInfo, successCallback, failureCallback) {
+                const events = generateCalendarEvents();
+                successCallback(events);
+            },
+            eventContent: renderEventContent,
+            eventDidMount: function(info) {
+                styleEvent(info);
+            },
+            eventClick: function(info) {
+                const taskId = info.event.extendedProps.taskId;
+                if (taskId) {
+                    openTaskModal(taskId);
+                }
+            },
+            eventMouseEnter: showTaskTooltip,
+            eventMouseLeave: hideTaskTooltip,
+            datesSet: function(dateInfo) {
+                updateCalendarTitle(dateInfo);
+                // Refresh events untuk navigasi
+                setTimeout(() => {
+                    refreshCalendarEvents();
+                }, 100);
+            }
+        });
+
+        appState.calendar.render();
+        setupCalendarControls();
+        updateCalendarTitle();
+        
+        console.log('Calendar initialized successfully');
+
+    } catch (error) {
+        console.error('Failed to initialize calendar:', error);
+        showCalendarError('Gagal memuat komponen kalender: ' + error.message);
+    }
 }
 
-// Fungsi generate event untuk kalender
+function refreshCalendarEvents() {
+    if (!appState.calendar) return;
+    
+    try {
+        const events = generateCalendarEvents();
+        appState.calendar.removeAllEvents();
+        appState.calendar.addEventSource(events);
+        console.log('Calendar events refreshed');
+    } catch (error) {
+        console.error('Error refreshing calendar events:', error);
+    }
+}
+
 function generateCalendarEvents() {
-    return appState.tasksData.map(task => {
-        const color = getTaskColor(task);
-        // Perbaikan logika: tugas sehari penuh jika tidak ada start_time DAN end_time, 
-        // atau jika start_time adalah 00:00 dan end_time adalah 23:59
-        const isAllDay = !task.start_time || !task.end_time || 
-                         (task.start_time === '00:00' && task.end_time === '23:59');
-
-        const eventData = {
-            id: task.id.toString(),
-            title: task.title,
-            start: isAllDay ? task.start_date : task.start_date + `T${task.start_time}:00`,
-            end: isAllDay ? task.end_date : task.end_date + `T${task.end_time}:00`,
-            extendedProps: {
-                description: task.description,
-                priority: task.priority,
-                completed: task.completed,
-                startTime: task.start_time,
-                endTime: task.end_time,
-                isAllDay: isAllDay
-            },
-            className: `priority-${task.priority} ${task.completed ? 'completed-task' : 'active-task'}`,
-            backgroundColor: color,
-            borderColor: color,
-            textColor: '#fff',               // Tambahan agar teks terlihat jelas di warna gelap
-            allDay: isAllDay,
-            display: 'block'                // ✅ Inilah kunci agar tampilannya selalu blok warna
-        };
-
-        // Koreksi endDate untuk all-day event
+    let events = [];
+    
+    appState.tasksData.forEach((task) => {
+        const isAllDay = task.is_all_day || !task.start_time || !task.end_time;
+        let eventStart, eventEnd;
+        
         if (isAllDay) {
+            eventStart = task.start_date;
             const endDate = new Date(task.end_date);
             endDate.setDate(endDate.getDate() + 1);
-            eventData.end = endDate.toISOString().split('T')[0];
+            eventEnd = endDate.toISOString().split('T')[0];
+        } else {
+            eventStart = `${task.start_date}T${task.start_time}`;
+            eventEnd = `${task.end_date}T${task.end_time}`;
         }
 
-        return eventData;
+        const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
+            !task.sub_tasks.some(parent => parent.parent_id === st.id)
+        ) : [];
+        const completedCount = leafSubTasks.filter(st => st.completed).length;
+        const totalCount = leafSubTasks.length;
+        const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : (task.completed ? 100 : 0);
+        
+        const mainEvent = {
+            id: `task-${task.id}`,
+            title: task.title,
+            start: eventStart,
+            end: eventEnd,
+            allDay: isAllDay,
+            backgroundColor: getTaskColor(task),
+            borderColor: getTaskBorderColor(task),
+            textColor: task.completed ? '#6B7280' : '#FFFFFF',
+            display: 'block',
+            extendedProps: {
+                taskId: task.id,
+                priority: task.priority,
+                completed: task.completed,
+                progress: progress,
+                isSubtask: false,
+                isMainTask: true,
+                category: task.category?.name || 'Uncategorized',
+                subtaskCount: totalCount,
+                subtaskCompleted: completedCount,
+                hasSubtasks: task.sub_tasks && task.sub_tasks.length > 0,
+                description: task.description || '',
+                durationDays: task.durationDays
+            },
+            classNames: [
+                task.completed ? 'completed-task' : 'active-task',
+                `priority-${task.priority}`,
+                'main-task-event'
+            ]
+        };
+        
+        events.push(mainEvent);
+
+        // Add subtasks hanya untuk view tertentu
+        if (task.sub_tasks && task.sub_tasks.length > 0 && shouldShowSubtasks()) {
+            task.sub_tasks.forEach((subtask, index) => {
+                if (subtask.start_date || subtask.end_date) {
+                    let subtaskStart = subtask.start_date || task.start_date;
+                    let subtaskEnd = subtask.end_date || task.end_date;
+                    
+                    if (!isAllDay && subtask.start_time && subtask.end_time) {
+                        subtaskStart = `${subtaskStart}T${subtask.start_time}`;
+                        subtaskEnd = `${subtaskEnd}T${subtask.end_time}`;
+                    } else if (isAllDay) {
+                        const endDate = new Date(subtaskEnd);
+                        endDate.setDate(endDate.getDate() + 1);
+                        subtaskEnd = endDate.toISOString().split('T')[0];
+                    }
+                    
+                    const level = getSubtaskLevel(subtask, task.sub_tasks);
+                    
+                    const subtaskEvent = {
+                        id: `subtask-${subtask.id}`,
+                        title: `${subtask.title}`,
+                        start: subtaskStart,
+                        end: subtaskEnd,
+                        allDay: isAllDay,
+                        backgroundColor: getSubtaskColor(task, subtask, level),
+                        borderColor: getSubtaskBorderColor(task, subtask, level),
+                        textColor: subtask.completed ? '#9CA3AF' : '#FFFFFF',
+                        display: 'block',
+                        extendedProps: {
+                            taskId: task.id,
+                            subtaskId: subtask.id,
+                            priority: task.priority,
+                            completed: subtask.completed,
+                            isSubtask: true,
+                            isMainTask: false,
+                            parentCompleted: task.completed,
+                            taskLevel: level + 1,
+                            parentId: subtask.parent_id,
+                            level: level,
+                            description: subtask.description || '',
+                            durationDays: calculateDurationDays(subtask.start_date || task.start_date, subtask.end_date || task.end_date)
+                        },
+                        classNames: [
+                            subtask.completed ? 'completed-subtask' : 'active-subtask',
+                            `priority-${task.priority}`,
+                            `subtask-level-${level}`,
+                            'subtask-event'
+                        ]
+                    };
+                    
+                    events.push(subtaskEvent);
+                }
+            });
+        }
     });
+    
+    return events;
 }
 
+function shouldShowSubtasks() {
+    const view = appState.currentView;
+    return view === 'timeGridDay' || view === 'timeGridWeek' || view === 'dayGridMonth';
+}
 
-function getTaskColor(task) {
-    if (task.completed) return '#9ca3af'; // Warna abu-abu solid untuk yang selesai
+function calculateDurationDays(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function getSubtaskLevel(subtask, allSubtasks) {
+    let level = 0;
+    let currentParent = subtask.parent_id;
     
-    // Warna lebih cerah untuk event di hari yang sama
-    switch(task.priority) {
-        case 'urgent': return '#ef4444'; // merah (urgent)
-        case 'high': return '#eab308';   // kuning (tinggi)
-        case 'medium': return '#3b82f6'; // biru (sedang)
-        case 'low': return '#22c55e';    // hijau (rendah)
-        default: return '#3b82f6';
+    while (currentParent) {
+        level++;
+        const parent = allSubtasks.find(st => st.id === currentParent);
+        currentParent = parent ? parent.parent_id : null;
+    }
+    
+    return level;
+}
+
+function renderEventContent(arg) {
+    const event = arg.event;
+    const isCompleted = event.extendedProps.completed;
+    const isSubtask = event.extendedProps.isSubtask || false;
+    const isMainTask = event.extendedProps.isMainTask || false;
+    const level = event.extendedProps.level || 0;
+    const viewType = arg.view.type;
+    const durationDays = event.extendedProps.durationDays || 1;
+    const progress = event.extendedProps.progress || 0;
+
+    if (viewType === 'timeGridDay' || viewType === 'timeGridWeek') {
+        const today = new Date();
+        const endDate = event.end ? new Date(event.end) : new Date(event.start);
+        const timeDiff = endDate - today;
+        const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+        const countdownText = daysRemaining > 0 ? `${daysRemaining}d` : 'Today';
+
+        const height = isMainTask ? 28 : 24 - (level * 2);
+        const fontSize = isMainTask ? '12px' : `${11 - level}px`;
+        const fontWeight = isMainTask ? '600' : '500';
+
+        const priorityColors = {
+            urgent: { bg: 'linear-gradient(135deg, #EF4444, #DC2626)', border: '#DC2626' },
+            high: { bg: 'linear-gradient(135deg, #F59E0B, #D97706)', border: '#F59E0B' },
+            medium: { bg: 'linear-gradient(135deg, #3B82F6, #2563EB)', border: '#3B82F6' },
+            low: { bg: 'linear-gradient(135deg, #10B981, #059669)', border: '#10B981' }
+        };
+        const colors = priorityColors[event.extendedProps.priority] || priorityColors.medium;
+
+        let subtaskInfo = '';
+        if (isMainTask && event.extendedProps.subtaskCount > 0) {
+            subtaskInfo = `
+                <div class="text-xs text-blue-200 mt-1 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
+                    </svg>
+                    ${event.extendedProps.subtaskCompleted}/${event.extendedProps.subtaskCount} subtasks
+                </div>
+            `;
+        }
+
+        let timelineInfo = '';
+        if (isMainTask) {
+            timelineInfo = `
+                <div class="text-xs text-blue-200 mt-1 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    ${durationDays} hari timeline
+                </div>
+            `;
+        }
+
+        return {
+            html: `
+                <div class="timegrid-event-container" style="
+                    position: relative;
+                    height: ${height}px;
+                    ${isSubtask ? `margin-left: ${level * 20}px;` : ''}
+                ">
+                    <div class="timegrid-event-bar" style="
+                        position: relative;
+                        width: 100%;
+                        height: 100%;
+                        background: ${isCompleted ? '#E5E7EB' : colors.bg};
+                        border-radius: 6px;
+                        overflow: hidden;
+                        border-left: ${isMainTask ? '4px' : '3px'} solid ${isCompleted ? '#9CA3AF' : colors.border};
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    ">
+                        ${!isCompleted && progress > 0 && progress < 100 ? `
+                        <div class="timegrid-progress-overlay" style="
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            height: 100%;
+                            width: ${progress}%;
+                            background: linear-gradient(90deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.5));
+                            border-radius: 0 6px 6px 0;
+                        "></div>
+                        ` : ''}
+                        <div class="timegrid-event-content" style="
+                            position: absolute;
+                            top: 6px;
+                            left: 8px;
+                            right: 60px;
+                            color: ${isCompleted ? '#6B7280' : 'white'};
+                            font-size: ${fontSize};
+                            font-weight: ${fontWeight};
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            text-shadow: ${isCompleted ? 'none' : '0 1px 2px rgba(0,0,0,0.4)'};
+                        ">
+                            ${event.title}
+                            ${subtaskInfo}
+                            ${timelineInfo}
+                        </div>
+                        <div class="timegrid-duration-badge" style="
+                            position: absolute;
+                            top: 50%;
+                            right: 6px;
+                            transform: translateY(-50%);
+                            background: rgba(255,255,255,${isCompleted ? '0.8' : '0.95'});
+                            color: ${isCompleted ? '#6B7280' : '#1F2937'};
+                            font-size: ${parseInt(fontSize) - 2}px;
+                            font-weight: 700;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            border: 1px solid rgba(0,0,0,0.1);
+                            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                        ">
+                            ${countdownText}
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+    } else {
+        const height = isMainTask ? '24px' : '20px';
+        const fontSize = isMainTask ? '11px' : '10px';
+        const fontWeight = isMainTask ? '600' : '500';
+
+        return {
+            html: `
+                <div class="gantt-compact-bar" style="
+                    width: 100%;
+                    height: ${height};
+                    background: ${isCompleted ? '#E5E7EB' : (isMainTask ? 'linear-gradient(135deg, #3B82F6, #1D4ED8)' : 'linear-gradient(135deg, #93C5FD, #60A5FA)')};
+                    border-radius: 4px;
+                    position: relative;
+                    border-left: ${isMainTask ? '3px' : '2px'} solid ${getTimelineBorderColor(event.extendedProps.priority, isCompleted)};
+                    margin: 2px 0;
+                    overflow: hidden;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                ">
+                    <div class="gantt-compact-content" style="
+                        position: absolute;
+                        top: 50%;
+                        left: ${isSubtask ? (6 + level * 2) : 6}px;
+                        transform: translateY(-50%);
+                        color: ${isCompleted ? '#6B7280' : 'white'};  
+                        font-size: ${fontSize};
+                        font-weight: ${fontWeight};
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        max-width: calc(100% - 40px);
+                        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+                    ">
+                        ${event.title}
+                    </div>
+                    <div class="gantt-compact-duration" style="
+                        position: absolute;
+                        top: 50%;
+                        right: 4px;
+                        transform: translateY(-50%);
+                        color: rgba(255,255,255,0.9);
+                        font-size: 7px;
+                        font-weight: 700;
+                        background: rgba(0,0,0,0.2);
+                        padding: 1px 3px;
+                        border-radius: 2px;
+                    ">
+                        ${durationDays}d
+                    </div>
+                    ${!isCompleted && progress > 0 && progress < 100 ? `
+                    <div class="gantt-compact-progress" style="
+                        position: absolute;
+                        bottom: 2px;
+                        left: 2px;
+                        right: 2px;
+                        height: 2px;
+                        background: rgba(255,255,255,0.3);
+                        border-radius: 1px;
+                        overflow: hidden;
+                    ">
+                        <div style="
+                            width: ${progress}%;
+                            height: 100%;
+                            background: rgba(34, 197, 94, 0.8);
+                            border-radius: 1px;
+                        "></div>
+                    </div>
+                    ` : ''}
+                </div>
+            `
+        };
     }
 }
 
-// ===== TOOLTIP FUNCTIONS =====
+function styleEvent(info) {
+    const event = info.event;
+    const isCompleted = event.extendedProps.completed;
+    const priority = event.extendedProps.priority;
+    const isSubtask = event.extendedProps.isSubtask || false;
+    const level = event.extendedProps.level || 0;
+
+    info.el.style.border = 'none';
+    info.el.style.padding = '0';
+    info.el.style.margin = '0';
+    info.el.style.backgroundColor = 'transparent';
+    info.el.style.cursor = 'pointer';
+    info.el.style.transition = 'all 0.2s ease';
+    info.el.style.position = 'relative';
+
+    if (isCompleted) {
+        info.el.style.opacity = isSubtask ? '0.6' : '0.7';
+    }
+
+    info.el.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px) scale(1.02)';
+        this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        this.style.zIndex = '25';
+    });
+    
+    info.el.addEventListener('mouseleave', function() {
+        this.style.transform = '';
+        this.style.boxShadow = '';
+        this.style.zIndex = '';
+    });
+}
+
+function getTaskColor(task) {
+    if (task.completed) return 'linear-gradient(135deg, #E5E7EB, #D1D5DB)';
+    
+    switch(task.priority) {
+        case 'urgent': return 'linear-gradient(135deg, #EF4444, #DC2626)';
+        case 'high': return 'linear-gradient(135deg, #F59E0B, #D97706)';
+        case 'medium': return 'linear-gradient(135deg, #3B82F6, #2563EB)';
+        case 'low': return 'linear-gradient(135deg, #10B981, #059669)';
+        default: return 'linear-gradient(135deg, #6B7280, #4B5563)';
+    }
+}
+
+function getTaskBorderColor(task) {
+    if (task.completed) return '#9CA3AF';
+    
+    switch(task.priority) {
+        case 'urgent': return '#DC2626';
+        case 'high': return '#D97706';
+        case 'medium': return '#2563EB';
+        case 'low': return '#059669';
+        default: return '#4B5563';
+    }
+}
+
+function getSubtaskColor(task, subtask, level) {
+    const baseOpacity = Math.max(0.6, 0.9 - (level * 0.1));
+    
+    if (subtask.completed) return `rgba(209, 213, 219, ${baseOpacity})`;
+    
+    switch(task.priority) {
+        case 'urgent': return `rgba(239, 68, 68, ${baseOpacity})`;
+        case 'high': return `rgba(245, 158, 11, ${baseOpacity})`;
+        case 'medium': return `rgba(59, 130, 246, ${baseOpacity})`;
+        case 'low': return `rgba(16, 185, 129, ${baseOpacity})`;
+        default: return `rgba(107, 114, 128, ${baseOpacity})`;
+    }
+}
+
+function getSubtaskBorderColor(task, subtask, level) {
+    if (subtask.completed) return '#D1D5DB';
+    
+    const colors = {
+        'urgent': '#FCA5A5',
+        'high': '#FCD34D',
+        'medium': '#93C5FD',
+        'low': '#6EE7B7'
+    };
+    
+    return colors[task.priority] || '#9CA3AF';
+}
+
+function getTimelineBorderColor(priority, isCompleted) {
+    if (isCompleted) return '#9CA3AF';
+    
+    switch(priority) {
+        case 'urgent': return '#DC2626';
+        case 'high': return '#EA580C';
+        case 'medium': return '#2563EB';
+        case 'low': return '#059669';
+        default: return '#6B7280';
+    }
+}
+
+function setupCalendarControls() {
+    const todayBtn = document.getElementById('today-btn');
+    if (todayBtn) {
+        todayBtn.addEventListener('click', function() {
+            if (appState.calendar) {
+                appState.calendar.today();
+                updateCalendarTitle();
+                setTimeout(() => {
+                    refreshCalendarEvents();
+                }, 100);
+            }
+        });
+    }
+    
+    const viewButtons = {
+        'day-view': 'timeGridDay',
+        'week-view': 'timeGridWeek', 
+        'month-view': 'dayGridMonth',
+        'year-view': 'multiMonthYear'
+    };
+    
+    Object.entries(viewButtons).forEach(([buttonId, viewName]) => {
+        const button = document.getElementById(buttonId);
+        if (button) {
+            button.addEventListener('click', function() {
+                try {
+                    if (appState.calendar) {
+                        appState.calendar.changeView(viewName);
+                        appState.currentView = viewName;
+                        setActiveViewButton(buttonId);
+                        updateCalendarTitle();
+                        
+                        setTimeout(() => {
+                            refreshCalendarEvents();
+                        }, 100);
+                    }
+                } catch (error) {
+                    console.error(`Error changing to view ${viewName}:`, error);
+                    showNotification(`Tampilan ${buttonId.replace('-view', '')} tidak tersedia`, 'error');
+                }
+            });
+        }
+    });
+}
+
+function setActiveViewButton(activeButtonId) {
+    const viewButtons = document.querySelectorAll('.view-btn');
+    viewButtons.forEach(btn => {
+        btn.classList.remove('bg-white', 'text-blue-600', 'shadow-sm', 'active-view');
+        btn.classList.add('text-gray-600');
+    });
+    
+    const activeButton = document.getElementById(activeButtonId);
+    if (activeButton) {
+        activeButton.classList.add('bg-white', 'text-blue-600', 'shadow-sm', 'active-view');
+        activeButton.classList.remove('text-gray-600');
+    }
+}
+
+function updateCalendarTitle(dateInfo) {
+    const titleElement = document.getElementById('calendar-title');
+    if (!titleElement || !appState.calendar) return;
+    
+    const view = appState.calendar.view;
+    const viewDate = dateInfo ? dateInfo.start : view.currentStart;
+    let title = 'Timeline Proyek';
+    
+    try {
+        if (view.type === 'timeGridDay') {
+            title = `Timeline - ${viewDate.toLocaleDateString('id-ID', { 
+                weekday: 'long', 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            })}`;
+        } else if (view.type === 'timeGridWeek') {
+            const start = viewDate;
+            const end = new Date(view.currentEnd);
+            end.setDate(end.getDate() - 1);
+            
+            if (start.getMonth() === end.getMonth()) {
+                title = `Timeline - ${start.getDate()} - ${end.getDate()} ${start.toLocaleDateString('id-ID', { month: 'long' })} ${start.getFullYear()}`;
+            } else {
+                title = `Timeline - ${start.getDate()} ${start.toLocaleDateString('id-ID', { month: 'short' })} - ${end.getDate()} ${end.toLocaleDateString('id-ID', { month: 'short' })} ${start.getFullYear()}`;
+            }
+        } else if (view.type === 'dayGridMonth') {
+            title = `Timeline - ${viewDate.toLocaleDateString('id-ID', { 
+                month: 'long', 
+                year: 'numeric' 
+            })}`;
+        } else if (view.type === 'multiMonthYear' || view.type === 'multiMonth') {
+            title = `Timeline - ${viewDate.getFullYear()}`;
+        }
+    } catch (error) {
+        console.error('Error updating calendar title:', error);
+        title = 'Timeline Proyek';
+    }
+    
+    titleElement.textContent = title;
+}
+
 function initializeTooltip() {
     appState.tooltip = document.getElementById('taskTooltip');
 }
 
 function showTaskTooltip(info) {
-    const task = appState.tasksData.find(t => t.id == info.event.id);
-    if (!task) return;
+    const taskId = info.event.extendedProps.taskId;
+    const isSubtask = info.event.extendedProps.isSubtask;
+    const level = info.event.extendedProps.level || 0;
+    const task = appState.tasksData.find(t => t.id == taskId);
+    if (!task || !appState.tooltip) return;
 
     const priorityLabels = {
-    'urgent': 'Urgent',
-    'high': 'Tinggi', 
-    'medium': 'Sedang',
-    'low': 'Rendah'
-};
+        'urgent': 'Sangat Mendesak',
+        'high': 'Tinggi', 
+        'medium': 'Sedang',
+        'low': 'Rendah'
+    };
 
-    const timeInfo = (task.start_time && task.end_time && 
-                      !(task.start_time === '00:00' && task.end_time === '23:59'))
+    const timeInfo = (task.start_time && task.end_time && !task.is_all_day)
         ? `<div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             ${task.start_time} - ${task.end_time}
           </div>`
-        : '<div class="text-xs text-gray-500 mt-1">Sehari penuh</div>';
+        : '<div class="text-xs text-gray-500 mt-1">📅 Timeline Harian Penuh</div>';
+
+    const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
+        !task.sub_tasks.some(parent => parent.parent_id === st.id)
+    ) : [];
+    const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
+    const subtaskTotal = leafSubTasks.length;
+    const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
+
+    const durationInfo = `<div class="flex items-center gap-1 text-xs text-blue-600 mt-1 font-semibold">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+        Timeline: ${task.durationDays} hari (${formatDateString(task.start_date)} → ${formatDateString(task.end_date)})
+    </div>`;
+
+    const hierarchyInfo = isSubtask ? `
+        <div class="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full border border-purple-200">
+            📊 Level ${level + 1} Subtask
+        </div>
+    ` : '';
 
     const tooltipContent = document.getElementById('tooltipContent');
     tooltipContent.innerHTML = `
-        <div class="space-y-2">
-            <div class="font-semibold text-gray-800 ${task.completed ? 'line-through' : ''}">${task.title}</div>
-            <div class="flex items-center gap-2">
+        <div class="space-y-3">
+            <div class="font-semibold text-gray-800 ${task.completed ? 'line-through' : ''} flex items-center gap-2">
+                ${isSubtask ? '📝' : '📋'} ${task.title}
+                ${hierarchyInfo}
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
                 <span class="px-2 py-1 text-xs rounded-full ${getPriorityBadgeClass(task.priority)}">
                     ${priorityLabels[task.priority] || 'Normal'}
                 </span>
-                ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">Selesai</span>' : ''}
+                ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">✅ Selesai</span>' : ''}
+                ${subtaskTotal > 0 && !isSubtask ? `<span class="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded-full">📊 ${progressPercentage}% Progress</span>` : ''}
+                ${subtaskTotal > 0 && !isSubtask ? `<span class="px-2 py-1 text-xs bg-green-100 text-green-600 rounded-full">📋 ${subtaskTotal} Subtasks</span>` : ''}
             </div>
-            <!-- Ganti bagian tooltipContent di showTaskTooltip -->
-<div class="text-xs text-gray-600">
-    <div class="flex items-center gap-1">
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-        </svg>
-        ${task.start_date ? formatDateString(task.start_date) : 'No start date'} - 
-        ${task.end_date ? formatDateString(task.end_date) : 'No end date'}
-    </div>
-    ${timeInfo}
-</div>
-            <div class="text-xs text-gray-600">
-                <div class="flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    ${formatDateString(task.start_date)} - ${formatDateString(task.end_date)}
-                </div>
+            <div class="text-xs text-gray-600 bg-gray-50 p-2 rounded-lg border">
+                ${durationInfo}
                 ${timeInfo}
             </div>
-            ${task.description ? `<div class="text-xs text-gray-600 border-t pt-2 mt-2">${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</div>` : ''}
+            ${task.description ? `<div class="text-xs text-gray-600 border-t pt-2 mt-2 bg-blue-50 p-2 rounded-lg">${task.description.substring(0, 100)}${task.description.length > 100 ? '...' : ''}</div>` : ''}
+            <div class="text-xs text-blue-600 font-medium flex items-center gap-1 pt-2 border-t">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                Klik untuk detail lengkap timeline
+            </div>
         </div>
     `;
 
-    // Position tooltip
     const rect = info.el.getBoundingClientRect();
-    appState.tooltip.style.left = (rect.right + 10) + 'px';
-    appState.tooltip.style.top = rect.top + 'px';
+    const tooltipRect = appState.tooltip.getBoundingClientRect();
     
-    // Show tooltip with animation
+    let left = rect.right + 10;
+    let top = rect.top;
+    
+    if (left + tooltipRect.width > window.innerWidth) {
+        left = rect.left - tooltipRect.width - 10;
+    }
+    
+    if (top + tooltipRect.height > window.innerHeight) {
+        top = window.innerHeight - tooltipRect.height - 10;
+    }
+    
+    appState.tooltip.style.left = left + 'px';
+    appState.tooltip.style.top = top + 'px';
+    
     appState.tooltip.classList.remove('hidden');
     appState.tooltip.style.opacity = '0';
     appState.tooltip.style.transform = 'translateY(-10px)';
@@ -775,72 +1262,74 @@ function hideTaskTooltip() {
 
 function getPriorityBadgeClass(priority) {
     switch(priority) {
-        case 'urgent': return 'bg-red-100 text-red-800';
-        case 'high': return 'bg-yellow-100 text-yellow-800';
-        case 'medium': return 'bg-blue-100 text-blue-800';
-        case 'low': return 'bg-green-100 text-green-800';
-        default: return 'bg-blue-100 text-blue-800';
+        case 'urgent':
+            return 'bg-red-100 text-red-800 border border-red-300';
+        case 'high':
+            return 'bg-orange-100 text-orange-800 border border-orange-300';
+        case 'medium':
+            return 'bg-blue-100 text-blue-800 border border-blue-300';
+        case 'low':
+            return 'bg-green-100 text-green-800 border border-green-300';
+        default:
+            return 'bg-gray-100 text-gray-800 border border-gray-300';
     }
 }
 
-function setupCalendarNavigation() {
-    document.getElementById('prev-month').addEventListener('click', () => {
-        appState.calendar.prev();
-        updateCalendarTitle();
-    });
-    document.getElementById('today-btn').addEventListener('click', function() {
-    appState.calendar.today();
-    updateCalendarTitle();
-});
-    
-    document.getElementById('next-month').addEventListener('click', () => {
-        appState.calendar.next();
-        updateCalendarTitle();
-    });
-    
-    document.getElementById('month-view').addEventListener('click', function() {
-        appState.calendar.changeView('dayGridMonth');
-        updateCalendarTitle();
-        this.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
-        document.getElementById('week-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
-    });
-    
-    document.getElementById('week-view').addEventListener('click', function() {
-        appState.calendar.changeView('timeGridWeek');
-        updateCalendarTitle();
-        this.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
-        document.getElementById('month-view').classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+function formatDateString(dateString) {
+    return new Date(dateString).toLocaleDateString('id-ID', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
     });
 }
 
-function updateCalendarTitle() {
-    const view = appState.calendar.view;
-    let title = '';
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('notification-container');
+    const notification = document.createElement('div');
     
-    if (view.type === 'dayGridMonth') {
-        title = view.currentStart.toLocaleDateString('id-ID', { 
-            month: 'long', 
-            year: 'numeric' 
-        });
-    } else if (view.type === 'timeGridWeek') {
-        const start = view.currentStart;
-        const end = new Date(view.currentEnd);
-        end.setDate(end.getDate() - 1);
-        
-        const startMonth = start.toLocaleDateString('id-ID', { month: 'short' });
-        const endMonth = end.toLocaleDateString('id-ID', { month: 'short' });
-        
-        if (startMonth === endMonth) {
-            title = `${start.getDate()} - ${end.getDate()} ${startMonth} ${start.getFullYear()}`;
-        } else {
-            title = `${start.getDate()} ${startMonth} - ${end.getDate()} ${endMonth} ${start.getFullYear()}`;
-        }
+    let bgColor, icon;
+    switch(type) {
+        case 'success':
+            bgColor = 'from-green-500 to-green-600';
+            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+            break;
+        case 'error':
+            bgColor = 'from-red-500 to-red-600';
+            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            break;
+        case 'info':
+            bgColor = 'from-blue-500 to-blue-600';
+            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            break;
     }
     
-    document.getElementById('calendar-title').textContent = title;
+    notification.className = `bg-gradient-to-r ${bgColor} text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 flex items-center gap-2 max-w-xs`;
+    notification.innerHTML = `
+        ${icon}
+        <span class="font-medium text-sm">${message}</span>
+    `;
+    
+    notification.style.transform = 'translateX(100%)';
+    notification.style.opacity = '0';
+    
+    container.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+        notification.style.opacity = '1';
+    }, 10);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        notification.style.opacity = '0';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 300);
+    }, 4000);
 }
 
-// ===== TASK FILTER FUNCTIONS =====
 function initializeTaskFilter() {
     const filterButtons = document.querySelectorAll('.filter-btn');
     
@@ -852,20 +1341,17 @@ function initializeTaskFilter() {
         });
     });
     
-    // Initial filter application
     filterTasks('all');
 }
 
 function setActiveFilter(filter) {
     appState.currentFilter = filter;
     
-    // Remove active class from all buttons
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active', 'bg-blue-100', 'text-blue-600', 'border-blue-300');
         btn.classList.add('bg-gray-100', 'text-gray-600');
     });
     
-    // Add active class to clicked button
     const activeButton = document.querySelector(`[data-filter="${filter}"]`);
     if (activeButton) {
         activeButton.classList.add('active', 'bg-blue-100', 'text-blue-600', 'border-blue-300');
@@ -904,11 +1390,9 @@ function filterTasks(filter) {
         }
     });
     
-    // Update filtered count
     appState.filteredTasksCount = visibleCount;
     updateFilteredCountDisplay(filter, visibleCount);
     
-    // Show/hide empty state
     if (visibleCount === 0) {
         showEmptyState(filter);
     } else {
@@ -921,7 +1405,6 @@ function showTaskItem(item) {
     item.style.opacity = '0';
     item.style.transform = 'translateY(20px)';
     
-    // Trigger reflow
     item.offsetHeight;
     
     item.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
@@ -954,7 +1437,6 @@ function updateFilteredCountDisplay(filter, count) {
     }
 }
 
-// Enhanced showEmptyState function with null checks
 function showEmptyState(filter) {
     const emptyState = document.getElementById('filter-empty-state');
     const title = document.getElementById('empty-state-title');
@@ -965,7 +1447,6 @@ function showEmptyState(filter) {
         return;
     }
     
-    // Define default messages
     const defaultMessages = {
         'all': {
             title: 'Belum ada tugas',
@@ -981,14 +1462,11 @@ function showEmptyState(filter) {
         }
     };
     
-    // Get messages for current filter or use defaults
     const messages = defaultMessages[filter] || defaultMessages.all;
     
-    // Safely update content
     title.textContent = messages.title;
     description.textContent = messages.description;
     
-    // Show with animation
     emptyState.style.display = 'block';
     emptyState.style.opacity = '0';
     emptyState.style.transform = 'translateY(20px)';
@@ -1001,6 +1479,7 @@ function showEmptyState(filter) {
     
     emptyState.classList.remove('hidden');
 }
+
 function hideEmptyState() {
     const emptyState = document.getElementById('filter-empty-state');
     
@@ -1019,31 +1498,22 @@ function resetFilter() {
     filterTasks('all');
 }
 
-// Update filter when task status changes
-function updateTaskFilter(taskId, newStatus) {
-    const taskItem = document.getElementById(`task-item-${taskId}`);
-    if (taskItem) {
-        taskItem.setAttribute('data-task-status', newStatus);
-        
-        // Re-apply current filter
-        filterTasks(appState.currentFilter);
-    }
-}
-
-// ===== EVENT DELEGATION SYSTEM =====
 function initializeEventDelegation() {
-    // Task list container delegation
-    document.getElementById('task-list-container').addEventListener('change', handleTaskListChange);
-    document.getElementById('task-list-container').addEventListener('click', handleTaskListClick);
+    const taskListContainer = document.getElementById('task-list-container');
+    if (taskListContainer) {
+        taskListContainer.addEventListener('change', handleTaskListChange);
+        taskListContainer.addEventListener('click', handleTaskListClick);
+    }
     
-    // Modal container delegation
     document.addEventListener('change', handleModalChange);
     document.addEventListener('click', handleModalClick);
     
-    // Modal close events
-    document.getElementById('taskModal').addEventListener('click', function(e) {
-        if (e.target === this) closeTaskModal();
-    });
+    const taskModal = document.getElementById('taskModal');
+    if (taskModal) {
+        taskModal.addEventListener('click', function(e) {
+            if (e.target === this) closeTaskModal();
+        });
+    }
     
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -1092,7 +1562,6 @@ function handleModalClick(e) {
     }
 }
 
-// ===== UNIFIED UPDATE FUNCTIONS =====
 async function performTaskUpdate(checkbox, source) {
     if (appState.isUpdating) return;
     
@@ -1120,17 +1589,10 @@ async function performTaskUpdate(checkbox, source) {
         const data = await response.json();
         
         if (data.success) {
-            // Update global state
             updateTasksData(taskId, data, 'task');
-            
-            // Sync UI updates
             syncTaskUIUpdates(taskId, data, source);
-            
-            // Update calendar and summary
             updateCalendarEvent(taskId, data.task.completed);
             updateSummaryUI(data);
-            
-            // Update filter display
             updateTaskFilter(taskId, data.task.completed ? 'completed' : 'active');
             
             showNotification('Tugas berhasil diperbarui!', 'success');
@@ -1192,17 +1654,10 @@ async function performSubtaskUpdate(checkbox, source) {
         const data = await response.json();
         
         if (data.success) {
-            // Update global state
             updateTasksData(taskId, data, 'subtask');
-            
-            // Sync UI updates
             syncSubtaskUIUpdates(subtaskId, taskId, data, source);
-            
-            // Update calendar and summary
             updateCalendarEvent(taskId, data.task.completed);
             updateSummaryUI(data);
-            
-            // Update filter display
             updateTaskFilter(taskId, data.task.completed ? 'completed' : 'active');
             
             showNotification('Subtugas berhasil diperbarui!', 'success');
@@ -1221,11 +1676,9 @@ async function performSubtaskUpdate(checkbox, source) {
     }
 }
 
-// ===== SYNCHRONIZATION FUNCTIONS =====
 function syncTaskUIUpdates(taskId, data, source) {
     const task = data.task;
     
-    // Update main view
     const mainCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
     const mainTitle = document.querySelector(`#task-item-${taskId} .task-title`);
     
@@ -1235,15 +1688,14 @@ function syncTaskUIUpdates(taskId, data, source) {
     
     if (mainTitle) {
         if (task.completed) {
-    mainTitle.classList.add('line-through');
-    mainTitle.style.color = '#9ca3af';
-} else {
-    mainTitle.classList.remove('line-through');
-    mainTitle.style.color = '';
-}
+            mainTitle.classList.add('line-through');
+            mainTitle.style.color = '#9ca3af';
+        } else {
+            mainTitle.classList.remove('line-through');
+            mainTitle.style.color = '';
+        }
     }
     
-    // Update modal if open
     if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
         const modalCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
         const modalTitle = document.getElementById(`modal-task-title-${taskId}`);
@@ -1253,30 +1705,25 @@ function syncTaskUIUpdates(taskId, data, source) {
         }
         
         if (modalTitle) {
-           if (task.completed) {
-    mainTitle.classList.add('line-through');
-    mainTitle.style.color = '#9ca3af';
-} else {
-    mainTitle.classList.remove('line-through');
-    mainTitle.style.color = '';
-}
+            if (task.completed) {
+                modalTitle.classList.add('line-through');
+                modalTitle.style.color = '#9ca3af';
+            } else {
+                modalTitle.classList.remove('line-through');
+                modalTitle.style.color = '';
+            }
         }
         
-        // Update all modal subtasks if task is toggled
         updateAllModalSubtasks(taskId, task.completed);
     }
     
-    // Update all main subtasks if task is toggled
     updateAllMainSubtasks(taskId, task.completed);
-    
-    // Update progress
     updateTaskProgress(taskId, data);
 }
 
 function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
     const subtask = data.subtask;
 
-    // Update main view subtask
     const mainSubtaskCheckbox = document.querySelector(`[data-sub-task-id="${subtaskId}"]:not(.subtask-checkbox-modal)`);
     const mainSubtaskText = mainSubtaskCheckbox?.parentElement?.nextElementSibling;
 
@@ -1288,7 +1735,6 @@ function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
         updateTextStyle(mainSubtaskText, subtask.completed);
     }
 
-    // Update modal subtask if open
     if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
         const modalSubtaskCheckbox = document.querySelector(`.subtask-checkbox-modal[data-sub-task-id="${subtaskId}"]`);
         const modalSubtaskText = modalSubtaskCheckbox?.parentElement?.nextElementSibling;
@@ -1304,16 +1750,13 @@ function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
         updateModalProgress(taskId);
     }
 
-    // Update task progress
     updateTaskProgress(taskId, data);
 
-    // Update main task checkbox if needed
     const mainTaskCheckbox = document.querySelector(`#task-item-${taskId} .task-checkbox`);
     if (mainTaskCheckbox) {
         mainTaskCheckbox.checked = data.task.completed;
     }
 
-    // Update modal task checkbox if needed
     if (appState.isModalOpen && appState.currentModalTaskId == taskId) {
         const modalTaskCheckbox = document.querySelector(`.task-checkbox-modal[data-task-id="${taskId}"]`);
         if (modalTaskCheckbox) {
@@ -1321,7 +1764,6 @@ function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
         }
     }
 
-    // Update strike-through pada judul tugas
     const task = appState.tasksData.find(t => t.id == taskId);
     if (task && task.sub_tasks) {
         const leafSubTasks = task.sub_tasks.filter(st =>
@@ -1351,7 +1793,6 @@ function syncSubtaskUIUpdates(subtaskId, taskId, data, source) {
     }
 }
 
-// ===== HELPER FUNCTIONS =====
 function updateTextStyle(element, completed) {
     if (completed) {
         element.classList.add('line-through');
@@ -1431,18 +1872,14 @@ function updateTasksData(taskId, data, type) {
     const taskIndex = appState.tasksData.findIndex(t => t.id == taskId);
     if (taskIndex === -1) return;
     
-    // Update task
     appState.tasksData[taskIndex].completed = data.task.completed;
     
-    // Update subtasks if they exist
     if (appState.tasksData[taskIndex].sub_tasks) {
         if (type === 'task') {
-            // If task is toggled, update all subtasks
             appState.tasksData[taskIndex].sub_tasks.forEach(st => {
                 st.completed = data.task.completed;
             });
         } else if (type === 'subtask' && data.subtask) {
-            // If subtask is toggled, update specific subtask
             const subtaskIndex = appState.tasksData[taskIndex].sub_tasks.findIndex(st => st.id == data.subtask.id);
             if (subtaskIndex !== -1) {
                 appState.tasksData[taskIndex].sub_tasks[subtaskIndex].completed = data.subtask.completed;
@@ -1454,33 +1891,28 @@ function updateTasksData(taskId, data, type) {
 function updateCalendarEvent(taskId, completed) {
     if (!appState.calendar) return;
     
-    const event = appState.calendar.getEventById(taskId.toString());
-    if (!event) return;
-    
-    const taskIndex = appState.tasksData.findIndex(t => t.id == taskId);
-    if (taskIndex !== -1) {
-        appState.tasksData[taskIndex].completed = completed;
-        
-        event.setProp('backgroundColor', getTaskColor(appState.tasksData[taskIndex]));
-        event.setProp('borderColor', getTaskColor(appState.tasksData[taskIndex]));
-        event.setProp('className', completed ? 'completed-task' : 'active-task');
-        event.setExtendedProp('completed', completed);
-    }
+    // Refresh all events instead of updating individual ones
+    setTimeout(() => {
+        refreshCalendarEvents();
+    }, 100);
 }
 
 function updateSummaryUI(data) {
     if (data.totalTasks !== undefined) {
-        document.getElementById('total-tasks-count').textContent = data.totalTasks;
+        const totalTasksEl = document.getElementById('total-tasks-count');
+        if (totalTasksEl) totalTasksEl.textContent = data.totalTasks;
         appState.totalTasks = data.totalTasks;
     }
     
     if (data.completedTasks !== undefined) {
-        document.getElementById('completed-tasks-count').textContent = data.completedTasks;
+        const completedTasksEl = document.getElementById('completed-tasks-count');
+        if (completedTasksEl) completedTasksEl.textContent = data.completedTasks;
         appState.completedTasks = data.completedTasks;
     }
     
     if (data.overallProgress !== undefined) {
-        document.getElementById('overall-progress-percentage').textContent = `${data.overallProgress}%`;
+        const overallProgressEl = document.getElementById('overall-progress-percentage');
+        if (overallProgressEl) overallProgressEl.textContent = `${data.overallProgress}%`;
     }
 }
 
@@ -1499,14 +1931,23 @@ function checkAllTasksCompleted() {
 
 function updateCalendarCompletionIndicator(show) {
     const indicator = document.getElementById('calendar-completion-indicator');
-    if (show) {
-        indicator.classList.remove('hidden');
-    } else {
-        indicator.classList.add('hidden');
+    if (indicator) {
+        if (show) {
+            indicator.classList.remove('hidden');
+        } else {
+            indicator.classList.add('hidden');
+        }
     }
 }
 
-// ===== MODAL FUNCTIONS =====
+function updateTaskFilter(taskId, newStatus) {
+    const taskItem = document.getElementById(`task-item-${taskId}`);
+    if (taskItem) {
+        taskItem.setAttribute('data-task-status', newStatus);
+        filterTasks(appState.currentFilter);
+    }
+}
+
 function openTaskModal(taskId) {
     const task = appState.tasksData.find(t => t.id == taskId);
     if (!task) {
@@ -1518,34 +1959,6 @@ function openTaskModal(taskId) {
     appState.isModalOpen = true;
     appState.currentModalTaskId = taskId;
 
-    const modalContent = document.getElementById('taskModalContent');
-    modalContent.innerHTML = `
-        <div>
-            <h3 class="font-bold text-lg mb-2">${task.title}</h3>
-            <div class="mb-2 text-gray-600">
-                <span><b>Tanggal:</b> ${task.start_date} - ${task.end_date}</span>
-            </div>
-            <div class="mb-2 text-gray-600">
-                <span><b>Deskripsi:</b> ${task.description || '-'}</span>
-            </div>
-            <div class="mb-2 text-gray-600">
-                <span><b>Prioritas:</b> ${task.priority}</span>
-            </div>
-            <div class="mb-2 text-gray-600">
-                <span><b>Subtasks:</b></span>
-                <ul>
-                    ${task.sub_tasks.map(st => `<li>${st.title} (${st.start_date || '-'} - ${st.end_date || '-'})</li>`).join('')}
-                </ul>
-            </div>
-        </div>
-    `;
-
-    // Show modal
-    const modalEl = document.getElementById('taskModal');
-    modalEl.classList.remove('hidden');
-    modalEl.style.opacity = '1';
-    modalEl.style.transform = 'scale(1)';
-    
     let priorityText = '';
     let priorityClass = '';
     switch(task.priority) {
@@ -1574,9 +1987,7 @@ function openTaskModal(taskId) {
     const subtaskTotal = leafSubTasks.length;
     const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
 
-    // Add time display - perbaikan logika untuk sehari penuh
-    const timeDisplay = (task.start_time && task.end_time && 
-                        !(task.start_time === '00:00' && task.end_time === '23:59'))
+    const timeDisplay = (task.start_time && task.end_time && !task.is_all_day)
         ? `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
             <div class="flex items-center gap-2 mb-1">
                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1589,11 +2000,11 @@ function openTaskModal(taskId) {
         : `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
             <div class="flex items-center gap-2 mb-1">
                 <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
                 <span class="text-xs font-medium text-gray-600">Durasi</span>
             </div>
-            <span class="font-semibold text-gray-800 text-sm">Sehari Penuh</span>
+            <span class="font-semibold text-gray-800 text-sm">Timeline Harian Penuh</span>
         </div>`;
 
     let subtasksHtml = '';
@@ -1605,7 +2016,7 @@ function openTaskModal(taskId) {
                         <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
                         </svg>
-                        Subtugas (<span id="modal-subtask-count">${subtaskCompleted}/${subtaskTotal}</span>)
+                        Timeline Subtugas (<span id="modal-subtask-count">${subtaskCompleted}/${subtaskTotal}</span>)
                     </h5>
                     <div class="flex items-center gap-2">
                         <div class="w-20 h-2 bg-white rounded-full overflow-hidden shadow-inner">
@@ -1615,12 +2026,13 @@ function openTaskModal(taskId) {
                     </div>
                 </div>
                 <div class="space-y-1 max-h-40 overflow-y-auto">
-                    ${renderModalSubtasks(task.sub_tasks, null, task)}
+                    ${renderModalSubtasks(task.sub_tasks, null, task, 0)}
                 </div>
             </div>
         `;
     }
 
+    const modalContent = document.getElementById('taskModalContent');
     modalContent.innerHTML = `
         <div class="flex items-start gap-3 mb-4">
             <form action="/tasks/${task.id}/toggle" method="POST" class="task-toggle-form-modal">
@@ -1632,37 +2044,38 @@ function openTaskModal(taskId) {
                     ${task.completed ? 'checked' : ''}>
             </form>
             <div class="flex-1">
-                <h4 class="font-bold text-lg mb-2 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}" id="modal-task-title-${task.id}">
-                    ${task.title}
+                <h4 class="font-bold text-lg mb-2 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'} flex items-center gap-2" id="modal-task-title-${task.id}">
+                    📋 ${task.title}
                 </h4>
                 <div class="flex items-center gap-2 mb-3 flex-wrap">
                     <span class="px-2 py-1 text-xs rounded-lg font-medium ${priorityClass}">
                         ${priorityText}
                     </span>
-                    ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg font-medium border border-gray-300">Selesai</span>' : ''}
-                    ${subtaskTotal > 0 ? `<span id="modal-progress-badge" class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">${progressPercentage}% Progress</span>` : ''}
+                    ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg font-medium border border-gray-300">✅ Selesai</span>' : ''}
+                    ${subtaskTotal > 0 ? `<span id="modal-progress-badge" class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">📊 ${progressPercentage}% Progress</span>` : ''}
+                    <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-lg font-medium border border-green-300">⏱️ ${task.durationDays} hari</span>
                 </div>
             </div>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <span class="text-xs font-medium text-gray-600">Tanggal Mulai</span>
+                    <span class="text-xs font-medium text-green-700">Start Timeline</span>
                 </div>
-                <span class="font-semibold text-gray-800 text-sm">${formatDateString(task.start_date)}</span>
+                <span class="font-semibold text-green-800 text-sm">${formatDateString(task.start_date)}</span>
             </div>
-            <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 border border-red-200">
                 <div class="flex items-center gap-2 mb-1">
                     <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <span class="text-xs font-medium text-gray-600">Tanggal Selesai</span>
+                    <span class="text-xs font-medium text-red-700">End Timeline</span>
                 </div>
-                <span class="font-semibold text-gray-800 text-sm">${formatDateString(task.end_date)}</span>
+                <span class="font-semibold text-red-800 text-sm">${formatDateString(task.end_date)}</span>
             </div>
             ${timeDisplay}
         </div>
@@ -1682,8 +2095,8 @@ function openTaskModal(taskId) {
         ${subtasksHtml}
         
         <div class="flex gap-2 pt-4 border-t border-gray-200">
-            <a href="/tasks/${task.id}/edit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
-                Edit Tugas
+            <a href="/tasks/${task.id}/edit" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
+                Edit Timeline
             </a>
             <button onclick="closeTaskModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
                 Tutup
@@ -1691,7 +2104,6 @@ function openTaskModal(taskId) {
         </div>
     `;
     
-    // Show modal with animation
     const taskModalEl = document.getElementById('taskModal');
     taskModalEl.classList.remove('hidden');
     taskModalEl.style.opacity = '0';
@@ -1704,25 +2116,31 @@ function openTaskModal(taskId) {
     }, 10);
 }
 
-function renderModalSubtasks(subtasks, parentId = null, task) {
+function renderModalSubtasks(subtasks, parentId = null, task, level = 0) {
     let html = '';
     
     const filteredSubtasks = subtasks.filter(st => st.parent_id === parentId);
     
     filteredSubtasks.forEach(subTask => {
         const isParent = subtasks.some(st => st.parent_id === subTask.id);
+        const indentClass = level > 0 ? `ml-${level * 6}` : '';
+        const treeLineClass = level > 0 ? 'border-l-2 border-gray-200 pl-4' : '';
+        
         const dateInfo = (subTask.start_date || subTask.end_date) ? 
-            `<div class="subtask-date">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            `<div class="subtask-date" style="margin-top: 2px;">
+                <svg style="width: 10px; height: 10px; display: inline; margin-right: 3px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                 </svg>
-                ${subTask.start_date ? formatDateString(subTask.start_date) : ''} ${subTask.end_date ? ' - ' + formatDateString(subTask.end_date) : ''}
+                <span style="font-size: 8px; color: #6B7280;">
+                    ${subTask.start_date ? formatDateString(subTask.start_date) : ''} ${subTask.end_date ? ' → ' + formatDateString(subTask.end_date) : ''}
+                </span>
             </div>` : '';
         
         if (isParent) {
             html += `
-                <div class="subtask-parent-modal bg-white rounded-lg p-2 border border-gray-200" data-subtask-id="${subTask.id}">
-                    <div class="flex items-center gap-2 py-1">
+                <div class="subtask-parent-modal relative bg-white rounded-lg p-2 border border-gray-200 ${treeLineClass}" data-subtask-id="${subTask.id}">
+                    ${level > 0 ? `<div class="absolute left-0 top-0 w-3 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>` : ''}
+                    <div class="flex items-center gap-2 py-1 ${indentClass}">
                         <button class="subtask-parent-toggle-btn-modal text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50" 
                                 data-subtask-id="${subTask.id}" 
                                 data-expanded="true">
@@ -1730,18 +2148,20 @@ function renderModalSubtasks(subtasks, parentId = null, task) {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <span class="text-xs font-semibold text-gray-700">${subTask.title}</span>
+                        <div class="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0"></div>
+                        <span class="text-xs font-semibold text-gray-700">📁 ${subTask.title}</span>
                     </div>
                     ${dateInfo}
-                    <div class="subtask-children-modal pl-6 mt-1 border-l-2 border-blue-100" id="modal-subtask-children-${subTask.id}">
-                        ${renderModalSubtasks(subtasks, subTask.id, task)}
+                    <div class="subtask-children-modal relative border-l-2 border-gray-200 ml-4" id="modal-subtask-children-${subTask.id}">
+                        ${renderModalSubtasks(subtasks, subTask.id, task, level + 1)}
                     </div>
                 </div>
             `;
         } else {
             const lineClass = subTask.completed ? 'line-through text-gray-400' : 'text-gray-700';
             html += `
-                <div class="subtask-item-modal flex items-center gap-2 py-1 px-2 bg-white rounded border border-gray-200 hover:border-blue-300 transition-all duration-200" data-subtask-id="${subTask.id}">
+                <div class="subtask-item-modal relative flex items-center gap-2 py-1 px-2 bg-white rounded border border-gray-200 hover:border-blue-300 transition-all duration-200 ${treeLineClass}" data-subtask-id="${subTask.id}">
+                    ${level > 0 ? `<div class="absolute left-0 top-0 w-4 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>` : ''}
                     <form action="/subtasks/${subTask.id}/toggle" method="POST" class="subtask-toggle-form-modal">
                         <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
                         <input type="hidden" name="_method" value="PATCH">
@@ -1751,8 +2171,11 @@ function renderModalSubtasks(subtasks, parentId = null, task) {
                             data-task-id="${task.id}"
                             ${subTask.completed ? 'checked' : ''}>
                     </form>
-                    <div class="flex-1">
-                        <span class="text-xs ${lineClass} subtask-text-modal">${subTask.title}</span>
+                    <div class="flex-1 ${indentClass}">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
+                            <span class="text-xs ${lineClass} subtask-text-modal">📝 ${subTask.title}</span>
+                        </div>
                         ${dateInfo}
                     </div>
                 </div>
@@ -1778,7 +2201,6 @@ function closeTaskModal() {
     }, 300);
 }
 
-// ===== TOGGLE FUNCTIONS =====
 function toggleSubtasks(button) {
     const taskId = button.getAttribute('data-task-id');
     const subtasksContainer = document.getElementById(`subtasks-container-${taskId}`);
@@ -1911,13 +2333,14 @@ function toggleModalSubtaskParent(button) {
     }
 }
 
-// ===== UTILITY FUNCTIONS =====
 function showLoadingIndicator() {
-    document.getElementById('loading-indicator').classList.remove('hidden');
+    const indicator = document.getElementById('loading-indicator');
+    if (indicator) indicator.classList.remove('hidden');
 }
 
 function hideLoadingIndicator() {
-    document.getElementById('loading-indicator').classList.add('hidden');
+    const indicator = document.getElementById('loading-indicator');
+    if (indicator) indicator.classList.add('hidden');
 }
 
 function showAutoSaveIndicator() {
@@ -1937,196 +2360,464 @@ function hideAutoSaveIndicator() {
     }
 }
 
-function showNotification(message, type = 'success') {
-    const container = document.getElementById('notification-container');
-    const notification = document.createElement('div');
-    
-    let bgColor, icon;
-    switch(type) {
-        case 'success':
-            bgColor = 'from-green-500 to-green-600';
-            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-            break;
-        case 'error':
-            bgColor = 'from-red-500 to-red-600';
-            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-            break;
-        case 'info':
-            bgColor = 'from-blue-500 to-blue-600';
-            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-            break;
-    }
-    
-    notification.className = `bg-gradient-to-r ${bgColor} text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 flex items-center gap-2 max-w-xs`;
-    notification.innerHTML = `
-        ${icon}
-        <span class="font-medium text-sm">${message}</span>
-    `;
-    
-    notification.style.transform = 'translateX(100%)';
-    notification.style.opacity = '0';
-    
-    container.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-        notification.style.opacity = '1';
-    }, 10);
-    
-    setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        notification.style.opacity = '0';
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 3000);
-}
-
-function formatDateString(dateString) {
-    return new Date(dateString).toLocaleDateString('id-ID', { 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric' 
-    });
-}
-
-// Month Year Picker Functions
-function initializeMonthYearPicker() {
-    const monthNames = [
-        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
-    
-    const monthSelector = document.getElementById('month-selector');
-    const currentYearEl = document.getElementById('current-year');
-    let currentYear = new Date().getFullYear();
-    
-    // Populate months
-    monthNames.forEach((month, index) => {
-        const monthBtn = document.createElement('button');
-        monthBtn.className = 'py-2 px-3 text-sm font-medium rounded-lg hover:bg-blue-100 transition-all duration-200';
-        monthBtn.textContent = month.substring(0, 3);
-        monthBtn.dataset.month = index;
-        monthBtn.addEventListener('click', () => {
-            selectMonthYear(index, currentYear);
-        });
-        monthSelector.appendChild(monthBtn);
-    });
-    
-    // Update year display
-    function updateYearDisplay() {
-        currentYearEl.textContent = currentYear;
-    }
-    
-    // Navigation
-    document.getElementById('prev-year').addEventListener('click', () => {
-        currentYear--;
-        updateYearDisplay();
-    });
-    
-    document.getElementById('next-year').addEventListener('click', () => {
-        currentYear++;
-        updateYearDisplay();
-    });
-    
-    // Open modal when month/year selector is clicked
-    document.getElementById('month-year-selector').addEventListener('click', openMonthYearPicker);
-    
-    // Initialize
-    updateYearDisplay();
-}
-
-function openMonthYearPicker() {
-    const modal = document.getElementById('monthYearPickerModal');
-    modal.classList.remove('hidden');
-    modal.style.opacity = '0';
-    modal.style.transform = 'scale(0.95)';
-    
-    setTimeout(() => {
-        modal.style.opacity = '1';
-        modal.style.transform = 'scale(1)';
-        modal.style.transition = 'all 0.3s ease-out';
-    }, 10);
-}
-
-function closeMonthYearPicker() {
-    const modal = document.getElementById('monthYearPickerModal');
-    modal.style.opacity = '0';
-    modal.style.transform = 'scale(0.95)';
-    
-    setTimeout(() => {
-        modal.classList.add('hidden');
-        modal.style.opacity = '';
-        modal.style.transform = '';
-        modal.style.transition = '';
-    }, 300);
-}
-
-function selectMonthYear(month, year) {
-    const date = new Date(year, month, 1);
-    appState.calendar.gotoDate(date);
-    updateCalendarTitle();
-    closeMonthYearPicker();
-}
-
-// Panggil fungsi inisialisasi di DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
-    initializeMonthYearPicker();
+    console.log('Initializing calendar application...');
+
+    function initializeApp() {
+        if (typeof FullCalendar !== 'undefined') {
+            try {
+                initializeCalendar();
+                initializeEventDelegation();
+                initializeTaskFilter();
+                initializeTooltip();
+                checkAllTasksCompleted();
+                
+                console.log('Calendar application initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize calendar application:', error);
+                showCalendarError('Gagal menginisialisasi aplikasi timeline: ' + error.message);
+            }
+        } else {
+            console.log('FullCalendar not loaded yet, waiting...');
+            setTimeout(initializeApp, 100);
+        }
+    }
+
+    initializeApp();
 });
 </script>
-<style>
-    /* Enhanced CSS with modern animations and effects */
-    .vertical-tree {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .subtask-parent {
-        margin-bottom: 0.75rem;
-    }
-    
-    .subtask-children {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        padding-left: 2rem;
-    }
-    
-    .subtask-item {
-        margin-bottom: 0.5rem;
-        transition: all 0.2s ease-in-out;
-    }
-    
-    .subtask-item:hover {
-        transform: translateX(4px);
-    }
-    
-    .subtask-toggle-btn svg,
-    .subtask-parent-toggle-btn svg {
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .task-subtasks-container {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-    }
-    
-    .task-title,
-    .subtask-parent-title {
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-    }
 
-    /* Modal specific styles */
-    .subtask-parent-modal {
-        margin-bottom: 0.5rem;
-    }
-    
-    .subtask-children-modal {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        padding-left: 1.5rem;
-    }
-    .subtask-date {
+<style>
+/* Task Filter Styles */
+.filter-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+.filter-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filter-btn.active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.task-item {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#filter-empty-state {
+    transition: all 0.3s ease-out;
+}
+
+/* Calendar Styles */
+.gantt-timeline {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#calendar {
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.fc-more-link,
+.fc-daygrid-more-link {
+    display: none !important;
+}
+
+.fc-daygrid-day-bottom {
+    display: none !important;
+}
+
+.fc-daygrid-day-events {
+    margin: 0 !important;
+    padding: 4px 2px !important;
+}
+
+.fc-daygrid-event-harness {
+    margin-bottom: 2px !important;
+    position: relative !important;
+}
+
+.fc-daygrid-event {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.force-show-event {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.fc-daygrid-day {
+    min-height: 120px !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 6px 4px !important;
+    border: 1px solid #e2e8f0 !important;
+    position: relative;
+}
+
+.fc-daygrid-day-frame {
+    min-height: 120px !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: relative;
+}
+
+.timegrid-event-container {
+    transition: all 0.2s ease;
+}
+
+.timegrid-event-container:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 20 !important;
+}
+
+.gantt-compact-bar {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-left: 3px solid #1e40af;
+}
+
+.gantt-compact-content {
+    position: absolute;
+    top: 50%;
+    left: 6px;
+    transform: translateY(-50%);
+    color: white;  
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.gantt-compact-duration {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.9);
+    font-weight: 700;
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+}
+
+.gantt-compact-progress {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    right: 2px;
+    height: 2px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.fc-day-today {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.12)) !important;
+    border: 2px solid rgba(59, 130, 246, 0.3) !important;
+    position: relative;
+}
+
+.fc-day-today::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    z-index: 1;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    margin: 4px;
+    box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
+    z-index: 2;
+    position: relative;
+}
+
+.fc-timegrid-slot {
+    height: 40px !important;
+    border-color: #f1f5f9 !important;
+}
+
+.fc-timegrid-slot-minor {
+    border-color: #f8fafc !important;
+}
+
+.fc-timegrid-axis {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-right: 2px solid #e2e8f0;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.fc-timegrid-event {
+    border-radius: 6px !important;
+    overflow: visible !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-timegrid-event .fc-event-main {
+    padding: 3px 6px !important;
+}
+
+.fc-col-header {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-bottom: 3px solid #e2e8f0;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fc-col-header-cell {
+    padding: 12px 6px;
+    position: relative;
+}
+
+.fc-col-header-cell::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day {
+    height: 50px !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+    padding: 2px !important;
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day-frame {
+    height: 50px !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+}
+
+.fc-multiMonthYear-view .fc-event {
+    font-size: 8px !important;
+    height: 16px !important;
+    line-height: 14px !important;
+    margin: 0px !important;
+    border-radius: 2px !important;
+    border-left-width: 2px !important;
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day-number {
+    font-size: 9px;
+    padding: 2px;
+    font-weight: 600;
+}
+
+.fc-multiMonthYear-view .fc-col-header-cell {
+    padding: 4px 2px;
+    font-size: 9px;
+}
+
+.fc-toolbar {
+    margin-bottom: 2rem;
+    padding: 0 6px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fc-button {
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    font-weight: 600 !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-button:hover {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    border-color: #9ca3af !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.fc-button:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+}
+
+.fc-button-active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    border-color: #1d4ed8 !important;
+    color: white !important;
+    box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4) !important;
+}
+
+.view-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 13px;
+    padding: 10px 18px;
+    font-weight: 600;
+}
+
+.view-btn.active-view,
+.view-btn:hover {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+    color: #3b82f6;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border: 1px solid #3b82f6;
+}
+
+#taskTooltip {
+    z-index: 1000;
+    box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.98);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 380px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#taskTooltip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+}
+
+/* Subtask hierarchy styles */
+.vertical-tree-structure {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.subtask-parent {
+    margin-bottom: 0.75rem;
+    position: relative;
+}
+
+.subtask-children {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+}
+
+.subtask-item {
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.subtask-item:hover {
+    transform: translateX(4px);
+}
+
+.subtask-toggle-btn svg,
+.subtask-parent-toggle-btn svg {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.task-subtasks-container {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+.task-title,
+.subtask-parent-title {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.subtask-parent::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #e2e8f0, #f1f5f9);
+    border-radius: 1px;
+}
+
+.subtask-item::before {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 50%;
+    width: 12px;
+    height: 2px;
+    background: linear-gradient(90deg, #e2e8f0, #f8fafc);
+    border-radius: 1px;
+    transform: translateY(-50%);
+}
+
+.subtask-item::after {
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: 0;
+    width: 2px;
+    height: 50%;
+    background: linear-gradient(180deg, #e2e8f0, transparent);
+    border-radius: 1px;
+}
+
+.ml-6 { margin-left: 1.5rem; }
+.ml-12 { margin-left: 3rem; }
+.ml-18 { margin-left: 4.5rem; }
+.ml-24 { margin-left: 6rem; }
+
+.subtask-parent-modal {
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.subtask-children-modal {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+}
+
+.subtask-date {
     font-size: 0.7rem;
     color: #6b7280;
     margin-top: 2px;
@@ -2140,304 +2831,227 @@ document.addEventListener('DOMContentLoaded', function() {
     height: 10px;
     flex-shrink: 0;
 }
-    
-    .subtask-item-modal {
-        margin-bottom: 0.25rem;
-        transition: all 0.2s ease-in-out;
-    }
 
-    .subtask-item-modal:hover {
-        transform: translateX(2px);
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
-    }
-
-    /* Enhanced progress bar animation */
-    .subtask-progress-bar {
-        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Backdrop blur support */
-    .backdrop-blur-sm {
-        backdrop-filter: blur(4px);
-    }
-
-    /* Custom scrollbar */
-    .overflow-y-auto::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 2px;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 2px;
-    }
-
-    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
-
-    /* Enhanced hover effects */
-    .hover\:scale-105:hover {
-        transform: scale(1.05);
-    }
-
-    /* Gradient text support */
-    .bg-clip-text {
-        -webkit-background-clip: text;
-        background-clip: text;
-    }
-
-    /* Enhanced shadow effects */
-    .shadow-2xl {
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    }
-
-    /* Pulse animation for completion indicator */
-    @keyframes pulse {
-        0%, 100% {
-            opacity: 1;
-        }
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    .animate-pulse {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    /* Focus styles */
-    .focus\:ring-2:focus {
-        outline: 2px solid transparent;
-        outline-offset: 2px;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-    }
-
-    /* Filter animation styles */
-    .filter-btn {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid transparent;
-    }
-
-    .filter-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .filter-btn.active {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-    }
-
-    /* Task item filter animations */
-    .task-item {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* Empty state animations */
-    #filter-empty-state {
-        transition: all 0.3s ease-out;
-    }
-
-    
-    /* Enhanced Weekly Calendar Styles */
-    .fc-timeGridWeek-view .fc-daygrid-day-frame {
-        min-height: 80px;
-    }
-
-    .fc-timeGridWeek-view .fc-timegrid-slots {
-        background-color: #f8fafc;
-    }
-
-    .fc-timeGridWeek-view .fc-timegrid-slot {
-        height: 40px;
-        border-bottom: 1px solid #e2e8f0;
-        transition: background-color 0.2s ease;
-    }
-
-    .fc-timeGridWeek-view .fc-timegrid-slot:hover {
-        background-color: #f1f5f9;
-    }
-
-    .fc-timeGridWeek-view .fc-timegrid-event {
-        border-radius: 8px;
-        padding: 6px 8px;
-        font-size: 12px;
-        margin: 2px 4px;
-        border-left: 4px solid;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-    }
-
-    .fc-timeGridWeek-view .fc-timegrid-event:hover {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        transform: translateY(-1px);
-    }
-
-    .fc-timeGridWeek-view .fc-col-header-cell {
-        padding: 12px 8px;
-        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-        font-weight: 600;
-        border-bottom: 2px solid #cbd5e1;
-        color: #374151;
-    }
-
-    .fc-timeGridWeek-view .fc-timegrid-axis {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        border-right: 2px solid #e2e8f0;
-        font-weight: 500;
-        color: #6b7280;
-    }
-
-    .fc-timeGridWeek-view .fc-timegrid-axis-cushion {
-        padding: 8px 12px;
-    }
-
-    .fc-timeGridWeek-view .fc-event-time {
-        font-weight: bold;
-        margin-right: 4px;
-        opacity: 0.9;
-    }
-
-    .fc-timeGridWeek-view .fc-event-title {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.3;
-    }
-
-    /* All-day events styling */
-    .fc-timeGridWeek-view .fc-daygrid-event {
-        border-radius: 6px;
-        margin: 2px;
-        padding: 4px 6px;
-        font-size: 11px;
-        font-weight: 500;
-    }
-
-    /* Current time indicator */
-    .fc-timeGridWeek-view .fc-timegrid-now-indicator-line {
-        border-color: #ef4444;
-        border-width: 2px;
-    }
-
-    .fc-timeGridWeek-view .fc-timegrid-now-indicator-arrow {
-        border-color: #ef4444;
-    }
-
-    /* Today column highlighting */
-    .fc-timeGridWeek-view .fc-day-today {
-        background-color: rgba(59, 130, 246, 0.05);
-    }
-
-    .fc-timeGridWeek-view .fc-day-today .fc-col-header-cell {
-        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        color: #1d4ed8;
-    }
-
-    /* Tooltip styling */
-    #taskTooltip {
-        z-index: 1000;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        transition: all 0.2s ease-out;
-    }
-
-    /* Update the event priority indicators */
-.fc-event.priority-urgent {
-    border-left-color: #ef4444 !important;
-}
-
-.fc-event.priority-high {
-    border-left-color: #eab308 !important;
-}
-
-.fc-event.priority-medium {
-    border-left-color: #3b82f6 !important;
-}
-
-.fc-event.priority-low {
-    border-left-color: #22c55e !important;
-}
-
-    /* Menjadi ini: */
-.completed-task {
-    color: #9ca3af !important;
-    text-decoration: line-through;
-}
-
-    /* Improved responsive design */
-    @media (max-width: 768px) {
-        .fc-timeGridWeek-view .fc-timegrid-event {
-            font-size: 10px;
-            padding: 2px 4px;
-        }
-        
-        .fc-timeGridWeek-view .fc-col-header-cell {
-            padding: 8px 4px;
-            font-size: 12px;
-        }
-        
-        .fc-timeGridWeek-view .fc-timegrid-axis-cushion {
-            padding: 4px 8px;
-            font-size: 11px;
-        }
-    }
-
-    /* Tambahkan ini ke bagian CSS Anda */
-.fc-event.completed-task .fc-event-time,
-.fc-event.completed-task .fc-event-title {
-    text-decoration: line-through;
-    opacity: 0.7;
-}
-   /* Style angka tanggal hari ini jadi lingkaran biru */
-    .fc-day-today .fc-daygrid-day-number {
-        background-color: #2563eb; /* biru-600 */
-        color: white;
-        border-radius: 9999px;
-        padding: 2px 8px;
-        font-weight: bold;
-        display: inline-block;
-    }
-
-    /* Border biru di seluruh kotak hari ini */
-    .fc-day-today {
-        border: 2px solid #2563eb !important;
-        background-color: #f0f9ff !important; /* sedikit biru muda */
-    }
-
-    /* Hilangkan efek highlight default FullCalendar */
-    .fc-day-today:not(.fc-selected) {
-        background-color: transparent !important;
-    }
-
-    /* Tambahkan ke bagian CSS Anda */
-.fc-daygrid-event {
-    z-index: 5 !important; /* Pastikan event di atas grid */
-    margin: 1px 2px !important; /* Beri sedikit jarak */
-}
-
-.fc-event {
-    border-left-width: 5px !important;
-    border-left-style: solid !important;
-    border-radius: 4px;
-}
-
-/* Pastikan event yang bertumpuk tetap terlihat */
-.fc-daygrid-block-event {
+.subtask-item-modal {
+    margin-bottom: 0.25rem;
+    transition: all 0.2s ease-in-out;
     position: relative;
-    z-index: 5;
 }
 
-/* Highlight lebih kuat untuk event di hari yang sama */
-.fc-daygrid-day-events {
-    min-height: 20px; /* Pastikan ada ruang untuk event */
+.subtask-item-modal:hover {
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
+.subtask-progress-bar {
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+    width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 2px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.hover\:scale-105:hover {
+    transform: scale(1.05);
+}
+
+.bg-clip-text {
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.shadow-2xl {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.focus\:ring-2:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+@media (max-width: 768px) {
+    .fc-daygrid-day {
+        min-height: 100px !important;
+        height: auto !important;
+        padding: 3px 2px !important;
+    }
+    
+    .fc-col-header-cell {
+        padding: 6px 3px;
+        font-size: 10px;
+    }
+    
+    .fc-toolbar {
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .fc-toolbar-chunk {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .fc-multiMonthYear-view .fc-multiMonthYear-month {
+        width: 100% !important;
+    }
+    
+    .fc-daygrid-day {
+        min-height: 80px !important;
+        padding: 2px 1px !important;
+    }
+}
+
+.calendar-error {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    border: 1px solid #f87171;
+    color: #dc2626;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.calendar-fallback {
+    background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+    border: 2px dashed #d1d5db;
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.fc-view-harness {
+    overflow: visible !important;
+}
+
+.fc-scroller {
+    overflow: visible !important;
+}
+
+.fc-scroller-liquid {
+    overflow: visible !important;
+}
+
+.fc-daygrid-day:nth-child(7n) {
+    border-right: 2px solid #e2e8f0 !important;
+}
+
+.fc-daygrid-day:nth-child(7n-6) {
+    border-left: 2px solid #e2e8f0 !important;
+}
+
+.fc-day-sat,
+.fc-day-sun {
+    background: linear-gradient(135deg, rgba(249, 250, 251, 0.8), rgba(243, 244, 246, 0.8)) !important;
+}
+
+.fc-daygrid-day[data-date$="-01"] {
+    border-left: 3px solid #3b82f6 !important;
+}
+
+.fc-event:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    z-index: 20 !important;
+}
+
+.fc-timegrid-slot {
+    height: 24px !important;
+}
+
+.fc-timegrid-slot.fc-timegrid-slot-lane {
+    height: 24px !important;
+}
+
+.fc-timegrid-slot.fc-timegrid-slot-label {
+    height: 24px !important;
+}
+
+.fc-timegrid-event-harness {
+    margin-bottom: 2px !important;
+}
+
+.fc-timegrid-axis-frame {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fc-timegrid-axis-cushion {
+    font-size: 11px;
+    font-weight: 600;
+    color: #4B5563;
+}
+
+.fc-timeGridWeek-view .fc-timegrid-col-frame {
+    padding: 0 2px;
+}
+
+.fc-timegrid-event-harness {
+    position: relative;
+    z-index: 1;
+}
+
+.subtask-children-modal::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #e2e8f0, #f1f5f9, transparent);
+    border-radius: 1px;
+}
+
+.subtask-parent:hover::before,
+.subtask-item:hover::before {
+    background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa);
+    opacity: 0.8;
+}
+
+.subtask-parent-modal:hover::before,
+.subtask-item-modal:hover::before {
+    background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa);
+    opacity: 0.8;
+}
+
+.fc-timeGridDay-view .fc-timegrid-event,
+.fc-timeGridWeek-view .fc-timegrid-event {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+}
 </style>
 @endpush
-

@@ -18,76 +18,105 @@ class TaskController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {
-        $rawTasks = Task::with([
-            'subTasks' => function ($query) {
-                $query->orderBy('parent_id')->orderBy('created_at');
-            },
-            'category'
-        ])->get();
+{
+    $rawTasks = Task::with([
+        'subTasks' => function ($query) {
+            $query->orderBy('parent_id')->orderBy('created_at');
+        },
+        'category'
+    ])->get();
 
-        $tasks = $rawTasks->map(function ($task) {
-            $durationDays = $task->start_date && $task->end_date
-                ? $task->start_date->diffInDays($task->end_date) + 1
-                : 0;
+    $tasks = $rawTasks->map(function ($task) {
+        $durationDays = $task->start_date && $task->end_date
+            ? $task->start_date->diffInDays($task->end_date) + 1
+            : 0;
 
-            $leafSubTasks = $task->subTasks->filter(function ($subTask) use ($task) {
-                return !$task->subTasks->where('parent_id', $subTask->id)->count();
-            });
-
-            $calendarProgress = $leafSubTasks->count() > 0
-                ? round(($leafSubTasks->where('completed', true)->count() / $leafSubTasks->count()) * 100)
-                : ($task->completed ? 100 : 0);
-
-            return [
-                'id' => $task->id,
-                'title' => $task->title,
-                'description' => $task->description,
-                'priority' => $task->priority,
-                'start_date' => $task->start_date->format('Y-m-d'),
-                'end_date' => $task->end_date->format('Y-m-d'),
-                'start_date_formatted' => $task->start_date->format('M d'),
-                'end_date_formatted' => $task->end_date->format('M d'),
-                'start_time' => $task->start_time ? $task->start_time->format('H:i') : null,
-                'end_time' => $task->end_time ? $task->end_time->format('H:i') : null,
-                'completed' => $task->completed,
-                'durationDays' => $durationDays,
-                'calendarProgress' => $calendarProgress,
-                'is_all_day' => $task->is_all_day,
-                'sub_tasks' => collect($task->subTasks->map(function ($subtask) {
-                    return [
-                        'id' => $subtask->id,
-                        'title' => $subtask->title,
-                        'completed' => $subtask->completed,
-                        'parent_id' => $subtask->parent_id,
-                        'is_group' => $subtask->is_group,
-                        'start_date' => $subtask->start_date ? $subtask->start_date->format('Y-m-d') : null,
-                        'end_date' => $subtask->end_date ? $subtask->end_date->format('Y-m-d') : null,
-                    ];
-                }))
-            ];
+        $leafSubTasks = $task->subTasks->filter(function ($subTask) use ($task) {
+            return !$task->subTasks->where('parent_id', $subTask->id)->count();
         });
 
-        // Tambahan info
-        $categories = Category::withCount('tasks')->get();
+        // Fixed the ternary operation - removed extra parenthesis
+        $completedCount = $leafSubTasks->where('completed', true)->count();
+        $totalCount = $leafSubTasks->count();
+        $calendarProgress = $totalCount > 0 
+            ? round(($completedCount / $totalCount) * 100)
+            : ($task->completed ? 100 : 0);
 
-        $priorityCounts = [
-            'urgent' => Task::where('priority', 'urgent')->count(),
-            'high' => Task::where('priority', 'high')->count(),
-            'medium' => Task::where('priority', 'medium')->count(),
-            'low' => Task::where('priority', 'low')->count(),
+        return [
+            'id' => $task->id,
+            'title' => $task->title,
+            'description' => $task->description,
+            'priority' => $task->priority,
+            'start_date' => $task->start_date->format('Y-m-d'),
+            'end_date' => $task->end_date->format('Y-m-d'),
+            'start_date_formatted' => $task->start_date->format('M d'),
+            'end_date_formatted' => $task->end_date->format('M d'),
+            'start_time' => $task->start_time ? $task->start_time->format('H:i') : null,
+            'end_time' => $task->end_time ? $task->end_time->format('H:i') : null,
+            'completed' => $task->completed,
+            'durationDays' => $durationDays,
+            'calendarProgress' => $calendarProgress,
+            'is_all_day' => $task->is_all_day,
+            'sub_tasks' => $task->subTasks->map(function ($subtask) {
+                return [
+                    'id' => $subtask->id,
+                    'title' => $subtask->title,
+                    'completed' => $subtask->completed,
+                    'parent_id' => $subtask->parent_id,
+                    'is_group' => $subtask->is_group,
+                    'start_date' => $subtask->start_date ? $subtask->start_date->format('Y-m-d') : null,
+                    'end_date' => $subtask->end_date ? $subtask->end_date->format('Y-m-d') : null,
+                ];
+            })->all()
         ];
+    });
 
-        $totalTasks = $tasks->count();
+    // Prepare calendar events
+    $calendarEvents = $rawTasks->map(function ($task) {
+        return [
+            'title' => $task->title,
+            'start' => $task->start_date->format('Y-m-d'),
+            'end' => $task->end_date ? $task->end_date->addDay()->format('Y-m-d') : null,
+            'extendedProps' => [
+                'completed' => $task->completed,
+                'priority' => $task->priority,
+                'taskId' => $task->id
+            ],
+            'color' => $this->getPriorityColor($task->priority),
+            'allDay' => $task->is_all_day
+        ];
+    })->all();
 
-        return view('tasks.index', [
-            'tasks' => $tasks->all(), // tetap array agar aman di Blade
-            'categories' => $categories,
-            'priorityCounts' => $priorityCounts,
-            'totalTasks' => $totalTasks
-        ]);
+    $categories = Category::withCount('tasks')->get();
+
+    $priorityCounts = [
+        'urgent' => Task::where('priority', 'urgent')->count(),
+        'high' => Task::where('priority', 'high')->count(),
+        'medium' => Task::where('priority', 'medium')->count(),
+        'low' => Task::where('priority', 'low')->count(),
+    ];
+
+    $totalTasks = $tasks->count();
+
+    return view('tasks.index', [
+        'tasks' => $tasks,
+        'categories' => $categories,
+        'priorityCounts' => $priorityCounts,
+        'totalTasks' => $totalTasks,
+        'calendarEvents' => $calendarEvents
+    ]);
+}
+
+private function getPriorityColor($priority)
+{
+    switch ($priority) {
+        case 'urgent': return '#ff0000';
+        case 'high': return '#ff6b00';
+        case 'medium': return '#ffcc00';
+        case 'low': return '#00b300';
+        default: return '#3a87ad';
     }
-
+}
     /**
      * Show the form for creating a new task.
      *
