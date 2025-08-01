@@ -3,352 +3,513 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
-use App\Models\User;
 use App\Models\TaskCollaborator;
 use App\Models\TaskRevision;
+use App\Models\User;
+use App\Models\SubTask;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 
 class CollaborationController extends Controller
 {
-    /**
-     * Invite user to collaborate on a task
-     */
-    public function invite(Request $request, Task $task)
-{
-    $request->validate([
-        'email' => 'required|email|exists:users,email',
-        'can_edit' => 'boolean'
-    ]);
-
-    // Pastikan user adalah pemilik task
-    if ($task->user_id !== Auth::id()) {
-        return response()->json(['error' => 'Unauthorized'], 403);
-    }
-
-    $user = User::where('email', $request->email)->first();
-    
-    // Cek tidak mengundang diri sendiri
-    if ($user->id === Auth::id()) {
-        return response()->json(['error' => 'Tidak dapat mengundang diri sendiri'], 400);
-    }
-
-    // Check if already invited
-    $existingInvite = TaskCollaborator::where('task_id', $task->id)
-        ->where('user_id', $user->id)
-        ->first();
-
-    if ($existingInvite) {
-        if ($existingInvite->status === 'pending') {
-            return response()->json(['error' => 'Undangan sudah dikirim dan menunggu respons'], 400);
-        } elseif ($existingInvite->status === 'approved') {
-            return response()->json(['error' => 'User sudah berkolaborasi pada tugas ini'], 400);
-        }
-    }
-
-    $collaborator = TaskCollaborator::create([
-        'task_id' => $task->id,
-        'user_id' => $user->id,
-        'status' => 'pending',
-        'can_edit' => $request->boolean('can_edit', false),
-        'invited_by' => Auth::id(),
-        'invited_at' => now(),
-        'responded_at' => null
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Undangan kolaborasi berhasil dikirim',
-        'collaborator' => $collaborator->load('user')
-    ]);
-}
-    /**
-     * Respond to collaboration invite
-     */
-    public function respondToInvite(Request $request, TaskCollaborator $collaborator)
-    {
-        $request->validate([
-            'action' => 'required|in:accept,reject'
-        ]);
-
-        if ($collaborator->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        if ($collaborator->status !== 'pending') {
-            return response()->json(['error' => 'Undangan sudah direspons'], 400);
-        }
-
-        $collaborator->update([
-            'status' => $request->action === 'accept' ? 'approved' : 'rejected',
-            'responded_at' => now()
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => $request->action === 'accept' 
-                ? 'Undangan kolaborasi diterima' 
-                : 'Undangan kolaborasi ditolak'
-        ]);
-    }
-
-    /**
-     * Get collaboration invites for current user
-     */
     public function getInvites()
     {
-        $invites = TaskCollaborator::with(['task', 'inviter'])
-            ->where('user_id', Auth::id())
-            ->where('status', 'pending')
-            ->orderBy('invited_at', 'desc')
-            ->get();
+        try {
+            $invites = TaskCollaborator::with(['task', 'inviter'])
+                ->where('user_id', Auth::id())
+                ->where('status', 'pending')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'invites' => $invites
-        ]);
+            return response()->json([
+                'success' => true,
+                'invites' => $invites->map(function($invite) {
+                    return [
+                        'id' => $invite->id,
+                        'task' => [
+                            'id' => $invite->task->id,
+                            'title' => $invite->task->title,
+                            'description' => $invite->task->description,
+                            'start_date' => $invite->task->start_date?->format('Y-m-d'),
+                            'end_date' => $invite->task->end_date?->format('Y-m-d'),
+                        ],
+                        'inviter' => [
+                            'name' => $invite->inviter->name,
+                            'email' => $invite->inviter->email,
+                        ],
+                        'can_edit' => $invite->can_edit,
+                        'invited_at' => $invite->invited_at?->format('Y-m-d H:i:s'),
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting invites: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load invites'
+            ], 500);
+        }
     }
 
-    /**
-     * Submit revision for task
-     */
-    public function submitRevision(Request $request, Task $task)
+    public function invite(Request $request, Task $task)
     {
-        $request->validate([
-            'revision_type' => 'required|in:create,update,delete',
-            'proposed_data' => 'required|array'
-        ]);
+        try {
+            // Check if user is owner
+            if ($task->user_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Only task owner can send invites'
+                ], 403);
+            }
 
-        // Check if user is collaborator
-        $collaborator = TaskCollaborator::where('task_id', $task->id)
-            ->where('user_id', Auth::id())
-            ->where('status', 'approved')
-            ->first();
-
-        if (!$collaborator) {
-            return response()->json(['error' => 'Anda tidak memiliki akses kolaborasi pada tugas ini'], 403);
-        }
-
-        if (!$collaborator->can_edit) {
-            return response()->json(['error' => 'Anda tidak memiliki izin edit pada tugas ini'], 403);
-        }
-
-        // Get current task data
-        $originalData = [
-            'title' => $task->title,
-            'description' => $task->description,
-            'priority' => $task->priority,
-            'start_date' => $task->start_date,
-            'end_date' => $task->end_date,
-            'start_time' => $task->start_time,
-            'end_time' => $task->end_time,
-            'is_all_day' => $task->is_all_day,
-            'category_id' => $task->category_id
-        ];
-
-        $revision = TaskRevision::create([
-            'task_id' => $task->id,
-            'collaborator_id' => Auth::id(),
-            'revision_type' => $request->revision_type,
-            'original_data' => $originalData,
-            'proposed_data' => $request->proposed_data,
-            'status' => 'pending'
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Usulan perubahan berhasil dikirim untuk review',
-            'revision' => $revision
-        ]);
-    }
-
-    /**
-     * Get pending revisions for task owner
-     */
-    public function getPendingRevisions()
-    {
-        $revisions = TaskRevision::with(['task', 'collaborator'])
-            ->whereHas('task', function ($query) {
-                $query->where('user_id', Auth::id());
-            })
-            ->where('status', 'pending')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'revisions' => $revisions
-        ]);
-    }
-
-    /**
-     * Review revision (approve/reject)
-     */
-    public function reviewRevision(Request $request, TaskRevision $revision)
-    {
-        $request->validate([
-            'action' => 'required|in:approve,reject',
-            'notes' => 'nullable|string|max:1000'
-        ]);
-
-        // Check if user owns the task
-        if ($revision->task->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        if ($revision->status !== 'pending') {
-            return response()->json(['error' => 'Revisi sudah di-review'], 400);
-        }
-
-        DB::transaction(function () use ($request, $revision) {
-            $revision->update([
-                'status' => $request->action === 'approve' ? 'approved' : 'rejected',
-                'reviewed_by' => Auth::id(),
-                'reviewed_at' => now(),
-                'review_notes' => $request->notes
+            $request->validate([
+                'email' => 'required|email|exists:users,email',
+                'can_edit' => 'boolean',
             ]);
 
-            // If approved, apply changes to the task
-            if ($request->action === 'approve') {
-                $task = $revision->task;
-                $proposedData = $revision->proposed_data;
-
-                $task->update([
-                    'title' => $proposedData['title'] ?? $task->title,
-                    'description' => $proposedData['description'] ?? $task->description,
-                    'priority' => $proposedData['priority'] ?? $task->priority,
-                    'start_date' => $proposedData['start_date'] ?? $task->start_date,
-                    'end_date' => $proposedData['end_date'] ?? $task->end_date,
-                    'start_time' => $proposedData['start_time'] ?? $task->start_time,
-                    'end_time' => $proposedData['end_time'] ?? $task->end_time,
-                    'is_all_day' => $proposedData['is_all_day'] ?? $task->is_all_day,
-                    'category_id' => $proposedData['category_id'] ?? $task->category_id
-                ]);
-
-                // Handle subtasks if provided
-                if (isset($proposedData['subtasks'])) {
-                    // Process subtasks updates here
-                    // Similar to the existing subtask logic in TaskController
-                }
+            $user = User::where('email', $request->email)->first();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'User not found'
+                ], 404);
             }
-        });
 
-        return response()->json([
-            'success' => true,
-            'message' => $request->action === 'approve' 
-                ? 'Revisi disetujui dan perubahan telah diterapkan' 
-                : 'Revisi ditolak'
-        ]);
+            if ($user->id === Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Cannot invite yourself'
+                ], 400);
+            }
+
+            // Check if already invited
+            $existing = TaskCollaborator::where('task_id', $task->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'User already invited or collaborating'
+                ], 400);
+            }
+
+            // Create invitation
+            TaskCollaborator::create([
+                'task_id' => $task->id,
+                'user_id' => $user->id,
+                'can_edit' => $request->boolean('can_edit', false),
+                'status' => 'pending',
+                'invited_by' => Auth::id(),
+                'invited_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invitation sent successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error sending invite: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to send invitation'
+            ], 500);
+        }
     }
 
-    /**
-     * Get collaboration status for task
-     */
+    public function respondToInvite(Request $request, TaskCollaborator $collaborator)
+    {
+        try {
+            // Check if user is the invited user
+            if ($collaborator->user_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Unauthorized'
+                ], 403);
+            }
+
+            if ($collaborator->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Invitation already responded to'
+                ], 400);
+            }
+
+            $request->validate([
+                'action' => 'required|in:accept,reject'
+            ]);
+
+            $collaborator->update([
+                'status' => $request->action === 'accept' ? 'approved' : 'rejected',
+                'responded_at' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $request->action === 'accept' ? 'Invitation accepted' : 'Invitation rejected'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error responding to invite: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to respond to invitation'
+            ], 500);
+        }
+    }
+
     public function getCollaborationStatus(Task $task)
     {
-        $collaborators = TaskCollaborator::with('user')
-            ->where('task_id', $task->id)
-            ->get();
+        try {
+            // Check if user can view this task
+            if (!$task->canView(Auth::id())) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Access denied'
+                ], 403);
+            }
 
-        $pendingRevisions = TaskRevision::with('collaborator')
-            ->where('task_id', $task->id)
-            ->where('status', 'pending')
-            ->count();
+            $collaborators = $task->collaborators()->with('user')->get();
+            $pendingRevisionsCount = $task->revisions()->where('status', 'pending')->count();
 
-        return response()->json([
-            'success' => true,
-            'collaborators' => $collaborators,
-            'pending_revisions_count' => $pendingRevisions,
-            'is_owner' => $task->user_id === Auth::id(),
-            'is_collaborator' => $collaborators->where('user_id', Auth::id())->where('status', 'approved')->isNotEmpty()
-        ]);
+            return response()->json([
+                'success' => true,
+                'is_owner' => $task->user_id === Auth::id(),
+                'collaborators' => $collaborators->map(function($collab) {
+                    return [
+                        'id' => $collab->id,
+                        'user' => [
+                            'id' => $collab->user->id,
+                            'name' => $collab->user->name,
+                            'email' => $collab->user->email,
+                        ],
+                        'can_edit' => $collab->can_edit,
+                        'status' => $collab->status,
+                        'invited_at' => $collab->invited_at?->format('Y-m-d H:i:s'),
+                    ];
+                }),
+                'pending_revisions_count' => $pendingRevisionsCount,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting collaboration status: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load collaboration status'
+            ], 500);
+        }
     }
 
-    /**
-     * Remove collaborator
-     */
     public function removeCollaborator(Task $task, TaskCollaborator $collaborator)
     {
-        if ($task->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        try {
+            // Check if user is task owner
+            if ($task->user_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,       
+                    'error' => 'Only task owner can remove collaborators'
+                ], 403);
+            }
+
+            // Check if collaborator belongs to this task
+            if ($collaborator->task_id !== $task->id) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Invalid collaborator'
+                ], 400);
+            }
+
+            $collaborator->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Collaborator removed successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error removing collaborator: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to remove collaborator'
+            ], 500);
         }
+    }
 
-        if ($collaborator->task_id !== $task->id) {
-            return response()->json(['error' => 'Invalid collaborator'], 400);
+    public function getPendingRevisions()
+    {
+        try {
+            $revisions = TaskRevision::with(['task', 'collaborator'])
+                ->whereHas('task', function($q) {
+                    $q->where('user_id', Auth::id());
+                })
+                ->where('status', 'pending')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'revisions' => $revisions->map(function($revision) {
+                    return [
+                        'id' => $revision->id,
+                        'task' => [
+                            'id' => $revision->task->id,
+                            'title' => $revision->task->title,
+                        ],
+                        'collaborator' => [
+                            'id' => $revision->collaborator->id,
+                            'name' => $revision->collaborator->name,
+                            'email' => $revision->collaborator->email,
+                        ],
+                        'revision_type' => $revision->revision_type,
+                        'original_data' => $revision->original_data,
+                        'proposed_data' => $revision->proposed_data,
+                        'created_at' => $revision->created_at->toISOString(),
+                    ];
+                })
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error getting pending revisions: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load pending revisions'
+            ], 500);
         }
+    }
 
-        $collaborator->delete();
+    public function reviewRevision(Request $request, TaskRevision $revision)
+    {
+        try {
+            Log::info('ReviewRevision called', [
+                'revision_id' => $revision->id,
+                'action' => $request->action,
+                'user_id' => Auth::id()
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Kolaborator berhasil dihapus'
+            $request->validate([
+                'action' => 'required|in:approve,reject',
+                'notes' => 'nullable|string|max:500'
+            ]);
+
+            // Check if user is task owner
+            if ($revision->task->user_id !== Auth::id()) {
+                Log::warning('Unauthorized revision review attempt', [
+                    'revision_id' => $revision->id,
+                    'task_owner' => $revision->task->user_id,
+                    'current_user' => Auth::id()
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Only task owner can review revisions'
+                ], 403);
+            }
+
+            if ($revision->status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Revision already reviewed'
+                ], 400);
+            }
+
+            return DB::transaction(function () use ($request, $revision) {
+                $action = $request->action;
+                
+                // Update revision status
+                $revision->update([
+                    'status' => $action === 'approve' ? 'approved' : 'rejected',
+                    'reviewed_by' => Auth::id(),
+                    'reviewed_at' => now(),
+                    'review_notes' => $request->notes,
+                ]);
+
+                Log::info('Revision status updated', [
+                    'revision_id' => $revision->id,
+                    'new_status' => $revision->status
+                ]);
+
+                if ($action === 'approve') {
+                    $this->applyRevisionChanges($revision);
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => $action === 'approve' ? 'Changes approved and applied' : 'Changes rejected'
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            Log::error('Error reviewing revision', [
+                'revision_id' => $revision->id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to review revision: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Apply approved revision changes
+     */
+    private function applyRevisionChanges(TaskRevision $revision)
+    {
+        $proposedData = $revision->proposed_data;
+        
+        if (isset($proposedData['action'])) {
+            switch ($proposedData['action']) {
+                case 'create_subtask':
+                    $this->createSubtaskFromRevision($revision, $proposedData['subtask_data']);
+                    break;
+                    
+                case 'update_subtask':
+                    $this->updateSubtaskFromRevision($revision, $proposedData);
+                    break;
+                    
+                default:
+                    // Handle task updates
+                    $this->updateTaskFromRevision($revision, $proposedData);
+                    break;
+            }
+        } else {
+            // Legacy task update
+            $this->updateTaskFromRevision($revision, $proposedData);
+        }
+    }
+
+    /**
+     * Create subtask from approved revision
+     */
+    private function createSubtaskFromRevision(TaskRevision $revision, array $subtaskData)
+    {
+        SubTask::create([
+            'task_id' => $revision->task_id,
+            'title' => $subtaskData['title'],
+            'description' => $subtaskData['description'] ?? null,
+            'parent_id' => $subtaskData['parent_id'] ?? null,
+            'is_group' => $subtaskData['is_group'] ?? false,
+            'start_date' => Carbon::parse($subtaskData['start_date']),
+            'end_date' => Carbon::parse($subtaskData['end_date']),
+            'start_time' => $subtaskData['start_time'] ? Carbon::createFromFormat('H:i', $subtaskData['start_time']) : null,
+            'end_time' => $subtaskData['end_time'] ? Carbon::createFromFormat('H:i', $subtaskData['end_time']) : null,
+            'completed' => false,
+        ]);
+
+        Log::info('Subtask created from revision', [
+            'revision_id' => $revision->id,
+            'task_id' => $revision->task_id
         ]);
     }
 
     /**
-     * Get my collaborated tasks
+     * Update subtask from approved revision
      */
+    private function updateSubtaskFromRevision(TaskRevision $revision, array $proposedData)
+    {
+        $subtaskId = $proposedData['subtask_id'];
+        $subtaskData = $proposedData['subtask_data'];
+        
+        $subtask = SubTask::find($subtaskId);
+        if ($subtask) {
+            $subtask->update([
+                'title' => $subtaskData['title'],
+                'description' => $subtaskData['description'] ?? null,
+                'start_date' => Carbon::parse($subtaskData['start_date']),
+                'end_date' => Carbon::parse($subtaskData['end_date']),
+                'start_time' => $subtaskData['start_time'] ? Carbon::createFromFormat('H:i', $subtaskData['start_time']) : null,
+                'end_time' => $subtaskData['end_time'] ? Carbon::createFromFormat('H:i', $subtaskData['end_time']) : null,
+            ]);
+
+            Log::info('Subtask updated from revision', [
+                'revision_id' => $revision->id,
+                'subtask_id' => $subtaskId
+            ]);
+        }
+    }
+
+    /**
+     * Update task from approved revision
+     */
+    private function updateTaskFromRevision(TaskRevision $revision, array $proposedData)
+    {
+        $task = $revision->task;
+        
+        // Filter out any fields that don't exist in the database
+        $validFields = [
+            'title',
+            'description', 
+            'priority',
+            'category_id',
+            'start_date',
+            'end_date',
+            'start_time',
+            'end_time',
+            'is_all_day'
+        ];
+        
+        $updateData = [];
+        foreach ($proposedData as $field => $value) {
+            if (in_array($field, $validFields)) {
+                // Handle date fields
+                if (in_array($field, ['start_date', 'end_date']) && $value) {
+                    $updateData[$field] = Carbon::parse($value);
+                } 
+                // Handle time fields  
+                else if (in_array($field, ['start_time', 'end_time']) && $value) {
+                    $updateData[$field] = Carbon::createFromFormat('H:i', $value);
+                }
+                // Handle boolean fields
+                else if ($field === 'is_all_day') {
+                    $updateData[$field] = (bool) $value;
+                }
+                // Handle other fields
+                else {
+                    $updateData[$field] = $value;
+                }
+            }
+        }
+
+        Log::info('Applying task updates', [
+            'task_id' => $task->id,
+            'update_data' => $updateData
+        ]);
+
+        $task->update($updateData);
+        
+        Log::info('Task updated successfully', [
+            'task_id' => $task->id
+        ]);
+    }
+
     public function getMyCollaboratedTasks()
     {
-        $tasks = Task::with(['category', 'subTasks', 'collaborators'])
-            ->whereHas('collaborators', function ($query) {
-                $query->where('user_id', Auth::id())
+        try {
+            $tasks = Task::with(['user', 'category', 'subTasks', 'collaborators'])
+                ->whereHas('collaborators', function($q) {
+                    $q->where('user_id', Auth::id())
                       ->where('status', 'approved');
-            })
-            ->get();
+                })
+                ->get();
 
-        // Transform tasks data similar to TaskController@index
-        $transformedTasks = $tasks->map(function ($task) {
-            $durationDays = $task->start_date && $task->end_date
-                ? $task->start_date->diffInDays($task->end_date) + 1
-                : 0;
+            return response()->json([
+                'success' => true,
+                'tasks' => $tasks
+            ]);
 
-            $leafSubTasks = $task->subTasks->filter(function ($subTask) use ($task) {
-                return !$task->subTasks->where('parent_id', $subTask->id)->count();
-            });
-
-            $completedCount = $leafSubTasks->where('completed', true)->count();
-            $totalCount = $leafSubTasks->count();
-            $calendarProgress = $totalCount > 0 
-                ? round(($completedCount / $totalCount) * 100)
-                : ($task->completed ? 100 : 0);
-
-            return [
-                'id' => $task->id,
-                'title' => $task->title,
-                'description' => $task->description,
-                'priority' => $task->priority,
-                'start_date' => $task->start_date->format('Y-m-d'),
-                'end_date' => $task->end_date->format('Y-m-d'),
-                'start_date_formatted' => $task->start_date->format('M d'),
-                'end_date_formatted' => $task->end_date->format('M d'),
-                'start_time' => $task->start_time ? $task->start_time->format('H:i') : null,
-                'end_time' => $task->end_time ? $task->end_time->format('H:i') : null,
-                'completed' => $task->completed,
-                'durationDays' => $durationDays,
-                'calendarProgress' => $calendarProgress,
-                'is_all_day' => $task->is_all_day,
-                'is_collaborator' => true,
-                'owner' => $task->user,
-                'sub_tasks' => $task->subTasks->map(function ($subtask) {
-                    return [
-                        'id' => $subtask->id,
-                        'title' => $subtask->title,
-                        'completed' => $subtask->completed,
-                        'parent_id' => $subtask->parent_id,
-                        'is_group' => $subtask->is_group,
-                        'start_date' => $subtask->start_date ? $subtask->start_date->format('Y-m-d') : null,
-                        'end_date' => $subtask->end_date ? $subtask->end_date->format('Y-m-d') : null,
-                    ];
-                })->all()
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'tasks' => $transformedTasks
-        ]);
+        } catch (\Exception $e) {
+            Log::error('Error getting collaborated tasks: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to load collaborated tasks'
+            ], 500);
+        }
     }
 }

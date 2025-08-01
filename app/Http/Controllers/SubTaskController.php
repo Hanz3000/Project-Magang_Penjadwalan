@@ -2,76 +2,208 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\SubTask;
 use App\Models\Task;
+use App\Models\TaskRevision;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class SubTaskController extends Controller
 {
-    /**
-     * Toggle the completion status of a single subtask
-     * MODIFIED: Now also updates main task status when subtask is unchecked
-     */
-    public function toggle(Request $request, $id)
+    public function store(Request $request)
     {
-        $request->validate([
-            'completed' => 'required|boolean',
-        ]);
+        try {
+            $validated = $request->validate([
+                'task_id' => 'required|exists:tasks,id',
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'parent_id' => 'nullable|exists:sub_tasks,id',
+                'is_group' => 'boolean',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+                'start_time' => 'nullable|date_format:H:i',
+                'end_time' => 'nullable|date_format:H:i|required_with:start_time',
+            ]);
 
-        $subtask = SubTask::findOrFail($id);
-        $isCompleted = $request->completed;
-        
-        // Use transaction to ensure atomicity
-        return DB::transaction(function() use ($subtask, $isCompleted) {
-            // Update the subtask
-            $subtask->completed = $isCompleted;
-            $subtask->save();
+            $task = Task::findOrFail($validated['task_id']);
 
-            // Ambil tugas induk dari subtask
-            $task = $subtask->task;
-
-            // Hitung kembali jumlah subtask yang selesai dan total untuk tugas induk
-            $leafSubTasks = $task->subTasks->filter(function($st) use ($task) {
-                return $task->subTasks->where('parent_id', $st->id)->count() == 0;
-            });
-            
-            $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
-            $subtaskTotal = $leafSubTasks->count();
-
-            // Hitung persentase progres subtask
-            $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : 0;
-            
-            // MODIFIED LOGIC: Update main task status based on subtask completion
-            if ($isCompleted) {
-                // If subtask is checked, only mark main task as completed if ALL subtasks are completed
-                $mainTaskCompleted = ($subtaskTotal > 0 && $subtaskCompleted === $subtaskTotal);
-            } else {
-                // If subtask is unchecked, ALWAYS uncheck the main task
-                $mainTaskCompleted = false;
+            if (!$task->canEdit(Auth::id())) {
+                return response()->json(['success' => false, 'error' => 'Anda tidak memiliki izin untuk menambah subtask'], 403);
             }
 
-            // Perbarui status 'completed' pada tugas induk
+            if ($task->user_id === Auth::id()) {
+                return $this->createSubtaskDirectly($task, $validated);
+            } else {
+                $collaborator = $task->collaborators()
+                    ->where('user_id', Auth::id())
+                    ->where('status', 'approved')
+                    ->where('can_edit', true)
+                    ->first();
+
+                if (!$collaborator) {
+                    return response()->json(['success' => false, 'error' => 'Anda tidak memiliki izin edit untuk task ini'], 403);
+                }
+
+                return $this->createSubtaskRevision($task, $validated);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error creating subtask:', ['error' => $e->getMessage(), 'user_id' => Auth::id(), 'request_data' => $request->all()]);
+            return response()->json(['success' => false, 'error' => 'Gagal menambah subtask: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function update(Request $request, SubTask $subtask)
+    {
+        try {
+            if (!$subtask->canEdit(Auth::id())) {
+                return response()->json(['success' => false, 'error' => 'Anda tidak memiliki izin untuk mengedit subtask ini'], 403);
+            }
+
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+                'start_time' => 'nullable|date_format:H:i',
+                'end_time' => 'nullable|date_format:H:i|required_with:start_time',
+            ]);
+
+            $task = $subtask->task;
+
+            if ($task->user_id === Auth::id()) {
+                return $this->updateSubtaskDirectly($subtask, $validated);
+            } else {
+                return $this->updateSubtaskRevision($subtask, $validated);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error updating subtask:', ['error' => $e->getMessage(), 'subtask_id' => $subtask->id, 'user_id' => Auth::id()]);
+            return response()->json(['success' => false, 'error' => 'Gagal mengupdate subtask: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function destroy(SubTask $subtask)
+    {
+        try {
+            $task = $subtask->task;
+
+            if ($task->user_id !== Auth::id()) {
+                return response()->json(['success' => false, 'error' => 'Hanya pemilik task yang dapat menghapus subtask'], 403);
+            }
+
+            DB::transaction(function () use ($subtask) {
+                $this->deleteSubtaskRecursively($subtask);
+            });
+
+            return response()->json(['success' => true, 'message' => 'Subtask berhasil dihapus']);
+        } catch (\Exception $e) {
+            Log::error('Error deleting subtask:', ['error' => $e->getMessage(), 'subtask_id' => $subtask->id, 'user_id' => Auth::id()]);
+            return response()->json(['success' => false, 'error' => 'Gagal menghapus subtask: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function createSubtaskDirectly(Task $task, array $validated)
+    {
+        return DB::transaction(function () use ($task, $validated) {
+            $subtask = SubTask::create([...$validated, 'task_id' => $task->id, 'completed' => false]);
+            return response()->json(['success' => true, 'message' => 'Subtask berhasil ditambahkan', 'subtask' => $subtask->load('task')]);
+        });
+    }
+
+    private function createSubtaskRevision(Task $task, array $validated)
+    {
+        return DB::transaction(function () use ($task, $validated) {
+            $revision = TaskRevision::create([
+                'task_id' => $task->id,
+                'collaborator_id' => Auth::id(),
+                'revision_type' => 'create_subtask',
+                'original_data' => null,
+                'proposed_data' => ['action' => 'create_subtask', 'subtask_data' => $validated],
+                'status' => 'pending'
+            ]);
+            return response()->json(['success' => true, 'message' => 'Usulan penambahan subtask telah dikirim dan menunggu persetujuan', 'revision_id' => $revision->id]);
+        });
+    }
+
+    private function updateSubtaskDirectly(SubTask $subtask, array $validated)
+    {
+        return DB::transaction(function () use ($subtask, $validated) {
+            $subtask->update($validated);
+            return response()->json(['success' => true, 'message' => 'Subtask berhasil diperbarui', 'subtask' => $subtask->fresh()->load('task')]);
+        });
+    }
+
+    private function updateSubtaskRevision(SubTask $subtask, array $validated)
+    {
+        return DB::transaction(function () use ($subtask, $validated) {
+            $originalData = [...];
+            $revision = TaskRevision::create([
+                'task_id' => $subtask->task_id,
+                'collaborator_id' => Auth::id(),
+                'revision_type' => 'update_subtask',
+                'original_data' => ['action' => 'update_subtask', 'subtask_id' => $subtask->id, 'subtask_data' => $originalData],
+                'proposed_data' => ['action' => 'update_subtask', 'subtask_id' => $subtask->id, 'subtask_data' => $validated],
+                'status' => 'pending'
+            ]);
+            return response()->json(['success' => true, 'message' => 'Usulan perubahan subtask telah dikirim dan menunggu persetujuan', 'revision_id' => $revision->id]);
+        });
+    }
+
+    private function deleteSubtaskRecursively(SubTask $subtask)
+    {
+        foreach ($subtask->children as $child) {
+            $this->deleteSubtaskRecursively($child);
+        }
+        $subtask->delete();
+    }
+
+    public function getTaskSubtasks($taskId)
+    {
+        try {
+            $task = Task::findOrFail($taskId);
+
+            if (!$task->canView(Auth::id())) {
+                return response()->json(['success' => false, 'error' => 'Anda tidak memiliki akses ke task ini'], 403);
+            }
+
+            $subtasks = $task->subTasks()->orderBy('parent_id')->orderBy('created_at')->get();
+            return response()->json(['success' => true, 'subtasks' => $subtasks, 'can_edit' => $task->canEdit(Auth::id()), 'is_owner' => $task->user_id === Auth::id()]);
+        } catch (\Exception $e) {
+            Log::error('Error getting subtasks:', ['error' => $e->getMessage(), 'task_id' => $taskId, 'user_id' => Auth::id()]);
+            return response()->json(['success' => false, 'error' => 'Gagal memuat subtasks'], 500);
+        }
+    }
+
+    public function toggle(Request $request, $id)
+    {
+        $request->validate(['completed' => 'required|boolean']);
+        $subtask = SubTask::findOrFail($id);
+        $isCompleted = $request->completed;
+
+        return DB::transaction(function() use ($subtask, $isCompleted) {
+            $subtask->completed = $isCompleted;
+            $subtask->save();
+            $task = $subtask->task;
+
+            $leafSubTasks = $task->subTasks->filter(fn($st) => $task->subTasks->where('parent_id', $st->id)->count() == 0);
+            $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
+            $subtaskTotal = $leafSubTasks->count();
+            $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : 0;
+            $mainTaskCompleted = $isCompleted ? ($subtaskTotal > 0 && $subtaskCompleted === $subtaskTotal) : false;
+
             $task->completed = $mainTaskCompleted;
             $task->save();
 
-            // Hitung total tasks dan completed tasks untuk summary global
             $totalTasks = Task::count();
             $completedTasks = Task::where('completed', true)->count();
             $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
 
-            // Mengembalikan respons JSON sesuai format yang diharapkan frontend
             return response()->json([
                 'success' => true,
-                'subtask' => [
-                    'id' => $subtask->id,
-                    'completed' => $subtask->completed,
-                    'title' => $subtask->title
-                ],
-                'task' => [
-                    'id' => $task->id,
-                    'completed' => $task->completed
-                ],
+                'subtask' => ['id' => $subtask->id, 'completed' => $subtask->completed, 'title' => $subtask->title],
+                'task' => ['id' => $task->id, 'completed' => $task->completed],
                 'progressPercentage' => $progressPercentage,
                 'subtaskCompleted' => $subtaskCompleted,
                 'subtaskTotal' => $subtaskTotal,
@@ -82,50 +214,29 @@ class SubTaskController extends Controller
         });
     }
 
-    /**
-     * Toggle all subtasks for a task at once
-     */
     public function toggleAll(Request $request, $taskId)
     {
-        $request->validate([
-            'completed' => 'required|boolean',
-        ]);
-
+        $request->validate(['completed' => 'required|boolean']);
         $task = Task::findOrFail($taskId);
         $isCompleted = $request->completed;
 
-        // Use a transaction to ensure all updates are atomic
         return DB::transaction(function() use ($task, $isCompleted) {
-            // Update all subtasks for this task
             $task->subTasks()->update(['completed' => $isCompleted]);
-            
-            // Update the task's completion status
             $task->completed = $isCompleted;
             $task->save();
 
-            // Get leaf subtasks for progress calculation
-            $leafSubTasks = $task->subTasks->filter(function($st) use ($task) {
-                return $task->subTasks->where('parent_id', $st->id)->count() == 0;
-            });
-            
+            $leafSubTasks = $task->subTasks->filter(fn($st) => $task->subTasks->where('parent_id', $st->id)->count() == 0);
             $subtaskCompleted = $isCompleted ? $leafSubTasks->count() : 0;
             $subtaskTotal = $leafSubTasks->count();
-            
-            // Calculate progress percentage
             $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : 0;
-            
-            // Calculate global summary stats
+
             $totalTasks = Task::count();
             $completedTasks = Task::where('completed', true)->count();
             $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
 
-            // Return response with all necessary data
             return response()->json([
                 'success' => true,
-                'task' => [
-                    'id' => $task->id,
-                    'completed' => $task->completed
-                ],
+                'task' => ['id' => $task->id, 'completed' => $task->completed],
                 'progressPercentage' => $progressPercentage,
                 'subtaskCompleted' => $subtaskCompleted,
                 'subtaskTotal' => $subtaskTotal,
@@ -136,4 +247,3 @@ class SubTaskController extends Controller
         });
     }
 }
-

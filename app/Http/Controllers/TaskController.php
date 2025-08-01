@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
+use App\Models\TaskRevision;
 
 class TaskController extends Controller
 {
@@ -19,158 +20,187 @@ class TaskController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-{
-    try {
-        // 1. Ambil tugas: milik sendiri ATAU kolaborasi approved
-        $tasksQuery = Task::with([
-            'category',
-            'subTasks' => function ($query) {
-                $query->orderBy('parent_id')->orderBy('created_at');
-            },
-            'collaborators' => function ($query) {
-                $query->where('status', 'approved')->with('user');
-            }
-        ])
-        ->where(function ($query) {
-            $query->where('user_id', Auth::id())
-                  ->orWhereHas('collaborators', function ($q) {
-                      $q->where('user_id', Auth::id())
-                        ->where('status', 'approved');
-                  });
-        })
-        ->orderBy('start_date', 'asc')
-        ->get();
+    {
+        try {
+            // 1. Get tasks: owned by user OR approved collaborations
+            $tasksQuery = Task::with([
+                'user',
+                'category',
+                'subTasks' => function ($query) {
+                    $query->orderBy('parent_id')->orderBy('created_at');
+                },
+                'collaborators' => function ($query) {
+                    $query->where('status', 'approved')->with('user');
+                }
+            ])
+            ->where(function ($query) {
+                $query->where('user_id', Auth::id())
+                      ->orWhereHas('collaborators', function ($q) {
+                          $q->where('user_id', Auth::id())->where('status', 'approved');
+                      });
+            })
+            ->orderBy('start_date', 'asc')
+            ->get();
 
-        // 2. Transformasi data untuk frontend
-        $transformedTasks = $tasksQuery->map(function ($task) {
-            $durationDays = $task->start_date && $task->end_date
-                ? $task->start_date->diffInDays($task->end_date) + 1
-                : 0;
+            // 2. Transform data with proper null checks
+            $tasks = $tasksQuery->map(function ($task) {
+                $durationDays = $task->start_date && $task->end_date
+                    ? $task->start_date->diffInDays($task->end_date) + 1
+                    : 0;
 
-            $leafSubTasks = $task->subTasks->filter(function ($subTask) use ($task) {
-                return !$task->subTasks->where('parent_id', $subTask->id)->count();
+                $leafSubTasks = $task->subTasks->filter(function ($subTask) use ($task) {
+                    return !$task->subTasks->where('parent_id', $subTask->id)->count();
+                });
+
+                $completedCount = $leafSubTasks->where('completed', true)->count();
+                $totalCount = $leafSubTasks->count();
+                $calendarProgress = $totalCount > 0 
+                    ? round(($completedCount / $totalCount) * 100)
+                    : ($task->completed ? 100 : 0);
+
+                return [
+                    'id' => $task->id,
+                    'title' => $task->title,
+                    'description' => $task->description,
+                    'priority' => $task->priority,
+                    'start_date' => $task->start_date?->format('Y-m-d'),
+                    'end_date' => $task->end_date?->format('Y-m-d'),
+                    'start_date_formatted' => $task->start_date?->format('M d'),
+                    'end_date_formatted' => $task->end_date?->format('M d'),
+                    'start_time' => $task->start_time ? $task->start_time->format('H:i') : null,
+                    'end_time' => $task->end_time ? $task->end_time->format('H:i') : null,
+                    'is_all_day' => $task->is_all_day,
+                    'completed' => $task->completed,
+                    'durationDays' => $durationDays,
+                    'calendarProgress' => $calendarProgress,
+                    'category_id' => $task->category_id,
+                    'category_name' => $task->category?->name ?? null,
+                    'category_color' => $task->category?->color ?? '#6B7280',
+                    'is_owner' => $task->user_id === Auth::id(),
+                    'owner_name' => $task->user?->name ?? 'Unknown',
+                    'sub_tasks' => $task->subTasks->map(function ($subtask) {
+                        return [
+                            'id' => $subtask->id,
+                            'title' => $subtask->title,
+                            'completed' => $subtask->completed,
+                            'parent_id' => $subtask->parent_id,
+                            'is_group' => $subtask->is_group,
+                            'start_date' => $subtask->start_date?->format('Y-m-d'),
+                            'end_date' => $subtask->end_date?->format('Y-m-d'),
+                        ];
+                    })->all(),
+                    'collaborators' => $task->collaborators->map(function ($collab) {
+                        return [
+                            'id' => $collab->id,
+                            'user_id' => $collab->user?->id,
+                            'name' => $collab->user?->name ?? 'Deleted User',
+                            'email' => $collab->user?->email ?? '',
+                            'can_edit' => $collab->can_edit,
+                            'status' => $collab->status
+                        ];
+                    })->all()
+                ];
             });
 
-            $completedCount = $leafSubTasks->where('completed', true)->count();
-            $totalCount = $leafSubTasks->count();
-            $calendarProgress = $totalCount > 0 
-                ? round(($completedCount / $totalCount) * 100)
-                : ($task->completed ? 100 : 0);
+            // 3. Calendar events
+            $calendarEvents = $tasksQuery->map(function ($task) {
+                if (!$task->start_date || !$task->end_date) {
+                    return null; // Skip invalid dates
+                }
 
-            return [
-                'id' => $task->id,
-                'title' => $task->title,
-                'description' => $task->description,
-                'priority' => $task->priority,
-                'start_date' => $task->start_date->format('Y-m-d'),
-                'end_date' => $task->end_date->format('Y-m-d'),
-                'start_date_formatted' => $task->start_date->format('M d'),
-                'end_date_formatted' => $task->end_date->format('M d'),
-                'start_time' => $task->start_time ? $task->start_time->format('H:i') : null,
-                'end_time' => $task->end_time ? $task->end_time->format('H:i') : null,
-                'is_all_day' => $task->is_all_day,
-                'completed' => $task->completed,
-                'durationDays' => $durationDays,
-                'calendarProgress' => $calendarProgress,
-                'category_id' => $task->category_id,
-                'category_name' => $task->category?->name ?? null,
-                'category_color' => $task->category?->color ?? '#6B7280',
-                'is_owner' => $task->user_id === Auth::id(),
-                'sub_tasks' => $task->subTasks->map(function ($subtask) {
-                    return [
-                        'id' => $subtask->id,
-                        'title' => $subtask->title,
-                        'completed' => $subtask->completed,
-                        'parent_id' => $subtask->parent_id,
-                        'is_group' => $subtask->is_group,
-                        'start_date' => $subtask->start_date?->format('Y-m-d'),
-                        'end_date' => $subtask->end_date?->format('Y-m-d'),
-                    ];
-                }),
-                'collaborators' => $task->collaborators->map(function ($collab) {
-                    return [
-                        'id' => $collab->id,
-                        'user_id' => $collab->user->id,
-                        'name' => $collab->user->name,
-                        'email' => $collab->user->email,
-                        'can_edit' => $collab->can_edit,
-                        'status' => $collab->status
-                    ];
+                $isAllDay = $task->is_all_day || !$task->start_time || !$task->end_time;
+                $eventStart = $task->start_date->format('Y-m-d');
+                $eventEnd = $task->end_date->copy()->addDay()->format('Y-m-d'); // FullCalendar uses exclusive end
+
+                return [
+                    'title' => $task->title,
+                    'start' => $isAllDay ? $eventStart : $task->start_date->format('Y-m-d\TH:i:s'),
+                    'end' => $isAllDay ? $eventEnd : $task->end_date->format('Y-m-d\TH:i:s'),
+                    'allDay' => $isAllDay,
+                    'extendedProps' => [
+                        'taskId' => $task->id,
+                        'priority' => $task->priority,
+                        'completed' => $task->completed,
+                        'is_owner' => $task->user_id === Auth::id(),
+                    ],
+                    'backgroundColor' => $this->getPriorityColor($task->priority),
+                    'borderColor' => $task->completed ? '#9CA3AF' : $this->getPriorityColor($task->priority),
+                    'textColor' => '#FFFFFF'
+                ];
+            })->filter(); // Remove null events
+
+            // 4. Pending revisions
+            $pendingRevisions = TaskRevision::with(['task', 'collaborator'])
+                ->whereHas('task', function ($q) {
+                    $q->where('user_id', Auth::id());
                 })
+                ->orWhere('collaborator_id', Auth::id())
+                ->where('status', 'pending')
+                ->get();
+
+            // 5. Statistics
+            $categories = Category::withCount(['tasks' => function ($query) {
+                $query->where('user_id', Auth::id())
+                      ->orWhereHas('collaborators', function ($q) {
+                          $q->where('user_id', Auth::id())->where('status', 'approved');
+                      });
+            }])->get();
+
+            $totalTasks = $tasks->count();
+            $completedTasks = $tasks->where('completed', true)->count();
+            $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+
+            $priorityCounts = [
+                'urgent' => $tasks->where('priority', 'urgent')->count(),
+                'high' => $tasks->where('priority', 'high')->count(),
+                'medium' => $tasks->where('priority', 'medium')->count(),
+                'low' => $tasks->where('priority', 'low')->count(),
             ];
-        });
 
-        // 3. Siapkan event kalender
-        $calendarEvents = $tasksQuery->map(function ($task) {
-            $isAllDay = $task->is_all_day || !$task->start_time || !$task->end_time;
-            $eventStart = $task->start_date->format('Y-m-d');
-            $eventEnd = $task->end_date->copy()->addDay()->format('Y-m-d');
+            return view('tasks.index', compact(
+                'tasks',
+                'calendarEvents',
+                'pendingRevisions',
+                'categories',
+                'priorityCounts',
+                'totalTasks',
+                'completedTasks',
+                'overallProgress'
+            ));
 
-            return [
-                'title' => $task->title,
-                'start' => $isAllDay ? $eventStart : $task->start_date->format('Y-m-d\TH:i:s'),
-                'end' => $isAllDay ? $eventEnd : $task->end_date->format('Y-m-d\TH:i:s'),
-                'allDay' => $isAllDay,
-                'extendedProps' => [
-                    'taskId' => $task->id,
-                    'priority' => $task->priority,
-                    'completed' => $task->completed,
-                    'is_owner' => $task->user_id === Auth::id(),
-                ],
-                'backgroundColor' => $this->getPriorityColor($task->priority),
-                'borderColor' => $task->completed ? '#9CA3AF' : $this->getPriorityColor($task->priority),
-                'textColor' => '#FFFFFF'
-            ];
-        })->all();
+        } catch (\Exception $e) {
+            \Log::error('TaskController Error', [
+                'user' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'input' => request()->all()
+            ]);
 
-        // 4. Statistik
-        $categories = Category::withCount(['tasks' => function ($query) {
-            $query->where('user_id', Auth::id())
-                  ->orWhereHas('collaborators', function ($q) {
-                      $q->where('user_id', Auth::id())->where('status', 'approved');
-                  });
-        }])->get();
-
-        $totalTasks = $transformedTasks->count();
-        $completedTasks = $transformedTasks->where('completed', true)->count();
-        $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
-
-        return view('tasks.index', [
-            'tasks' => $transformedTasks,           // ✅ Ini yang dikirim ke view
-            'categories' => $categories,
-            'priorityCounts' => [
-                'urgent' => $transformedTasks->where('priority', 'urgent')->count(),
-                'high' => $transformedTasks->where('priority', 'high')->count(),
-                'medium' => $transformedTasks->where('priority', 'medium')->count(),
-                'low' => $transformedTasks->where('priority', 'low')->count(),
-            ],
-            'totalTasks' => $totalTasks,
-            'completedTasks' => $completedTasks,
-            'overallProgress' => $overallProgress,
-            'calendarEvents' => $calendarEvents
-        ]);
-
-    } catch (\Exception $e) {
-        \Log::error('Error in TaskController@index: ' . $e->getMessage());
-        return back()->withErrors('Terjadi kesalahan saat memuat data tugas.');
+            return response()->view('errors.custom', [
+                'message' => 'Error loading task data.',
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ], 500);
+        }
     }
-}
 
-private function getPriorityColor($priority)
-{
-    switch ($priority) {
-        case 'urgent':
-            return '#DC2626'; // red-600
-        case 'high':
-            return '#EA580C'; // orange-600
-        case 'medium':
-            return '#059669'; // emerald-600
-        case 'low':
-            return '#0891B2'; // sky-600
-        default:
-            return '#6B7280'; // gray-500
+    private function getPriorityColor($priority)
+    {
+        switch ($priority) {
+            case 'urgent':
+                return '#DC2626'; // red-600
+            case 'high':
+                return '#EA580C'; // orange-600
+            case 'medium':
+                return '#059669'; // emerald-600
+            case 'low':
+                return '#0891B2'; // sky-600
+            default:
+                return '#6B7280'; // gray-500
+        }
     }
-}
+
     /**
      * Show the form for creating a new task.
      *
@@ -230,18 +260,19 @@ private function getPriorityColor($priority)
 
         return DB::transaction(function () use ($request, $validated) {
             $task = Task::create([
-    'title' => $validated['title'],
-    'description' => $validated['description'],
-    'priority' => $validated['priority'],
-    'category_id' => $validated['category_id'] ?? null,
-    'start_date' => Carbon::parse($validated['start_date']),
-    'end_date' => Carbon::parse($validated['end_date']),
-    'start_time' => isset($validated['full_day']) && $validated['full_day'] ? null : $validated['start_time'],
-    'end_time' => isset($validated['full_day']) && $validated['full_day'] ? null : $validated['end_time'],
-    'is_all_day' => $validated['full_day'] ?? false,
-    'user_id' => Auth::id(), // 🔴 PENTING!
-    'completed' => false,
-]);
+                'title' => $validated['title'],
+                'description' => $validated['description'],
+                'priority' => $validated['priority'],
+                'category_id' => $validated['category_id'] ?? null,
+                'start_date' => Carbon::parse($validated['start_date']),
+                'end_date' => Carbon::parse($validated['end_date']),
+                'start_time' => isset($validated['full_day']) && $validated['full_day'] ? null : $validated['start_time'],
+                'end_time' => isset($validated['full_day']) && $validated['full_day'] ? null : $validated['end_time'],
+                'is_all_day' => $validated['full_day'] ?? false,
+                'user_id' => Auth::id(),
+                'completed' => false,
+            ]);
+
             // Simpan semua subtasks
             if ($request->has('subtasks')) {
                 $map = []; // untuk menyimpan id sementara dari front-end ke ID DB
@@ -273,6 +304,11 @@ private function getPriorityColor($priority)
      */
     public function edit(Task $task)
     {
+        // Check if user can edit this task
+        if (!$task->canView(Auth::id())) {
+            abort(403, 'Anda tidak memiliki akses ke tugas ini.');
+        }
+
         $categories = Category::all();
         return view('tasks.edit', compact('task', 'categories'));
     }
@@ -286,6 +322,11 @@ private function getPriorityColor($priority)
      */
     public function update(Request $request, Task $task)
     {
+        // Check if user can edit this task
+        if (!$task->canView(Auth::id())) {
+            abort(403, 'Anda tidak memiliki akses ke tugas ini.');
+        }
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
@@ -300,7 +341,7 @@ private function getPriorityColor($priority)
             'subtasks.*.title' => 'required|string|max:255',
             'subtasks.*.parent_id' => 'nullable',
             'subtasks.*.id' => 'nullable|exists:sub_tasks,id',
-            'subtasks.*.is_group' => 'nullable|boolean', // Added is_group validation
+            'subtasks.*.is_group' => 'nullable|boolean',
             'subtasks.*.start_date' => 'required|date',
             'subtasks.*.end_date' => 'required|date|after_or_equal:subtasks.*.start_date',
             'deleted_subtasks' => 'nullable|string',
@@ -311,8 +352,31 @@ private function getPriorityColor($priority)
             $this->validateSubtaskDatesRecursive($validated['subtasks'], $task, null);
         }
 
+        // Cek apakah user adalah pemilik tugas
+        if ($task->user_id === Auth::id()) {
+            // ✅ Pemilik: update langsung
+            return $this->updateTaskDirectly($request, $task, $validated);
+        } 
+        else {
+            // 🟡 Cek apakah user adalah kolaborator yang diizinkan edit
+            $collaborator = $task->collaborators()
+                ->where('user_id', Auth::id())
+                ->where('status', 'approved')
+                ->first();
+
+            if (!$collaborator || !$collaborator->can_edit) {
+                return back()->withErrors('Anda tidak memiliki izin untuk mengedit tugas ini.')->withInput();
+            }
+
+            // 🟡 Kolaborator: kirim revisi untuk review
+            return $this->submitRevisionForReview($request, $task, $validated);
+        }
+    }
+
+    private function updateTaskDirectly(Request $request, Task $task, array $validated)
+    {
         return DB::transaction(function () use ($request, $task, $validated) {
-            // Update main task
+            // Update tugas utama
             $task->update([
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
@@ -320,64 +384,102 @@ private function getPriorityColor($priority)
                 'priority' => $validated['priority'],
                 'start_date' => Carbon::parse($validated['start_date']),
                 'end_date' => Carbon::parse($validated['end_date']),
-                'start_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['start_time'] ?? null),
-                'end_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['end_time'] ?? null),
+                'start_time' => $validated['full_day'] ? null : ($validated['start_time'] ?? null),
+                'end_time' => $validated['full_day'] ? null : ($validated['end_time'] ?? null),
                 'is_all_day' => $validated['full_day'] ?? false,
             ]);
 
-            // Handle deleted subtasks
+            // Hapus subtask yang dihapus
             if ($request->has('deleted_subtasks') && $request->deleted_subtasks) {
                 $deletedIds = explode(',', $request->deleted_subtasks);
-                SubTask::whereIn('id', $deletedIds)->where('task_id', $task->id)->delete(); // Ensure only task's subtasks are deleted
+                $task->subTasks()->whereIn('id', $deletedIds)->delete();
             }
 
-            // Process subtasks
+            // Proses subtask
             if ($request->has('subtasks')) {
                 $subtasks = $validated['subtasks'];
                 $existingIds = $task->subTasks->pluck('id')->toArray();
                 $processedIds = [];
-                $map = []; // Map temporary IDs to database IDs for parent_id resolution
+                $map = []; // Mapping ID sementara ke ID database
 
                 foreach ($subtasks as $tempId => $subtaskData) {
-                    // Handle existing subtasks
                     if (isset($subtaskData['id']) && in_array($subtaskData['id'], $existingIds)) {
+                        // Update subtask yang sudah ada
                         $subtask = SubTask::find($subtaskData['id']);
                         $subtask->update([
                             'title' => $subtaskData['title'],
-                            'parent_id' => isset($subtaskData['parent_id']) && $subtaskData['parent_id'] !== ''
-                                ? ($map[$subtaskData['parent_id']] ?? $subtaskData['parent_id'])
-                                : null,
+                            'parent_id' => $subtaskData['parent_id'] !== '' ? ($map[$subtaskData['parent_id']] ?? $subtaskData['parent_id']) : null,
                             'start_date' => Carbon::parse($subtaskData['start_date']),
                             'end_date' => Carbon::parse($subtaskData['end_date']),
-                            'is_group' => isset($subtaskData['is_group']) ? true : false,
+                            'is_group' => $subtaskData['is_group'] ?? false,
                         ]);
                         $processedIds[] = $subtask->id;
                         $map[$tempId] = $subtask->id;
-                    } 
-                    // Handle new subtasks
-                    else {
+                    } else {
+                        // Buat subtask baru
                         $newSubtask = $task->subTasks()->create([
                             'title' => $subtaskData['title'],
-                            'parent_id' => isset($subtaskData['parent_id']) && $subtaskData['parent_id'] !== ''
-                                ? ($map[$subtaskData['parent_id']] ?? null)
-                                : null,
+                            'parent_id' => $subtaskData['parent_id'] !== '' ? ($map[$subtaskData['parent_id']] ?? null) : null,
                             'start_date' => Carbon::parse($subtaskData['start_date']),
                             'end_date' => Carbon::parse($subtaskData['end_date']),
-                            'is_group' => isset($subtaskData['is_group']) ? true : false,
+                            'is_group' => $subtaskData['is_group'] ?? false,
                         ]);
                         $processedIds[] = $newSubtask->id;
                         $map[$tempId] = $newSubtask->id;
                     }
                 }
 
-                // Delete only subtasks that were not processed and not explicitly deleted
+                // Hapus subtask yang tidak diproses
                 $toDelete = array_diff($existingIds, $processedIds);
                 if (!empty($toDelete)) {
-                    SubTask::whereIn('id', $toDelete)->where('task_id', $task->id)->delete();
+                    $task->subTasks()->whereIn('id', $toDelete)->delete();
                 }
             }
 
             return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui!');
+        });
+    }
+
+    private function submitRevisionForReview(Request $request, Task $task, array $validated)
+    {
+        return DB::transaction(function () use ($request, $task, $validated) {
+            // Data asli
+            $originalData = [
+                'title' => $task->title,
+                'description' => $task->description,
+                'priority' => $task->priority,
+                'category_id' => $task->category_id,
+                'start_date' => $task->start_date?->format('Y-m-d'),
+                'end_date' => $task->end_date?->format('Y-m-d'),
+                'start_time' => $task->start_time?->format('H:i'),
+                'end_time' => $task->end_time?->format('H:i'),
+                'is_all_day' => $task->is_all_day,
+            ];
+
+            // Data usulan
+            $proposedData = [
+                'title' => $validated['title'],
+                'description' => $validated['description'] ?? null,
+                'priority' => $validated['priority'],
+                'category_id' => $validated['category_id'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'start_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['start_time'] ?? null),
+                'end_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['end_time'] ?? null),
+                'is_all_day' => isset($validated['full_day']) && $validated['full_day'] ?? false,
+            ];
+
+            // Simpan revisi
+            $revision = TaskRevision::create([
+                'task_id' => $task->id,
+                'collaborator_id' => Auth::id(),
+                'revision_type' => 'update',
+                'original_data' => $originalData,
+                'proposed_data' => $proposedData,
+                'status' => 'pending'
+            ]);
+
+            return redirect()->route('tasks.index')->with('success', 'Perubahan Anda telah diajukan dan menunggu persetujuan pemilik tugas.');
         });
     }
 
@@ -390,9 +492,17 @@ private function getPriorityColor($priority)
     public function destroy(Task $task)
     {
         try {
+            // Check if user can delete this task
+            if (!$task->canEdit(Auth::id())) {
+                return redirect()->route('tasks.index')
+                    ->with('error', 'Anda tidak memiliki izin untuk menghapus tugas ini.');
+            }
+
             DB::beginTransaction();
 
             $task->subTasks()->delete();
+            $task->collaborators()->delete(); // Remove collaborators
+            $task->revisions()->delete(); // Remove revisions
             $task->delete();
 
             DB::commit();
@@ -471,6 +581,14 @@ private function getPriorityColor($priority)
      */
     public function toggle(Request $request, Task $task)
     {
+        // Check if user can edit this task
+        if (!$task->canEdit(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengubah status tugas ini.'
+            ], 403);
+        }
+
         $request->validate([
             'completed' => 'required|boolean',
         ]);
@@ -524,11 +642,20 @@ private function getPriorityColor($priority)
      */
     public function toggleAll(Request $request, $taskId)
     {
+        $task = Task::findOrFail($taskId);
+        
+        // Check if user can edit this task
+        if (!$task->canEdit(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengubah status tugas ini.'
+            ], 403);
+        }
+
         $request->validate([
             'completed' => 'required|boolean',
         ]);
 
-        $task = Task::findOrFail($taskId);
         $isCompleted = $request->completed;
 
         // Use a transaction to ensure all updates are atomic
@@ -578,6 +705,14 @@ private function getPriorityColor($priority)
      */
     public function toggleSubtask(Request $request, SubTask $subtask)
     {
+        // Check if user can edit the parent task
+        if (!$subtask->task->canEdit(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki izin untuk mengubah status subtask ini.'
+            ], 403);
+        }
+
         $request->validate([
             'completed' => 'required|boolean',
         ]);

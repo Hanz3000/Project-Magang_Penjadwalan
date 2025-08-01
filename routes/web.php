@@ -28,9 +28,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('tasks', TaskController::class);
     Route::patch('/tasks/{task}/toggle', [TaskController::class, 'toggle'])->name('tasks.toggle');
     
-    // Subtasks
-    Route::resource('subtasks', SubTaskController::class)->except(['index', 'create', 'show']);
-    Route::patch('/subtasks/bulk-toggle', [SubTaskController::class, 'bulkToggle'])->name('subtasks.bulk-toggle');
+    // Subtasks - Enhanced with collaboration support
+    Route::post('/subtasks', [SubTaskController::class, 'store'])->name('subtasks.store');
+    Route::put('/subtasks/{subtask}', [SubTaskController::class, 'update'])->name('subtasks.update');
+    Route::delete('/subtasks/{subtask}', [SubTaskController::class, 'destroy'])->name('subtasks.destroy');
+    Route::get('/subtasks/task/{taskId}', [SubTaskController::class, 'getTaskSubtasks'])->name('subtasks.task');
     Route::patch('/subtasks/{subtask}/toggle', [TaskController::class, 'toggleSubtask'])->name('subtasks.toggle');
     
     // Categories
@@ -46,14 +48,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/my-tasks', [CollaborationController::class, 'getMyCollaboratedTasks']);
         Route::get('/pending-revisions', [CollaborationController::class, 'getPendingRevisions']);
         
-        Route::post('/collaboration/invite/{task}', [CollaborationController::class, 'invite'])
-    ->name('collaboration.invite');
         Route::post('/invite/{task}', [CollaborationController::class, 'invite'])->name('collaboration.invite');
         Route::post('/respond/{collaborator}', [CollaborationController::class, 'respondToInvite'])->name('collaboration.respond');
-        Route::post('/submit-revision/{task}', [CollaborationController::class, 'submitRevision'])->name('collaboration.submit-revision');
-        Route::post('/review-revision/{revision}', [CollaborationController::class, 'reviewRevision'])->name('collaboration.review-revision');
         
         Route::get('/task-status/{task}', [CollaborationController::class, 'getCollaborationStatus']);
         Route::delete('/remove/{task}/{collaborator}', [CollaborationController::class, 'removeCollaborator'])->name('collaboration.remove');
+        
+        // Fix: Consistent route parameter
+        Route::post('/revisions/{revision}', [CollaborationController::class, 'reviewRevision'])->name('collaboration.review');
     });
 });

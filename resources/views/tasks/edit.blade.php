@@ -298,14 +298,17 @@
                             </div>
                         </div>
                         <!-- Full Day Button -->
-                        <div class="mt-4">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" id="full_day_toggle" name="full_day" value="1"
-                                    class="form-checkbox h-5 w-5 text-blue-600" {{ $task->full_day ? 'checked' : '' }}>
-                                <span class="ml-2 text-gray-700">Sehari Penuh</span>
-                            </label>
-                        </div>
-                    </div>
+                       
+<div class="mb-4">
+    <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" 
+               name="full_day" 
+               value="1" 
+               {{ old('full_day', $task->is_all_day) ? 'checked' : '' }}
+               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+        <span class="text-sm text-gray-700">Sehari penuh</span>
+    </label>
+</div>
 
                     <!-- Description Section -->
                     <div class="mb-8 px-8">

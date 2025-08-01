@@ -45,4 +45,64 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get all tasks owned by this user
+     */
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
+     * Get all collaborations where this user is a collaborator
+     */
+    public function collaborations()
+    {
+        return $this->hasMany(TaskCollaborator::class, 'user_id');
+    }
+
+    /**
+     * Get all collaborations where this user invited others
+     */
+    public function sentInvitations()
+    {
+        return $this->hasMany(TaskCollaborator::class, 'invited_by');
+    }
+
+    /**
+     * Get all task revisions where this user is the collaborator
+     */
+    public function taskRevisions()
+    {
+        return $this->hasMany(TaskRevision::class, 'collaborator_id');
+    }
+
+    /**
+     * Get all task revisions reviewed by this user
+     */
+    public function reviewedRevisions()
+    {
+        return $this->hasMany(TaskRevision::class, 'reviewed_by');
+    }
+
+    /**
+     * Get tasks where this user is an approved collaborator
+     */
+    public function collaboratedTasks()
+    {
+        return $this->belongsToMany(Task::class, 'task_collaborators', 'user_id', 'task_id')
+                    ->wherePivot('status', 'approved')
+                    ->withPivot(['can_edit', 'status', 'invited_at', 'responded_at']);
+    }
+
+    /**
+     * Get pending collaboration invites for this user
+     */
+    public function pendingInvites()
+    {
+        return $this->hasMany(TaskCollaborator::class, 'user_id')
+                    ->where('status', 'pending')
+                    ->with(['task', 'inviter']);
+    }
 }

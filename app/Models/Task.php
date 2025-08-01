@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Support\Carbon;
 
 class Task extends Model
 {
@@ -20,7 +18,8 @@ class Task extends Model
         'start_time',
         'end_time',
         'completed',
-        'user_id'
+        'user_id',
+        'is_all_day'
     ];
 
     protected $casts = [
@@ -28,19 +27,22 @@ class Task extends Model
         'end_date' => 'datetime',
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
+        'completed' => 'boolean',
+        'is_all_day' => 'boolean',
     ];
+
+    // ✅ Relasi user (pemilik tugas)
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function subTasks()
+    public function subTasks(): HasMany
     {
         return $this->hasMany(SubTask::class)->orderBy('parent_id')->orderBy('created_at');
     }
@@ -68,22 +70,17 @@ class Task extends Model
     public function getDurationDaysAttribute()
     {
         if ($this->start_date && $this->end_date) {
-            return $this->start_date->diffInDays($this->end_date) + 1; // +1 to include both start and end days
+            return $this->start_date->diffInDays($this->end_date) + 1;
         }
         return 0;
     }
 
-    /**
-     * Check if user can edit this task
-     */
     public function canEdit($userId): bool
     {
-        // Owner can always edit
         if ($this->user_id === $userId) {
             return true;
         }
 
-        // Check if user is approved collaborator with edit permission
         return $this->collaborators()
             ->where('user_id', $userId)
             ->where('status', 'approved')
@@ -91,50 +88,28 @@ class Task extends Model
             ->exists();
     }
 
-    /**
-     * Check if user can view this task
-     */
     public function canView($userId): bool
     {
-        // Owner can always view
         if ($this->user_id === $userId) {
             return true;
         }
 
-        // Check if user is approved collaborator
         return $this->collaborators()
             ->where('user_id', $userId)
             ->where('status', 'approved')
             ->exists();
     }
 
-    /**
-     * Get formatted start time
-     */
     public function getFormattedStartTimeAttribute()
     {
         return $this->start_time ? $this->start_time->format('H:i') : null;
     }
 
-    /**
-     * Get formatted end time
-     */
     public function getFormattedEndTimeAttribute()
     {
         return $this->end_time ? $this->end_time->format('H:i') : null;
     }
 
-    /**
-     * Check if task is all day
-     */
-    public function getIsAllDayAttribute()
-    {
-        return !$this->start_time || !$this->end_time;
-    }
-
-    /**
-     * Get full start datetime
-     */
     public function getStartDateTimeAttribute()
     {
         if ($this->start_date && $this->start_time) {
@@ -143,9 +118,6 @@ class Task extends Model
         return $this->start_date ? $this->start_date->format('Y-m-d') : null;
     }
 
-    /**
-     * Get full end datetime
-     */
     public function getEndDateTimeAttribute()
     {
         if ($this->end_date && $this->end_time) {
@@ -153,13 +125,13 @@ class Task extends Model
         }
         return $this->end_date ? $this->end_date->format('Y-m-d') : null;
     }
-    // Di model Task
-public function scopeAccessibleBy($query, $userId)
-{
-    return $query->where('user_id', $userId)
-        ->orWhereHas('collaborators', function($q) use ($userId) {
-            $q->where('user_id', $userId)
-              ->where('status', 'approved');
-        });
-}
+
+    public function scopeAccessibleBy($query, $userId)
+    {
+        return $query->where('user_id', $userId)
+            ->orWhereHas('collaborators', function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                  ->where('status', 'approved');
+            });
+    }
 }

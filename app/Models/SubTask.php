@@ -9,15 +9,36 @@ class SubTask extends Model
 {
     protected $table = 'sub_tasks';
 
-    protected $fillable = ['title', 'task_id', 'parent_id', 'completed', 'is_group','start_date','end_date'];
-    protected $casts = [
-        'start_date' => 'date', // Casting ke objek Carbon
-        'end_date' => 'date',
-        'completed' => 'boolean',
+    protected $fillable = [
+        'task_id',
+        'title',
+        'description',
+        'completed',
+        'parent_id',
+        'is_group',
+        'start_date',
+        'end_date',
+        'start_time',
+        'end_time'
     ];
+
+    protected $casts = [
+        'completed' => 'boolean',
+        'is_group' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'start_time' => 'datetime:H:i',
+        'end_time' => 'datetime:H:i',
+    ];
+
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(SubTask::class, 'parent_id');
     }
 
     public function children()
@@ -25,8 +46,19 @@ class SubTask extends Model
         return $this->hasMany(SubTask::class, 'parent_id')->with('children');
     }
 
-    public function parent()
+    /**
+     * Check if user can edit this subtask
+     */
+    public function canEdit($userId): bool
     {
-        return $this->belongsTo(SubTask::class, 'parent_id');
+        return $this->task && $this->task->canEdit($userId);
+    }
+
+    /**
+     * Check if user can view this subtask
+     */
+    public function canView($userId): bool
+    {
+        return $this->task && $this->task->canView($userId);
     }
 }

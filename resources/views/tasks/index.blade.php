@@ -21,7 +21,7 @@
                 <a href="{{ route('collaboration.invites') }}"
                     class="relative bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                     Kolaborasi
                     <span id="invite-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
@@ -143,7 +143,7 @@
                                 $lineClass = $level > 0 ? 'border-l-2 border-gray-200 pl-4' : '';
 
                                 if ($isParent) {
-                                    $html .= '<div class="subtask-parent relative ' . $lineClass . '" data-subtask-id="' . $subTask['id'] . '">';
+                                    $html .= '<div class="subtask-parent group relative ' . $lineClass . '" data-subtask-id="' . $subTask['id'] . '">';
                                     
                                     if ($level > 0) {
                                         $html .= '<div class="absolute left-0 top-0 w-2 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
@@ -171,7 +171,7 @@
                                     $checked = $subTask['completed'] ? 'checked' : '';
                                     $lineClass = $subTask['completed'] ? 'line-through text-gray-400' : 'text-gray-700';
 
-                                    $html .= '<div class="subtask-item relative flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-blue-50 transition-all duration-200 ' . $indentClass . '" data-subtask-id="' . $subTask['id'] . '">';
+                                    $html .= '<div class="subtask-item group relative flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-blue-50 transition-all duration-200 ' . $indentClass . '" data-subtask-id="' . $subTask['id'] . '">';
                                     
                                     if ($level > 0) {
                                         $html .= '<div class="absolute left-0 top-0 w-4 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
@@ -190,6 +190,23 @@
                                     $html .= '<div class="flex items-center gap-2 flex-1">';
                                     $html .= '<div class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>';
                                     $html .= '<span class="text-sm ' . $lineClass . ' subtask-text flex-1">' . e($subTask['title']) . '</span>';
+                                    
+                                    // Add edit/delete buttons for subtasks if user has permission
+                                    if ($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty())) {
+                                        $html .= '<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">';
+                                        $html .= '<button onclick="editSubtask(' . $subTask['id'] . ', ' . $task['id'] . ')" class="text-gray-400 hover:text-blue-600 p-1 rounded" title="Edit">';
+                                        $html .= '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>';
+                                        $html .= '</button>';
+                                        
+                                        // Only owners can delete
+                                        if ($task['is_owner']) {
+                                            $html .= '<button onclick="deleteSubtask(' . $subTask['id'] . ')" class="text-gray-400 hover:text-red-600 p-1 rounded" title="Delete">';
+                                            $html .= '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+                                            $html .= '</button>';
+                                        }
+                                        $html .= '</div>';
+                                    }
+                                    
                                     $html .= '</div>';
                                     $html .= '</div>';
                                 }
@@ -214,7 +231,7 @@
                                 : ($task['completed'] ? 100 : 0);
                             @endphp
 
-                            <div class="border border-gray-200 rounded-xl p-5 transition-all duration-300 hover:border-blue-300 hover:shadow-lg bg-white backdrop-blur-sm task-item" 
+                            <div class="border border-gray-200 rounded-xl p-5 transition-all duration-300 hover:border-blue-300 hover:shadow-lg bg-white backdrop-blur-sm task-item group" 
                                  id="task-item-{{ $task['id'] }}" 
                                  data-task-status="{{ $task['completed'] ? 'completed' : 'active' }}">
                                 <div class="flex items-start gap-4">
@@ -247,6 +264,17 @@
                                                             onclick="openTaskModal({{ $task['id'] }})">
                                                             {{ $task['title'] }}
                                                         </h3>
+                                                        
+                                                        <!-- Ownership indicator -->
+                                                        @if($task['is_owner'])
+                                                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full border border-blue-300">
+                                                                👑 Owner
+                                                            </span>
+                                                        @else
+                                                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-300">
+                                                                🤝 Collaborator
+                                                            </span>
+                                                        @endif
                                                         
                                                         <!-- Collaboration indicator -->
                                                         <div class="collaboration-indicators flex gap-1" data-task-id="{{ $task['id'] }}">
@@ -283,12 +311,23 @@
                                             </div>
                                             
                                             <div class="flex items-center gap-2">
+                                                <!-- Add Subtask Button (only for owners and collaborators with edit permission) -->
+                                                @if($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty()))
+                                                    <button onclick="openSubtaskModal({{ $task['id'] }})"
+                                                            class="text-gray-400 hover:text-green-600 p-2 rounded-lg hover:bg-green-50 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                                            title="Tambah Subtask">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                        </svg>
+                                                    </button>
+                                                @endif
+
                                                 <!-- Collaboration button -->
                                                 <button onclick="openCollaborationModal({{ $task['id'] }})"
                                                         class="text-gray-400 hover:text-green-600 p-2 rounded-lg hover:bg-green-50 transition-all duration-200"
                                                         title="Kelola Kolaborasi">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                                                     </svg>
                                                 </button>
 
@@ -313,6 +352,7 @@
                                                     </svg>
                                                 </a>
 
+                                                @if($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty()))
                                                 <form action="{{ route('tasks.destroy', $task['id']) }}" method="POST" onsubmit="return confirm('Hapus tugas ini?')" class="inline">
                                                     @csrf
                                                     @method('DELETE')
@@ -326,6 +366,7 @@
                                                         </svg>
                                                     </button>
                                                 </form>
+                                                @endif
                                             </div>
                                         </div>
 
@@ -457,7 +498,84 @@
 
 @include('layouts.collaboration-modal')
 
-<!-- Modal -->
+<!-- Subtask Modal -->
+<div id="subtaskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+            <h3 id="subtaskModalTitle" class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Tambah Subtask
+            </h3>
+            <button onclick="closeSubtaskModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-white/50 transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="overflow-y-auto max-h-[calc(80vh-100px)]">
+            <div class="p-6">
+                <form id="subtaskForm" class="space-y-4">
+                    <input type="hidden" id="subtask_id" name="subtask_id">
+                    <input type="hidden" id="subtask_task_id" name="task_id">
+                    
+                    <div>
+                        <label for="subtask_title" class="block text-sm font-medium text-gray-700 mb-1">Judul Subtask</label>
+                        <input type="text" id="subtask_title" name="title" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    
+                    <div>
+                        <label for="subtask_description" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                        <textarea id="subtask_description" name="description" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="subtask_start_date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                            <input type="date" id="subtask_start_date" name="start_date"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        <div>
+                            <label for="subtask_end_date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai</label>
+                            <input type="date" id="subtask_end_date" name="end_date"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="subtask_start_time" class="block text-sm font-medium text-gray-700 mb-1">Waktu Mulai</label>
+                            <input type="time" id="subtask_start_time" name="start_time"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                        <div>
+                            <label for="subtask_end_time" class="block text-sm font-medium text-gray-700 mb-1">Waktu Selesai</label>
+                            <input type="time" id="subtask_end_time" name="end_time"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" id="subtaskSubmitBtn"
+                                class="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2 px-4 rounded-lg font-medium transition-all duration-300">
+                            Simpan Subtask
+                        </button>
+                        <button type="button" onclick="closeSubtaskModal()"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Modal -->
 <div id="taskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
         <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -512,26 +630,24 @@
 
 <script>
 let appState = {
-    // Data utama tugas dari backend
     tasksData: @json($tasks ?? []),
     calendarEvents: @json($calendarEvents ?? []),
-    calendar: null,
-    isModalOpen: false,
-    currentModalTaskId: null,
-    filteredTasksCount: {{ $totalTasks ?? 0 }},
+    pendingRevisions: @json($pendingRevisions ?? []),
     totalTasks: {{ $totalTasks ?? 0 }},
     completedTasks: {{ $completedTasks ?? 0 }},
     overallProgress: {{ $overallProgress ?? 0 }},
     allTasksCompleted: {{ ($completedTasks ?? 0) == ($totalTasks ?? 0) ? 'true' : 'false' }},
+    filteredTasksCount: {{ $totalTasks ?? 0 }},
     currentFilter: 'all',
     currentView: 'dayGridMonth',
+    isModalOpen: false,
+    currentModalTaskId: null,
     tooltip: null,
     isUpdating: false,
     collaborationState: {
         currentTaskId: null,
         currentRevisionId: null
-    },
-    pendingRevisions: @json($pendingRevisions ?? [])
+    }
 };
 
 // Add collaboration functions
@@ -603,7 +719,7 @@ function updateCollaborationIndicator(taskId, data) {
             indicators.push(`
                 <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full border border-green-300 flex items-center gap-1">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                     ${approvedCount} kolaborator
                 </span>
@@ -618,17 +734,6 @@ function updateCollaborationIndicator(taskId, data) {
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 ${data.pending_revisions_count} menunggu review
-            </span>
-        `);
-    }
-    
-    if (data.is_collaborator && !data.is_owner) {
-        indicators.push(`
-            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full border border-blue-300 flex items-center gap-1">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                Kolaborator
             </span>
         `);
     }
@@ -877,6 +982,138 @@ async function removeCollaborator(collaboratorId) {
     }
 }
 
+// Subtask Modal Functions
+function openSubtaskModal(taskId, subtaskId = null) {
+    const modal = document.getElementById('subtaskModal');
+    const title = document.getElementById('subtaskModalTitle');
+    const form = document.getElementById('subtaskForm');
+    const submitBtn = document.getElementById('subtaskSubmitBtn');
+    
+    // Set task ID
+    document.getElementById('subtask_task_id').value = taskId;
+    
+    if (subtaskId) {
+        // Edit mode
+        title.innerHTML = `
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            Edit Subtask
+        `;
+        document.getElementById('subtask_id').value = subtaskId;
+        submitBtn.textContent = 'Update Subtask';
+        
+        // Load subtask data (you would fetch this from the server)
+        // For now, just show the modal
+    } else {
+        // Create mode
+        title.innerHTML = `
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Tambah Subtask
+        `;
+        document.getElementById('subtask_id').value = '';
+        submitBtn.textContent = 'Simpan Subtask';
+        form.reset();
+        document.getElementById('subtask_task_id').value = taskId;
+    }
+    
+    modal.classList.remove('hidden');
+}
+
+function closeSubtaskModal() {
+    document.getElementById('subtaskModal').classList.add('hidden');
+    document.getElementById('subtaskForm').reset();
+}
+
+// Handle subtask form submission
+if (document.getElementById('subtaskForm')) {
+    document.getElementById('subtaskForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const subtaskId = formData.get('subtask_id');
+        const data = {
+            task_id: formData.get('task_id'),
+            title: formData.get('title'),
+            description: formData.get('description'),
+            start_date: formData.get('start_date'),
+            end_date: formData.get('end_date'),
+            start_time: formData.get('start_time'),
+            end_time: formData.get('end_time'),
+        };
+        
+        try {
+            let url, method;
+            if (subtaskId) {
+                url = `/subtasks/${subtaskId}`;
+                method = 'PUT';
+            } else {
+                url = '/subtasks';
+                method = 'POST';
+            }
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showNotification(result.message, 'success');
+                closeSubtaskModal();
+                // Refresh the page to show changes
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showNotification(result.error || 'Gagal menyimpan subtask', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Terjadi kesalahan', 'error');
+        }
+    });
+}
+
+// Subtask management functions
+function editSubtask(subtaskId, taskId) {
+    openSubtaskModal(taskId, subtaskId);
+}
+
+async function deleteSubtask(subtaskId) {
+    if (!confirm('Hapus subtask ini?')) return;
+    
+    try {
+        const response = await fetch(`/subtasks/${subtaskId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showNotification('Subtask berhasil dihapus', 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification(result.error || 'Gagal menghapus subtask', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Terjadi kesalahan', 'error');
+    }
+}
+
 // Revision Review Functions
 async function loadPendingRevisionsModal() {
     try {
@@ -908,100 +1145,223 @@ function renderRevisionModal(revisions) {
         return;
     }
     
-    content.innerHTML = revisions.map(revision => `
-        <div class="border border-gray-200 rounded-xl p-4 mb-4">
-            <div class="flex justify-between items-start mb-3">
-                <div>
-                    <h4 class="font-semibold text-gray-800">${revision.task.title}</h4>
-                    <p class="text-sm text-gray-600">
-                        Usulan dari: <span class="font-medium">${revision.collaborator.name}</span>
-                    </p>
-                    <p class="text-xs text-gray-500">
-                        ${new Date(revision.created_at).toLocaleDateString('id-ID', { 
-                            day: 'numeric', 
-                            month: 'long', 
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
-                    </p>
+    content.innerHTML = revisions.map(revision => {
+        let changesHtml = '';
+        
+        if (revision.revision_type === 'create_subtask') {
+            changesHtml = `
+                <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                    <h5 class="font-medium text-green-800 mb-2">Subtask Baru:</h5>
+                    <p class="text-sm text-green-700"><strong>Judul:</strong> ${revision.proposed_data.subtask_data.title}</p>
+                    <p class="text-sm text-green-700"><strong>Tanggal:</strong> ${revision.proposed_data.subtask_data.start_date} → ${revision.proposed_data.subtask_data.end_date}</p>
                 </div>
-                <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
-                    ${revision.revision_type === 'create' ? '➕ Tambah' : 
-                      revision.revision_type === 'update' ? '✏️ Edit' : '🗑️ Hapus'}
-                </span>
-            </div>
+            `;
+        } else if (revision.revision_type === 'update_subtask') {
+            const originalData = revision.original_data.subtask_data;
+            const proposedData = revision.proposed_data.subtask_data;
             
-            <div class="space-y-2 text-sm mb-4">
-                ${Object.keys(revision.proposed_data).map(key => {
-                    const original = revision.original_data?.[key];
-                    const proposed = revision.proposed_data[key];
-                    
-                    if (original !== proposed) {
-                        return `
-                            <div class="flex gap-4">
-                                <div class="flex-1">
-                                    <span class="font-medium">${key}:</span>
-                                    <div class="text-red-600 line-through">${original || 'Tidak ada'}</div>
-                                    <div class="text-green-600 font-medium">${proposed || 'Tidak ada'}</div>
+            changesHtml = `
+                <div class="space-y-2 text-sm">
+                    ${Object.keys(proposedData).map(key => {
+                        const original = originalData[key];
+                        const proposed = proposedData[key];
+                        
+                        if (original !== proposed) {
+                            return `
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <span class="font-medium">${key}:</span>
+                                        <div class="text-red-600 line-through">${original || 'Tidak ada'}</div>
+                                        <div class="text-green-600 font-medium">${proposed || 'Tidak ada'}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                    }
-                    return '';
-                }).join('')}
+                            `;
+                        }
+                        return '';
+                    }).join('')}
+                </div>
+            `;
+        } else {
+            // Task updates
+            changesHtml = `
+                <div class="space-y-2 text-sm">
+                    ${Object.keys(revision.proposed_data).map(key => {
+                        const original = revision.original_data?.[key];
+                        const proposed = revision.proposed_data[key];
+                        
+                        if (original !== proposed) {
+                            return `
+                                <div class="flex gap-4">
+                                    <div class="flex-1">
+                                        <span class="font-medium">${key}:</span>
+                                        <div class="text-red-600 line-through">${original || 'Tidak ada'}</div>
+                                        <div class="text-green-600 font-medium">${proposed || 'Tidak ada'}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        return '';
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="border border-gray-200 rounded-xl p-4 mb-4">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h4 class="font-semibold text-gray-800">${revision.task.title}</h4>
+                        <p class="text-sm text-gray-600">
+                            Usulan dari: <span class="font-medium">${revision.collaborator.name}</span>
+                        </p>
+                        <p class="text-xs text-gray-500">
+                            ${new Date(revision.created_at).toLocaleDateString('id-ID', { 
+                                day: 'numeric', 
+                                month: 'long', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}
+                        </p>
+                    </div>
+                    <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
+                        ${revision.revision_type === 'create_subtask' ? '➕ Tambah Subtask' : 
+                          revision.revision_type === 'update_subtask' ? '✏️ Edit Subtask' :
+                          revision.revision_type === 'update' ? '✏️ Edit Task' : '📝 Perubahan'}
+                    </span>
+                </div>
+                
+                <div class="mb-4">
+                    ${changesHtml}
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="reviewRevision(${revision.id}, 'approve')" 
+                            class="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                        ✅ Setujui
+                    </button>
+                    <button onclick="reviewRevision(${revision.id}, 'reject')" 
+                            class="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+                        ❌ Tolak
+                    </button>
+                </div>
             </div>
-            
-            <div class="flex gap-2">
-                <button onclick="reviewRevision(${revision.id}, 'approve')" 
-                        class="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
-                    ✅ Setujui
-                </button>
-                <button onclick="reviewRevision(${revision.id}, 'reject')" 
-                        class="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
-                    ❌ Tolak
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function closeRevisionModal() {
     document.getElementById('revisionModal').classList.add('hidden');
 }
 
+// Fixed reviewRevision function
 async function reviewRevision(revisionId, action) {
-    const notes = action === 'reject' ? prompt('Alasan penolakan (opsional):') : null;
+    console.log('Reviewing revision:', revisionId, 'Action:', action);
     
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    if (!csrfToken) {
+        console.error('CSRF token not found');
+        showNotification('Token keamanan tidak ditemukan', 'error');
+        return;
+    }
+
     try {
-        const response = await fetch(`/collaboration/review-revision/${revisionId}`, {
+        const response = await fetch(`/collaboration/revisions/${revisionId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({ 
-                action, 
-                notes: notes || null 
-            })
+            body: JSON.stringify({ action })
         });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showNotification(data.message, 'success');
-            loadPendingRevisionsModal(); // Refresh
-            loadPendingRevisions(); // Update summary
-            loadCollaborationIndicators(); // Update indicators
+
+        console.log('Response status:', response.status);
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Failed to parse JSON response:', parseError);
+            showNotification('Respons server tidak valid', 'error');
+            return;
+        }
+
+        if (result.success) {
+            showNotification(`Revisi ${action === 'approve' ? 'disetujui' : 'ditolak'}!`, 'success');
+
+            // Close modals
+            closeRevisionModal();
+            closeCollaborationModal();
+            
+            // Reload page to reflect changes
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
         } else {
-            showNotification(data.error || 'Gagal memproses review', 'error');
+            console.error('Server error:', result);
+            showNotification(result.message || result.error || 'Gagal memproses revisi', 'error');
         }
     } catch (error) {
-        showNotification('Terjadi kesalahan', 'error');
+        console.error('Network error:', error);
+        showNotification('Terjadi kesalahan jaringan', 'error');
     }
 }
 
-// Add the existing calendar and task management functions here...
+// Enhanced notification function
+function showNotification(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('notification-container') || createNotificationContainer();
+    
+    const notification = document.createElement('div');
+    notification.className = `
+        transform translate-x-full opacity-0 transition-all duration-300 ease-out
+        px-6 py-4 rounded-lg shadow-lg text-white font-medium text-sm
+        flex items-center gap-3 max-w-sm
+        ${type === 'success' ? 'bg-green-600' : 
+          type === 'error' ? 'bg-red-600' : 
+          type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'}
+    `;
+    
+    const icon = type === 'success' ? '✅' : 
+                 type === 'error' ? '❌' : 
+                 type === 'warning' ? '⚠️' : 'ℹ️';
+    
+    notification.innerHTML = `
+        <span class="text-lg">${icon}</span>
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-white hover:text-gray-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Animation in
+    setTimeout(() => {
+        notification.classList.remove('translate-x-full', 'opacity-0');
+    }, 10);
+    
+    // Auto remove
+    setTimeout(() => {
+        notification.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => notification.remove(), 300);
+    }, duration);
+}
+
+function createNotificationContainer() {
+    const container = document.createElement('div');
+    container.id = 'notification-container';
+    container.className = 'fixed top-4 right-4 z-50 space-y-2';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Initialize existing calendar and task management functions...
 function showCalendarError(message) {
     console.error('Calendar error:', message);
     const errorElement = document.getElementById('calendar-error');
@@ -1700,7 +2060,7 @@ function showTaskTooltip(info) {
 
     const durationInfo = `<div class="flex items-center gap-1 text-xs text-blue-600 mt-1 font-semibold">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7"></path>
         </svg>
         Timeline: ${task.durationDays} hari (${formatDateString(task.start_date)} → ${formatDateString(task.end_date)})
     </div>`;
@@ -1800,53 +2160,6 @@ function formatDateString(dateString) {
         month: 'short', 
         year: 'numeric' 
     });
-}
-
-function showNotification(message, type = 'success') {
-    const container = document.getElementById('notification-container');
-    const notification = document.createElement('div');
-    
-    let bgColor, icon;
-    switch(type) {
-        case 'success':
-            bgColor = 'from-green-500 to-green-600';
-            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-            break;
-        case 'error':
-            bgColor = 'from-red-500 to-red-600';
-            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-            break;
-        case 'info':
-            bgColor = 'from-blue-500 to-blue-600';
-            icon = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m-1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-            break;
-    }
-    
-    notification.className = `bg-gradient-to-r ${bgColor} text-white px-4 py-3 rounded-lg shadow-xl transform transition-all duration-300 flex items-center gap-2 max-w-xs`;
-    notification.innerHTML = `
-        ${icon}
-        <span class="font-medium text-sm">${message}</span>
-    `;
-    
-    notification.style.transform = 'translateX(100%)';
-    notification.style.opacity = '0';
-    
-    container.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-        notification.style.opacity = '1';
-    }, 10);
-    
-    setTimeout(() => {
-        notification.style.transform = 'translateX(100%)';
-        notification.style.opacity = '0';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 300);
-    }, 4000);
 }
 
 function initializeTaskFilter() {
@@ -2117,7 +2430,7 @@ async function performTaskUpdate(checkbox, source) {
             showNotification('Tugas berhasil diperbarui!', 'success');
             checkAllTasksCompleted();
         } else {
-            throw new Error('Update failed');
+            throw new Error(data.message || 'Update failed');
         }
     } catch (error) {
         console.error('Error:', error);
@@ -2878,10 +3191,97 @@ function hideAutoSaveIndicator() {
         indicator.classList.add('hidden');
     }
 }
-
 </script>
 
 <style>
+/* Enhanced modal positioning */
+.fixed.inset-0 {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999;
+}
+
+.fixed.inset-0 > div {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Subtask styling enhancements */
+.subtask-item.group:hover .opacity-0 {
+    opacity: 1;
+}
+
+.subtask-item {
+    position: relative;
+}
+
+.subtask-item .opacity-0 {
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Modal backdrop blur */
+.backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+/* Enhanced animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* Responsive modal positioning */
+@media (max-width: 768px) {
+    .fixed.inset-0 > div {
+        top: 2rem !important;
+        left: 1rem !important;
+        right: 1rem !important;
+        transform: none !important;
+        width: calc(100vw - 2rem) !important;
+        max-width: none !important;
+        max-height: calc(100vh - 4rem) !important;
+    }
+}
+
+/* Enhanced button hover states */
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* Task Filter Styles */
 .filter-btn {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
