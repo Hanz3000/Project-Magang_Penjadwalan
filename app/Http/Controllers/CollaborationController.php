@@ -102,7 +102,7 @@ class CollaborationController extends Controller
             TaskCollaborator::create([
                 'task_id' => $task->id,
                 'user_id' => $user->id,
-                'can_edit' => $request->boolean('can_edit', false),
+                'can_edit' => $request->boolean('can_edit', true),
                 'status' => 'pending',
                 'invited_by' => Auth::id(),
                 'invited_at' => now(),
