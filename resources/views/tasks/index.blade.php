@@ -191,17 +191,14 @@
                                     $html .= '<div class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>';
                                     $html .= '<span class="text-sm ' . $lineClass . ' subtask-text flex-1">' . e($subTask['title']) . '</span>';
                                     
-                                    // Add edit/delete buttons for subtasks with permission check
-                                    $canEdit = $task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty());
-                                    if ($canEdit) {
+                                    // Add edit/delete buttons for subtasks if user has permission
+                                    if ($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty())) {
                                         $html .= '<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">';
-                                        
-                                        // Edit button (both owners and collaborators can edit)
                                         $html .= '<button onclick="editSubtask(' . $subTask['id'] . ', ' . $task['id'] . ')" class="text-gray-400 hover:text-blue-600 p-1 rounded" title="Edit">';
                                         $html .= '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>';
                                         $html .= '</button>';
                                         
-                                        // Delete button (only owners can delete)
+                                        // Only owners can delete
                                         if ($task['is_owner']) {
                                             $html .= '<button onclick="deleteSubtask(' . $subTask['id'] . ')" class="text-gray-400 hover:text-red-600 p-1 rounded" title="Delete">';
                                             $html .= '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
@@ -232,9 +229,6 @@
                             $progressPercentage = $subtaskTotal > 0
                                 ? round(($subtaskCompleted / $subtaskTotal) * 100)
                                 : ($task['completed'] ? 100 : 0);
-                                
-                            // Check user permissions
-                            $canEdit = $task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty());
                             @endphp
 
                             <div class="border border-gray-200 rounded-xl p-5 transition-all duration-300 hover:border-blue-300 hover:shadow-lg bg-white backdrop-blur-sm task-item group" 
@@ -317,7 +311,16 @@
                                             </div>
                                             
                                             <div class="flex items-center gap-2">
-                                            
+                                                <!-- Add Subtask Button (only for owners and collaborators with edit permission) -->
+                                                @if($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty()))
+                                                    <button onclick="openSubtaskModal({{ $task['id'] }})"
+                                                            class="text-gray-400 hover:text-green-600 p-2 rounded-lg hover:bg-green-50 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                                            title="Tambah Subtask">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                        </svg>
+                                                    </button>
+                                                @endif
 
                                                 <!-- Collaboration button -->
                                                 <button onclick="openCollaborationModal({{ $task['id'] }})"
@@ -349,7 +352,7 @@
                                                     </svg>
                                                 </a>
 
-                                                @if($task['is_owner'])
+                                                @if($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty()))
                                                 <form action="{{ route('tasks.destroy', $task['id']) }}" method="POST" onsubmit="return confirm('Hapus tugas ini?')" class="inline">
                                                     @csrf
                                                     @method('DELETE')
@@ -495,122 +498,105 @@
 
 @include('layouts.collaboration-modal')
 
-<!-- Fixed and Improved Subtask Modal -->
-<div id="subtaskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-[60]">
-    <div class="fixed inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-                <h3 id="subtaskModalTitle" class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Tambah Subtask
-                </h3>
-                <button onclick="closeSubtaskModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-white/50 transition-all duration-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[calc(90vh-120px)]">
-                <div class="p-6">
-                    <form id="subtaskForm" class="space-y-4">
-                        <input type="hidden" id="subtask_id" name="subtask_id">
-                        <input type="hidden" id="subtask_task_id" name="task_id">
-                        <input type="hidden" id="subtask_parent_id" name="parent_id" value="">
-                        
-                        <!-- Parent Subtask Selection -->
-                        <div id="parent-selection-container" class="hidden">
-                            <label for="parent_subtask_select" class="block text-sm font-medium text-gray-700 mb-1">Parent Subtask (Opsional)</label>
-                            <select id="parent_subtask_select" name="parent_subtask" 
+<!-- Subtask Modal -->
+<div id="subtaskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+            <h3 id="subtaskModalTitle" class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Tambah Subtask
+            </h3>
+            <button onclick="closeSubtaskModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-white/50 transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="overflow-y-auto max-h-[calc(80vh-100px)]">
+            <div class="p-6">
+                <form id="subtaskForm" class="space-y-4">
+                    <input type="hidden" id="subtask_id" name="subtask_id">
+                    <input type="hidden" id="subtask_task_id" name="task_id">
+                    
+                    <div>
+                        <label for="subtask_title" class="block text-sm font-medium text-gray-700 mb-1">Judul Subtask</label>
+                        <input type="text" id="subtask_title" name="title" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    
+                    <div>
+                        <label for="subtask_description" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                        <textarea id="subtask_description" name="description" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="subtask_start_date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
+                            <input type="date" id="subtask_start_date" name="start_date"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                                <option value="">-- Pilih Parent Subtask --</option>
-                            </select>
-                            <p class="text-xs text-gray-500 mt-1">Pilih subtask induk jika ini adalah subtask bersarang</p>
                         </div>
-                        
                         <div>
-                            <label for="subtask_title" class="block text-sm font-medium text-gray-700 mb-1">Judul Subtask</label>
-                            <input type="text" id="subtask_title" name="title" required 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                   placeholder="Masukkan judul subtask">
+                            <label for="subtask_end_date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai</label>
+                            <input type="date" id="subtask_end_date" name="end_date"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                         </div>
-                        
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="subtask_description" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
-                            <textarea id="subtask_description" name="description" rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                      placeholder="Deskripsi subtask (opsional)"></textarea>
+                            <label for="subtask_start_time" class="block text-sm font-medium text-gray-700 mb-1">Waktu Mulai</label>
+                            <input type="time" id="subtask_start_time" name="start_time"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="subtask_start_date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Mulai</label>
-                                <input type="date" id="subtask_start_date" name="start_date" required
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                            <div>
-                                <label for="subtask_end_date" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai</label>
-                                <input type="date" id="subtask_end_date" name="end_date" required
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
+                        <div>
+                            <label for="subtask_end_time" class="block text-sm font-medium text-gray-700 mb-1">Waktu Selesai</label>
+                            <input type="time" id="subtask_end_time" name="end_time"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="subtask_start_time" class="block text-sm font-medium text-gray-700 mb-1">Waktu Mulai</label>
-                                <input type="time" id="subtask_start_time" name="start_time"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                            <div>
-                                <label for="subtask_end_time" class="block text-sm font-medium text-gray-700 mb-1">Waktu Selesai</label>
-                                <input type="time" id="subtask_end_time" name="end_time"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-3 pt-4">
-                            <button type="submit" id="subtaskSubmitBtn"
-                                    class="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2 px-4 rounded-lg font-medium transition-all duration-300">
-                                Simpan Subtask
-                            </button>
-                            <button type="button" onclick="closeSubtaskModal()"
-                                    class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300">
-                                Batal
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" id="subtaskSubmitBtn"
+                                class="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2 px-4 rounded-lg font-medium transition-all duration-300">
+                            Simpan Subtask
+                        </button>
+                        <button type="button" onclick="closeSubtaskModal()"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300">
+                            Batal
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Task Modal -->
-<div id="taskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-[60]">
-    <div class="fixed inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                    </svg>
-                    Detail Tugas
-                    <span id="modal-auto-save-indicator" class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-600 rounded-full font-medium animate-pulse">
-                        ✓ Tersimpan otomatis
-                    </span>
-                </h3>
-                <button onclick="closeTaskModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-white/50 transition-all duration-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="overflow-y-auto max-h-[calc(90vh-100px)]">
-                <div id="taskModalContent" class="p-4 space-y-4 text-sm text-gray-700">
-                </div>
+<div id="taskModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex justify-center items-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                Detail Tugas
+                <span id="modal-auto-save-indicator" class="hidden ml-2 px-2 py-1 text-xs bg-green-100 text-green-600 rounded-full font-medium animate-pulse">
+                    ✓ Tersimpan otomatis
+                </span>
+            </h3>
+            <button onclick="closeTaskModal()" class="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-white/50 transition-all duration-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="overflow-y-auto max-h-[calc(80vh-100px)]">
+            <div id="taskModalContent" class="p-4 space-y-4 text-sm text-gray-700">
             </div>
         </div>
     </div>
@@ -996,19 +982,15 @@ async function removeCollaborator(collaboratorId) {
     }
 }
 
-// Enhanced Subtask Modal Functions
-function openSubtaskModal(taskId, subtaskId = null, parentId = null) {
+// Subtask Modal Functions
+function openSubtaskModal(taskId, subtaskId = null) {
     const modal = document.getElementById('subtaskModal');
     const title = document.getElementById('subtaskModalTitle');
     const form = document.getElementById('subtaskForm');
     const submitBtn = document.getElementById('subtaskSubmitBtn');
-    const parentSelection = document.getElementById('parent-selection-container');
     
     // Set task ID
     document.getElementById('subtask_task_id').value = taskId;
-    
-    // Get task data to populate parent subtask options
-    const task = appState.tasksData.find(t => t.id == taskId);
     
     if (subtaskId) {
         // Edit mode
@@ -1021,8 +1003,8 @@ function openSubtaskModal(taskId, subtaskId = null, parentId = null) {
         document.getElementById('subtask_id').value = subtaskId;
         submitBtn.textContent = 'Update Subtask';
         
-        // Load subtask data
-        loadSubtaskData(subtaskId, taskId);
+        // Load subtask data (you would fetch this from the server)
+        // For now, just show the modal
     } else {
         // Create mode
         title.innerHTML = `
@@ -1035,124 +1017,9 @@ function openSubtaskModal(taskId, subtaskId = null, parentId = null) {
         submitBtn.textContent = 'Simpan Subtask';
         form.reset();
         document.getElementById('subtask_task_id').value = taskId;
-        
-        // Set parent ID if provided
-        if (parentId) {
-            document.getElementById('subtask_parent_id').value = parentId;
-        }
-        
-        // Set default dates from parent or task
-        setDefaultDates(taskId, parentId);
-    }
-    
-    // Populate parent subtask options
-    populateParentSubtaskOptions(taskId, subtaskId);
-    
-    // Show parent selection if needed
-    if (task && task.sub_tasks && task.sub_tasks.length > 0 && !subtaskId) {
-        parentSelection.classList.remove('hidden');
-    } else {
-        parentSelection.classList.add('hidden');
     }
     
     modal.classList.remove('hidden');
-    
-    // Focus on title input
-    setTimeout(() => {
-        document.getElementById('subtask_title').focus();
-    }, 100);
-}
-
-function populateParentSubtaskOptions(taskId, editingSubtaskId = null) {
-    const select = document.getElementById('parent_subtask_select');
-    const task = appState.tasksData.find(t => t.id == taskId);
-    
-    // Clear existing options except the first one
-    while (select.children.length > 1) {
-        select.removeChild(select.lastChild);
-    }
-    
-    if (task && task.sub_tasks) {
-        // Create hierarchical options
-        function addSubtaskOptions(subtasks, parentId = null, level = 0) {
-            subtasks.filter(st => st.parent_id === parentId).forEach(subtask => {
-                // Don't include the subtask being edited or its children
-                if (editingSubtaskId && (subtask.id === editingSubtaskId || isChildOf(subtask.id, editingSubtaskId, subtasks))) {
-                    return;
-                }
-                
-                const option = document.createElement('option');
-                option.value = subtask.id;
-                option.textContent = '  '.repeat(level) + subtask.title;
-                select.appendChild(option);
-                
-                // Add children
-                addSubtaskOptions(subtasks, subtask.id, level + 1);
-            });
-        }
-        
-        addSubtaskOptions(task.sub_tasks);
-    }
-}
-
-function isChildOf(childId, parentId, subtasks) {
-    function checkParent(id) {
-        const subtask = subtasks.find(st => st.id === id);
-        if (!subtask || !subtask.parent_id) return false;
-        if (subtask.parent_id === parentId) return true;
-        return checkParent(subtask.parent_id);
-    }
-    return checkParent(childId);
-}
-
-function setDefaultDates(taskId, parentId = null) {
-    const task = appState.tasksData.find(t => t.id == taskId);
-    let startDate = task.start_date;
-    let endDate = task.end_date;
-    
-    // If parent is specified, get parent dates
-    if (parentId && task.sub_tasks) {
-        const parent = task.sub_tasks.find(st => st.id == parentId);
-        if (parent) {
-            startDate = parent.start_date || startDate;
-            endDate = parent.end_date || endDate;
-        }
-    }
-    
-    document.getElementById('subtask_start_date').value = startDate;
-    document.getElementById('subtask_end_date').value = endDate;
-}
-
-async function loadSubtaskData(subtaskId, taskId) {
-    try {
-        const response = await fetch(`/subtasks/${subtaskId}`, {
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const subtask = data.subtask;
-            
-            document.getElementById('subtask_title').value = subtask.title || '';
-            document.getElementById('subtask_description').value = subtask.description || '';
-            document.getElementById('subtask_start_date').value = subtask.start_date || '';
-            document.getElementById('subtask_end_date').value = subtask.end_date || '';
-            document.getElementById('subtask_start_time').value = subtask.start_time || '';
-            document.getElementById('subtask_end_time').value = subtask.end_time || '';
-            document.getElementById('subtask_parent_id').value = subtask.parent_id || '';
-            
-            // Set parent selection if exists
-            const parentSelect = document.getElementById('parent_subtask_select');
-            if (subtask.parent_id && parentSelect) {
-                parentSelect.value = subtask.parent_id;
-            }
-        }
-    } catch (error) {
-        console.error('Error loading subtask data:', error);
-        showNotification('Gagal memuat data subtask', 'error');
-    }
 }
 
 function closeSubtaskModal() {
@@ -1167,10 +1034,6 @@ if (document.getElementById('subtaskForm')) {
         
         const formData = new FormData(this);
         const subtaskId = formData.get('subtask_id');
-        
-        // Get parent ID from either hidden input or select
-        let parentId = formData.get('parent_id') || document.getElementById('parent_subtask_select').value || null;
-        
         const data = {
             task_id: formData.get('task_id'),
             title: formData.get('title'),
@@ -1179,7 +1042,6 @@ if (document.getElementById('subtaskForm')) {
             end_date: formData.get('end_date'),
             start_time: formData.get('start_time'),
             end_time: formData.get('end_time'),
-            parent_id: parentId
         };
         
         try {
@@ -1226,7 +1088,7 @@ function editSubtask(subtaskId, taskId) {
 }
 
 async function deleteSubtask(subtaskId) {
-    if (!confirm('Hapus subtask ini? Semua subtask turunannya juga akan ikut terhapus.')) return;
+    if (!confirm('Hapus subtask ini?')) return;
     
     try {
         const response = await fetch(`/subtasks/${subtaskId}`, {
@@ -1250,11 +1112,6 @@ async function deleteSubtask(subtaskId) {
         console.error('Error:', error);
         showNotification('Terjadi kesalahan', 'error');
     }
-}
-
-// Add child subtask function
-function addChildSubtask(parentId, taskId) {
-    openSubtaskModal(taskId, null, parentId);
 }
 
 // Revision Review Functions
@@ -2493,8 +2350,6 @@ function initializeEventDelegation() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeTaskModal();
-            closeSubtaskModal();
-            closeCollaborationModal();
             hideTaskTooltip();
         }
     });
@@ -3339,17 +3194,14 @@ function hideAutoSaveIndicator() {
 </script>
 
 <style>
-/* Fixed modal positioning and improved z-index */
+/* Enhanced modal positioning */
 .fixed.inset-0 {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-}
-
-.fixed.inset-0.z-\[60\] {
-    z-index: 60 !important;
+    z-index: 9999;
 }
 
 .fixed.inset-0 > div {

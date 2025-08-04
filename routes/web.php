@@ -30,7 +30,6 @@ Route::middleware('auth')->group(function () {
     
     // Subtasks - Enhanced with collaboration support
     Route::post('/subtasks', [SubTaskController::class, 'store'])->name('subtasks.store');
-    Route::get('/subtasks/{subtask}', [SubTaskController::class, 'show'])->name('subtasks.show');
     Route::put('/subtasks/{subtask}', [SubTaskController::class, 'update'])->name('subtasks.update');
     Route::delete('/subtasks/{subtask}', [SubTaskController::class, 'destroy'])->name('subtasks.destroy');
     Route::get('/subtasks/task/{taskId}', [SubTaskController::class, 'getTaskSubtasks'])->name('subtasks.task');
