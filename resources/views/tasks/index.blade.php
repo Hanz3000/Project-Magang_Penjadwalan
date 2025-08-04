@@ -311,17 +311,6 @@
                                             </div>
                                             
                                             <div class="flex items-center gap-2">
-                                                <!-- Add Subtask Button (only for owners and collaborators with edit permission) -->
-                                                @if($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty()))
-                                                    <button onclick="openSubtaskModal({{ $task['id'] }})"
-                                                            class="text-gray-400 hover:text-green-600 p-2 rounded-lg hover:bg-green-50 transition-all duration-200 opacity-0 group-hover:opacity-100"
-                                                            title="Tambah Subtask">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                                        </svg>
-                                                    </button>
-                                                @endif
-
                                                 <!-- Collaboration button -->
                                                 <button onclick="openCollaborationModal({{ $task['id'] }})"
                                                         class="text-gray-400 hover:text-green-600 p-2 rounded-lg hover:bg-green-50 transition-all duration-200"
