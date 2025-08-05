@@ -195,13 +195,12 @@
                                     if ($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty())) {
                                         $html .= '<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">';
                                         $html .= '<button onclick="editSubtask(' . $subTask['id'] . ', ' . $task['id'] . ')" class="text-gray-400 hover:text-blue-600 p-1 rounded" title="Edit">';
-                                        $html .= '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>';
                                         $html .= '</button>';
                                         
                                         // Only owners can delete
                                         if ($task['is_owner']) {
                                             $html .= '<button onclick="deleteSubtask(' . $subTask['id'] . ')" class="text-gray-400 hover:text-red-600 p-1 rounded" title="Delete">';
-                                            $html .= '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+                                            
                                             $html .= '</button>';
                                         }
                                         $html .= '</div>';
@@ -971,44 +970,122 @@ async function removeCollaborator(collaboratorId) {
     }
 }
 
-// Subtask Modal Functions
-function openSubtaskModal(taskId, subtaskId = null) {
-    const modal = document.getElementById('subtaskModal');
-    const title = document.getElementById('subtaskModalTitle');
-    const form = document.getElementById('subtaskForm');
-    const submitBtn = document.getElementById('subtaskSubmitBtn');
-    
-    // Set task ID
-    document.getElementById('subtask_task_id').value = taskId;
-    
-    if (subtaskId) {
-        // Edit mode
-        title.innerHTML = `
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-            </svg>
-            Edit Subtask
-        `;
-        document.getElementById('subtask_id').value = subtaskId;
-        submitBtn.textContent = 'Update Subtask';
-        
-        // Load subtask data (you would fetch this from the server)
-        // For now, just show the modal
-    } else {
-        // Create mode
-        title.innerHTML = `
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-            Tambah Subtask
-        `;
-        document.getElementById('subtask_id').value = '';
-        submitBtn.textContent = 'Simpan Subtask';
-        form.reset();
-        document.getElementById('subtask_task_id').value = taskId;
+function openTaskModal(taskId) {
+    const task = appState.tasksData.find(t => t.id == taskId);
+    const modalEl = document.getElementById('taskModal');
+
+    if (!task) {
+        showNotification('Memuat data terbaru...', 'info');
+        window.location.reload();
+        return;
     }
-    
-    modal.classList.remove('hidden');
+
+    appState.isModalOpen = true;
+    appState.currentModalTaskId = taskId;
+
+    // Priority info
+    let priorityText = '';
+    let priorityClass = '';
+    switch(task.priority) {
+        case 'urgent':
+            priorityText = 'Sangat Mendesak';
+            priorityClass = 'bg-red-100 text-red-800 border border-red-300';
+            break;
+        case 'high':
+            priorityText = 'Tinggi';
+            priorityClass = 'bg-orange-100 text-orange-800 border border-orange-300';
+            break;
+        case 'medium':
+            priorityText = 'Sedang';
+            priorityClass = 'bg-yellow-100 text-yellow-800 border border-yellow-300';
+            break;
+        case 'low':
+            priorityText = 'Rendah';
+            priorityClass = 'bg-green-100 text-green-800 border border-green-300';
+            break;
+    }
+
+    // Hitung progres subtugas
+    const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
+        !task.sub_tasks.some(parent => parent.parent_id === st.id)
+    ) : [];
+    const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
+    const subtaskTotal = leafSubTasks.length;
+    const progressPercentage = subtaskTotal > 0
+        ? Math.round((subtaskCompleted / subtaskTotal) * 100)
+        : (task.completed ? 100 : 0);
+
+    // Penampilan waktu
+    const timeDisplay = (task.start_time && task.end_time && !task.is_all_day)
+        ? `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-xs font-medium text-gray-600">Waktu</span>
+                </div>
+                <span class="font-semibold text-gray-800 text-sm">${task.start_time} - ${task.end_time}</span>
+            </div>`
+        : `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-xs font-medium text-gray-600">Durasi</span>
+                </div>
+                <span class="font-semibold text-gray-800 text-sm">Timeline Harian Penuh</span>
+            </div>`;
+
+    // Subtask list
+    let subtasksHtml = '';
+    if (task.sub_tasks && task.sub_tasks.length > 0) {
+        subtasksHtml = `
+            <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <div class="flex justify-between items-center mb-3">
+                    <h5 class="font-medium text-gray-800 flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
+                        </svg>
+                        Timeline Subtugas (<span id="modal-subtask-count">${subtaskCompleted}/${subtaskTotal}</span>)
+                    </h5>
+                    <div class="flex items-center gap-2">
+                        <div class="w-20 h-2 bg-white rounded-full overflow-hidden shadow-inner">
+                            <div id="modal-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500" style="width: ${progressPercentage}%"></div>
+                        </div>
+                        <span id="modal-progress-percentage" class="text-xs font-semibold text-blue-600">${progressPercentage}%</span>
+                    </div>
+                </div>
+                <div class="space-y-1 max-h-40 overflow-y-auto">
+                    ${renderModalSubtasks(task.sub_tasks, null, task, 0)}
+                </div>
+            </div>
+        `;
+    }
+
+    // Masukkan konten ke dalam modal
+    document.getElementById('taskModalContent').innerHTML = `
+        <div class="space-y-4">
+            <div class="flex flex-col gap-1">
+                <h2 class="text-lg font-bold text-gray-900">${task.title}</h2>
+                <span class="text-sm text-gray-500">${task.description ?? ''}</span>
+                <span class="inline-block mt-1 px-2 py-1 text-xs font-medium rounded ${priorityClass}">${priorityText}</span>
+            </div>
+            ${timeDisplay}
+            ${subtasksHtml}
+        </div>
+    `;
+
+    // Buka modal dengan animasi
+    modalEl.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden'); // ✅ mencegah scroll halaman
+    modalEl.style.opacity = '0';
+    modalEl.style.transform = 'scale(0.95)';
+    modalEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+
+    setTimeout(() => {
+        modalEl.style.opacity = '1';
+        modalEl.style.transform = 'scale(1)';
+    }, 10);
 }
 
 function closeSubtaskModal() {
@@ -1076,32 +1153,6 @@ function editSubtask(subtaskId, taskId) {
     openSubtaskModal(taskId, subtaskId);
 }
 
-async function deleteSubtask(subtaskId) {
-    if (!confirm('Hapus subtask ini?')) return;
-    
-    try {
-        const response = await fetch(`/subtasks/${subtaskId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showNotification('Subtask berhasil dihapus', 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showNotification(result.error || 'Gagal menghapus subtask', 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Terjadi kesalahan', 'error');
-    }
-}
 
 // Revision Review Functions
 async function loadPendingRevisionsModal() {
@@ -2927,6 +2978,7 @@ function openTaskModal(taskId) {
     
     const taskModalEl = document.getElementById('taskModal');
     taskModalEl.classList.remove('hidden');
+    
     taskModalEl.style.opacity = '0';
     taskModalEl.style.transform = 'scale(0.95)';
     
