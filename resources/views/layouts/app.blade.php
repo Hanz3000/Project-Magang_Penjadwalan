@@ -62,18 +62,11 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <a href="{{ url('/') }}" class="flex items-center text-xl font-semibold text-gray-900">
+                    <a href="{{ route('tasks.index') }}" class="flex items-center text-xl font-semibold text-gray-900">
                         <i class="fas fa-tasks text-indigo-600 mr-2"></i>
                         TaskFlow
                     </a>
                     
-                    @auth
-                    <div class="hidden sm:ml-8 sm:flex sm:space-x-4">
-                        <a href="{{ route('tasks.index') }}" class="nav-link px-3 py-2 text-gray-700">
-                            <i class="fas fa-list-check mr-2"></i> My Tasks
-                        </a>
-                    </div>
-                    @endauth
                 </div>
                 
                 <div class="hidden sm:ml-6 sm:flex sm:items-center space-x-4">

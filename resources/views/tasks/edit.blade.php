@@ -141,69 +141,100 @@
                                     </div>
                                 @endif
 
-                                <!-- Priority Selection -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                                        Prioritas <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="grid grid-cols-2 gap-3">
-                                        <label class="relative priority-option">
-                                            <input type="radio" name="priority" value="urgent" required
-                                                class="sr-only peer"
-                                                {{ old('priority', $task->priority) == 'urgent' ? 'checked' : '' }}>
-                                            <div
-                                                class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-red-500 peer-checked:border-red-500 peer-checked:bg-red-100 hover:border-red-300 hover:bg-red-100">
-                                                <div class="flex items-center justify-center">
-                                                    <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                                                    <span class="text-sm font-medium text-red-700">Urgent</span>
-                                                </div>
-                                            </div>
-                                        </label>
+                                <!-- Priority Selection with Dot Indicators -->
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-3">
+        Prioritas <span class="text-red-500">*</span>
+    </label>
+    <div class="grid grid-cols-2 gap-3">
+        <label class="relative priority-option">
+            <input type="radio" name="priority" value="urgent" required
+                class="sr-only peer"
+                {{ old('priority', $task->priority) == 'urgent' ? 'checked' : '' }}>
+            <div
+                class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-red-500 peer-checked:border-red-500 peer-checked:bg-red-100 hover:border-red-300 hover:bg-red-100">
+                <div class="flex flex-col items-center">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                        <span class="text-sm font-medium text-red-700">Urgent</span>
+                    </div>
+                    <div class="flex items-center gap-1 mt-1">
+                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </label>
 
-                                        <label class="relative priority-option">
-                                            <input type="radio" name="priority" value="high" required
-                                                class="sr-only peer"
-                                                {{ old('priority', $task->priority) == 'high' ? 'checked' : '' }}>
-                                            <div
-                                                class="px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-yellow-500 peer-checked:border-yellow-500 peer-checked:bg-yellow-100 hover:border-yellow-300 hover:bg-yellow-100">
-                                                <div class="flex items-center justify-center">
-                                                    <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                                                    <span class="text-sm font-medium text-yellow-700">Tinggi</span>
-                                                </div>
-                                            </div>
-                                        </label>
+        <label class="relative priority-option">
+            <input type="radio" name="priority" value="high" required
+                class="sr-only peer"
+                {{ old('priority', $task->priority) == 'high' ? 'checked' : '' }}>
+            <div
+                class="px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-yellow-500 peer-checked:border-yellow-500 peer-checked:bg-yellow-100 hover:border-yellow-300 hover:bg-yellow-100">
+                <div class="flex flex-col items-center">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+                        <span class="text-sm font-medium text-yellow-700">Tinggi</span>
+                    </div>
+                    <div class="flex items-center gap-1 mt-1">
+                        <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-200 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </label>
 
-                                        <label class="relative priority-option">
-                                            <input type="radio" name="priority" value="medium" required
-                                                class="sr-only peer"
-                                                {{ old('priority', $task->priority) == 'medium' ? 'checked' : '' }}>
-                                            <div
-                                                class="px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-blue-500 peer-checked:border-blue-500 peer-checked:bg-blue-100 hover:border-blue-300 hover:bg-blue-100">
-                                                <div class="flex items-center justify-center">
-                                                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                                    <span class="text-sm font-medium text-blue-700">Sedang</span>
-                                                </div>
-                                            </div>
-                                        </label>
+        <label class="relative priority-option">
+            <input type="radio" name="priority" value="medium" required
+                class="sr-only peer"
+                {{ old('priority', $task->priority) == 'medium' ? 'checked' : '' }}>
+            <div
+                class="px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-blue-500 peer-checked:border-blue-500 peer-checked:bg-blue-100 hover:border-blue-300 hover:bg-blue-100">
+                <div class="flex flex-col items-center">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                        <span class="text-sm font-medium text-blue-700">Sedang</span>
+                    </div>
+                    <div class="flex items-center gap-1 mt-1">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-200 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-200 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </label>
 
-                                        <label class="relative priority-option">
-                                            <input type="radio" name="priority" value="low" required
-                                                class="sr-only peer"
-                                                {{ old('priority', $task->priority) == 'low' ? 'checked' : '' }}>
-                                            <div
-                                                class="px-4 py-3 bg-green-50 border border-green-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-green-500 peer-checked:border-green-500 peer-checked:bg-green-100 hover:border-green-300 hover:bg-green-100">
-                                                <div class="flex items-center justify-center">
-                                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                                    <span class="text-sm font-medium text-green-700">Rendah</span>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                    @error('priority')
-                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                    @endif
-                                </div>
-                            </div>
+        <label class="relative priority-option">
+            <input type="radio" name="priority" value="low" required
+                class="sr-only peer"
+                {{ old('priority', $task->priority) == 'low' ? 'checked' : '' }}>
+            <div
+                class="px-4 py-3 bg-green-50 border border-green-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-green-500 peer-checked:border-green-500 peer-checked:bg-green-100 hover:border-green-300 hover:bg-green-100">
+                <div class="flex flex-col items-center">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span class="text-sm font-medium text-green-700">Rendah</span>
+                    </div>
+                    <div class="flex items-center gap-1 mt-1">
+                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-200 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-200 rounded-full"></div>
+                        <div class="w-2 h-2 bg-gray-200 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </label>
+    </div>
+    @error('priority')
+        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+    @endif
+</div>
                         </div>
 
                         <!-- Timeline Section -->

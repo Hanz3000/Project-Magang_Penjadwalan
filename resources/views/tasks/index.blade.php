@@ -2978,6 +2978,7 @@ function openTaskModal(taskId) {
     
     const taskModalEl = document.getElementById('taskModal');
     taskModalEl.classList.remove('hidden');
+     document.body.classList.add('no-scroll');
     
     taskModalEl.style.opacity = '0';
     taskModalEl.style.transform = 'scale(0.95)';
@@ -3071,6 +3072,9 @@ function closeTaskModal() {
         modalEl.style.transition = '';
         appState.isModalOpen = false;
         appState.currentModalTaskId = null;
+
+        // Hapus kelas no-scroll dari body
+        document.body.classList.remove('no-scroll');
     }, 300);
 }
 
@@ -3988,5 +3992,7 @@ button:hover {
     margin-top: 2px !important;
     margin-bottom: 2px !important;
 }
+
+
 </style>
 @endpush

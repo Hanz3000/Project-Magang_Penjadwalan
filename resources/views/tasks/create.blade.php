@@ -86,57 +86,194 @@
                                 @endif
                             </div>
 
-                            <!-- Priority Selection -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-3">
-                                    Prioritas <span class="text-red-500">*</span>
-                                </label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <label class="relative priority-option">
-                                        <input type="radio" name="priority" value="urgent" required class="sr-only peer" {{ old('priority') == 'urgent' ? 'checked' : '' }}>
-                                        <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-red-500 peer-checked:border-red-500 peer-checked:bg-red-100 hover:border-red-300 hover:bg-red-100">
-                                            <div class="flex items-center justify-center">
-                                                <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                                                <span class="text-sm font-medium text-red-700">Urgent</span>
-                                            </div>
-                                        </div>
-                                    </label>
+                            <!-- Priority Selection - Improved Version -->
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-3">
+        Prioritas <span class="text-red-500">*</span>
+    </label>
+    <div id="priority-container" class="grid grid-cols-2 gap-3">
+        <!-- Urgent Priority -->
+        <label class="relative priority-option group">
+            <input type="radio" name="priority" value="urgent" required class="sr-only peer" {{ old('priority') == 'urgent' ? 'checked' : '' }}>
+            <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-xl cursor-pointer 
+                        transition-all duration-500 ease-in-out
+                        peer-checked:ring-2 peer-checked:ring-red-400 peer-checked:ring-opacity-50
+                        peer-checked:border-red-400 peer-checked:bg-red-100 
+                        hover:border-red-300 hover:bg-red-75 hover:shadow-sm
+                        peer-checked:shadow-md
+                        transform-gpu">
+                <div class="flex items-center justify-center">
+                    <div class="w-3 h-3 bg-red-500 rounded-full mr-2 
+                                transition-all duration-400 ease-in-out
+                                peer-checked:scale-110 peer-checked:shadow-sm"></div>
+                    <span class="text-sm font-medium text-red-700 
+                                transition-colors duration-300 ease-in-out
+                                peer-checked:text-red-800">Urgent</span>
+                </div>
+                <!-- Priority Level Dots -->
+                <div class="flex justify-center gap-1 mt-2">
+                    <div class="w-1.5 h-1.5 bg-red-500 rounded-full transition-all duration-300 ease-in-out"></div>
+                    <div class="w-1.5 h-1.5 bg-red-500 rounded-full transition-all duration-300 ease-in-out delay-75"></div>
+                    <div class="w-1.5 h-1.5 bg-red-500 rounded-full transition-all duration-300 ease-in-out delay-150"></div>
+                    <div class="w-1.5 h-1.5 bg-red-500 rounded-full transition-all duration-300 ease-in-out delay-200"></div>
+                </div>
+            </div>
+            <!-- Check Icon with Smooth Animation -->
+            <div class="priority-check-icon absolute -top-2 -right-2 w-6 h-6 
+                        bg-gradient-to-br from-green-400 to-green-600 rounded-full 
+                        flex items-center justify-center shadow-lg
+                        opacity-0 scale-0 peer-checked:opacity-100 peer-checked:scale-100
+                        transition-all duration-400 ease-out delay-100">
+                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+        </label>
 
-                                    <label class="relative priority-option">
-                                        <input type="radio" name="priority" value="high" required class="sr-only peer" {{ old('priority') == 'high' ? 'checked' : '' }}>
-                                        <div class="px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-yellow-500 peer-checked:border-yellow-500 peer-checked:bg-yellow-100 hover:border-yellow-300 hover:bg-yellow-100">
-                                            <div class="flex items-center justify-center">
-                                                <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                                                <span class="text-sm font-medium text-yellow-700">Tinggi</span>
-                                            </div>
-                                        </div>
-                                    </label>
+        <!-- High Priority -->
+        <label class="relative priority-option group">
+            <input type="radio" name="priority" value="high" required class="sr-only peer" {{ old('priority') == 'high' ? 'checked' : '' }}>
+            <div class="px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl cursor-pointer 
+                        transition-all duration-500 ease-in-out
+                        peer-checked:ring-2 peer-checked:ring-yellow-400 peer-checked:ring-opacity-50
+                        peer-checked:border-yellow-400 peer-checked:bg-yellow-100 
+                        hover:border-yellow-300 hover:bg-yellow-75 hover:shadow-sm
+                        peer-checked:shadow-md
+                        transform-gpu">
+                <div class="flex items-center justify-center">
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2 
+                                transition-all duration-400 ease-in-out
+                                peer-checked:scale-110 peer-checked:shadow-sm"></div>
+                    <span class="text-sm font-medium text-yellow-700 
+                                transition-colors duration-300 ease-in-out
+                                peer-checked:text-yellow-800">Tinggi</span>
+                </div>
+                <!-- Priority Level Dots -->
+                <div class="flex justify-center gap-1 mt-2">
+                    <div class="w-1.5 h-1.5 bg-yellow-500 rounded-full transition-all duration-300 ease-in-out"></div>
+                    <div class="w-1.5 h-1.5 bg-yellow-500 rounded-full transition-all duration-300 ease-in-out delay-75"></div>
+                    <div class="w-1.5 h-1.5 bg-yellow-500 rounded-full transition-all duration-300 ease-in-out delay-150"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-300 rounded-full transition-all duration-300 ease-in-out delay-200"></div>
+                </div>
+            </div>
+            <!-- Check Icon with Smooth Animation -->
+            <div class="priority-check-icon absolute -top-2 -right-2 w-6 h-6 
+                        bg-gradient-to-br from-green-400 to-green-600 rounded-full 
+                        flex items-center justify-center shadow-lg
+                        opacity-0 scale-0 peer-checked:opacity-100 peer-checked:scale-100
+                        transition-all duration-400 ease-out delay-100">
+                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+        </label>
 
-                                    <label class="relative priority-option">
-                                        <input type="radio" name="priority" value="medium" required class="sr-only peer" {{ old('priority') == 'medium' ? 'checked' : '' }}>
-                                        <div class="px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-blue-500 peer-checked:border-blue-500 peer-checked:bg-blue-100 hover:border-blue-300 hover:bg-blue-100">
-                                            <div class="flex items-center justify-center">
-                                                <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                                <span class="text-sm font-medium text-blue-700">Sedang</span>
-                                            </div>
-                                        </div>
-                                    </label>
+        <!-- Medium Priority -->
+        <label class="relative priority-option group">
+            <input type="radio" name="priority" value="medium" required class="sr-only peer" {{ old('priority') == 'medium' ? 'checked' : '' }}>
+            <div class="px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl cursor-pointer 
+                        transition-all duration-500 ease-in-out
+                        peer-checked:ring-2 peer-checked:ring-blue-400 peer-checked:ring-opacity-50
+                        peer-checked:border-blue-400 peer-checked:bg-blue-100 
+                        hover:border-blue-300 hover:bg-blue-75 hover:shadow-sm
+                        peer-checked:shadow-md
+                        transform-gpu">
+                <div class="flex items-center justify-center">
+                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-2 
+                                transition-all duration-400 ease-in-out
+                                peer-checked:scale-110 peer-checked:shadow-sm"></div>
+                    <span class="text-sm font-medium text-blue-700 
+                                transition-colors duration-300 ease-in-out
+                                peer-checked:text-blue-800">Sedang</span>
+                </div>
+                <!-- Priority Level Dots -->
+                <div class="flex justify-center gap-1 mt-2">
+                    <div class="w-1.5 h-1.5 bg-blue-500 rounded-full transition-all duration-300 ease-in-out"></div>
+                    <div class="w-1.5 h-1.5 bg-blue-500 rounded-full transition-all duration-300 ease-in-out delay-75"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-300 rounded-full transition-all duration-300 ease-in-out delay-150"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-300 rounded-full transition-all duration-300 ease-in-out delay-200"></div>
+                </div>
+            </div>
+            <!-- Check Icon with Smooth Animation -->
+            <div class="priority-check-icon absolute -top-2 -right-2 w-6 h-6 
+                        bg-gradient-to-br from-green-400 to-green-600 rounded-full 
+                        flex items-center justify-center shadow-lg
+                        opacity-0 scale-0 peer-checked:opacity-100 peer-checked:scale-100
+                        transition-all duration-400 ease-out delay-100">
+                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+        </label>
 
-                                    <label class="relative priority-option">
-                                        <input type="radio" name="priority" value="low" required class="sr-only peer" {{ old('priority') == 'low' ? 'checked' : '' }}>
-                                        <div class="px-4 py-3 bg-green-50 border border-green-200 rounded-xl cursor-pointer transition-all duration-200 peer-checked:ring-2 peer-checked:ring-green-500 peer-checked:border-green-500 peer-checked:bg-green-100 hover:border-green-300 hover:bg-green-100">
-                                            <div class="flex items-center justify-center">
-                                                <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                                <span class="text-sm font-medium text-green-700">Rendah</span>
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                                @error('priority')
-                                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                @endif
-                            </div>
-                        </div>
+        <!-- Low Priority -->
+        <label class="relative priority-option group">
+            <input type="radio" name="priority" value="low" required class="sr-only peer" {{ old('priority') == 'low' ? 'checked' : '' }}>
+            <div class="px-4 py-3 bg-green-50 border border-green-200 rounded-xl cursor-pointer 
+                        transition-all duration-500 ease-in-out
+                        peer-checked:ring-2 peer-checked:ring-green-400 peer-checked:ring-opacity-50
+                        peer-checked:border-green-400 peer-checked:bg-green-100 
+                        hover:border-green-300 hover:bg-green-75 hover:shadow-sm
+                        peer-checked:shadow-md
+                        transform-gpu">
+                <div class="flex items-center justify-center">
+                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2 
+                                transition-all duration-400 ease-in-out
+                                peer-checked:scale-110 peer-checked:shadow-sm"></div>
+                    <span class="text-sm font-medium text-green-700 
+                                transition-colors duration-300 ease-in-out
+                                peer-checked:text-green-800">Rendah</span>
+                </div>
+                <!-- Priority Level Dots -->
+                <div class="flex justify-center gap-1 mt-2">
+                    <div class="w-1.5 h-1.5 bg-green-500 rounded-full transition-all duration-300 ease-in-out"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-300 rounded-full transition-all duration-300 ease-in-out delay-75"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-300 rounded-full transition-all duration-300 ease-in-out delay-150"></div>
+                    <div class="w-1.5 h-1.5 bg-gray-300 rounded-full transition-all duration-300 ease-in-out delay-200"></div>
+                </div>
+            </div>
+            <!-- Check Icon with Smooth Animation -->
+            <div class="priority-check-icon absolute -top-2 -right-2 w-6 h-6 
+                        bg-gradient-to-br from-green-400 to-green-600 rounded-full 
+                        flex items-center justify-center shadow-lg
+                        opacity-0 scale-0 peer-checked:opacity-100 peer-checked:scale-100
+                        transition-all duration-400 ease-out delay-100">
+                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+        </label>
+    </div>
+    @error('priority')
+        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+    @endif
+</div>
+
+<!-- Optional: Add custom CSS for even smoother transitions -->
+<style>
+.priority-option:hover .priority-check-icon {
+    opacity: 0.3;
+    scale: 0.8;
+}
+
+.priority-option .peer:checked ~ div {
+    animation: gentle-pulse 0.6s ease-out;
+}
+
+@keyframes gentle-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+    100% { transform: scale(1); }
+}
+
+/* Custom background colors for better hover states */
+.hover\:bg-red-75:hover { background-color: rgb(254 242 242); }
+.hover\:bg-yellow-75:hover { background-color: rgb(255 251 235); }
+.hover\:bg-blue-75:hover { background-color: rgb(239 246 255); }
+.hover\:bg-green-75:hover { background-color: rgb(240 253 244); }
+</style>
+
+
                     </div>
 
                     <!-- Timeline Section -->
@@ -433,6 +570,7 @@
 
 @push('styles')
 <style>
+
 .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: #3B82F6 #E5E7EB;
@@ -486,6 +624,75 @@ document.addEventListener('DOMContentLoaded', function () {
     let subtaskIdCounter = 0;
     let currentTimeInput = null;
 
+    // --- Priority Selection Enhancement ---
+    function setupPrioritySelection() {
+        const priorityOptions = document.querySelectorAll('.priority-option');
+        
+        // Highlight selected priority on page load if there's old input
+        const selectedPriority = "{{ old('priority') }}";
+        if (selectedPriority) {
+            const selectedOption = document.querySelector(`input[name="priority"][value="${selectedPriority}"]`);
+            if (selectedOption) {
+                selectedOption.checked = true;
+                highlightSelectedPriority(selectedOption);
+            }
+        }
+        
+        // Add click handlers for all priority options
+        priorityOptions.forEach(option => {
+            const radioInput = option.querySelector('input[type="radio"]');
+            
+            option.addEventListener('click', function() {
+                // Remove highlight from all options
+                priorityOptions.forEach(opt => {
+                    opt.classList.remove('ring-2', 'ring-offset-2');
+                    const icon = opt.querySelector('.priority-check-icon');
+                    if (icon) icon.classList.add('hidden');
+                });
+                
+                // Highlight selected option
+                highlightSelectedPriority(radioInput);
+                
+                // Add visual feedback
+                option.classList.add('transform', 'scale-95');
+                setTimeout(() => {
+                    option.classList.remove('transform', 'scale-95');
+                }, 150);
+            });
+            
+            // Change handler for keyboard navigation
+            radioInput.addEventListener('change', function() {
+                if (this.checked) {
+                    highlightSelectedPriority(this);
+                }
+            });
+        });
+    }
+    
+    function highlightSelectedPriority(radioInput) {
+        if (!radioInput) return;
+        
+        const parentOption = radioInput.closest('.priority-option');
+        if (!parentOption) return;
+        
+        // Add highlight classes based on priority
+        parentOption.classList.add('ring-2', 'ring-offset-2');
+        
+        // Show check icon
+        const icon = parentOption.querySelector('.priority-check-icon');
+        if (icon) icon.classList.remove('hidden');
+        
+        // Set ring color based on priority
+        const priority = radioInput.value;
+        let ringColor = 'ring-blue-500';
+        if (priority === 'urgent') ringColor = 'ring-red-500';
+        if (priority === 'high') ringColor = 'ring-yellow-500';
+        if (priority === 'medium') ringColor = 'ring-blue-500';
+        if (priority === 'low') ringColor = 'ring-green-500';
+        
+        parentOption.classList.add(ringColor);
+    }
+
     // --- Time Picker Functions ---
     function openTimePicker(inputElement) {
         currentTimeInput = inputElement;
@@ -506,29 +713,39 @@ document.addEventListener('DOMContentLoaded', function () {
         const hourList = document.getElementById('hour-list');
         const minuteList = document.getElementById('minute-list');
         hourList.innerHTML = '';
+        
+        // Create hour options
         for (let i = 0; i <= 23; i++) {
             const hourDiv = document.createElement('div');
-            hourDiv.className = `time-option ${i === selectedHour ? 'selected' : ''}`;
+            hourDiv.className = `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${i === selectedHour ? 'bg-blue-100 font-medium text-blue-700' : ''}`;
             hourDiv.textContent = i.toString().padStart(2, '0');
             hourDiv.dataset.value = i;
             hourDiv.addEventListener('click', function() {
-                document.querySelectorAll('#hour-list .time-option').forEach(opt => opt.classList.remove('selected'));
-                this.classList.add('selected');
+                document.querySelectorAll('#hour-list .time-option').forEach(opt => 
+                    opt.classList.remove('bg-blue-100', 'font-medium', 'text-blue-700')
+                );
+                this.classList.add('bg-blue-100', 'font-medium', 'text-blue-700');
             });
             hourList.appendChild(hourDiv);
         }
+        
+        // Create minute options
         minuteList.innerHTML = '';
         for (let i = 0; i <= 59; i += 1) {
             const minuteDiv = document.createElement('div');
-            minuteDiv.className = `time-option ${i === selectedMinute ? 'selected' : ''}`;
+            minuteDiv.className = `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${i === selectedMinute ? 'bg-blue-100 font-medium text-blue-700' : ''}`;
             minuteDiv.textContent = i.toString().padStart(2, '0');
             minuteDiv.dataset.value = i;
             minuteDiv.addEventListener('click', function() {
-                document.querySelectorAll('#minute-list .time-option').forEach(opt => opt.classList.remove('selected'));
-                this.classList.add('selected');
+                document.querySelectorAll('#minute-list .time-option').forEach(opt => 
+                    opt.classList.remove('bg-blue-100', 'font-medium', 'text-blue-700')
+                );
+                this.classList.add('bg-blue-100', 'font-medium', 'text-blue-700');
             });
             minuteList.appendChild(minuteDiv);
         }
+        
+        // Scroll to selected options
         const selectedHourElement = hourList.querySelector(`.time-option[data-value="${selectedHour}"]`);
         const selectedMinuteElement = minuteList.querySelector(`.time-option[data-value="${selectedMinute}"]`);
         if (selectedHourElement) {
@@ -541,8 +758,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function setTimeFromPicker() {
         if (!currentTimeInput) return;
-        const selectedHour = document.querySelector('#hour-list .time-option.selected')?.dataset.value || '0';
-        const selectedMinute = document.querySelector('#minute-list .time-option.selected')?.dataset.value || '0';
+        const selectedHour = document.querySelector('#hour-list .time-option.bg-blue-100')?.dataset.value || '00';
+        const selectedMinute = document.querySelector('#minute-list .time-option.bg-blue-100')?.dataset.value || '00';
         currentTimeInput.value = `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`;
         closeTimePicker();
     }
@@ -551,6 +768,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function toggleTimeInputs(isFullDay) {
         const startTimeInput = document.getElementById('start_time');
         const endTimeInput = document.getElementById('end_time');
+        
         if (isFullDay) {
             if (!startTimeInput.dataset.originalTime) {
                 startTimeInput.dataset.originalTime = startTimeInput.value;
@@ -579,57 +797,57 @@ document.addEventListener('DOMContentLoaded', function () {
         const endDateInput = document.getElementById('end_date');
         const startTimeInput = document.getElementById('start_time');
         const endTimeInput = document.getElementById('end_time');
+        
         if (!startDateInput.value || !endDateInput.value) return;
+        
         const startDate = new Date(`${startDateInput.value}T${startTimeInput.value || '00:00'}`);
         const endDate = new Date(`${endDateInput.value}T${endTimeInput.value || '23:59'}`);
+        
         if (endDate < startDate) {
-            alert('Tanggal selesai tidak boleh sebelum tanggal mulai');
+            showAlert('Tanggal selesai tidak boleh sebelum tanggal mulai', 'error');
             endDateInput.value = startDateInput.value;
+            
             if (startDateInput.value === endDateInput.value) {
                 const startTime = startTimeInput.value || '00:00';
                 const [hours, minutes] = startTime.split(':').map(Number);
                 let endHours = hours;
                 let endMinutes = minutes + 30;
+                
                 if (endMinutes >= 60) {
                     endHours += 1;
                     endMinutes -= 60;
                 }
+                
                 endTimeInput.value = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
             }
         }
+        
         // Update subtask limits after main task date changes
         setSubtaskDateLimits();
     }
 
-    // --- Subtask Scroll Indicator ---
+    // --- Subtask Management ---
     function setupSubtaskScrollIndicator() {
         const container = document.getElementById('subtasks-container');
         const indicator = document.getElementById('scroll-indicator');
+        
         if (!container || !indicator) return;
+        
         container.addEventListener('scroll', function() {
-            if (this.scrollLeft > 0) {
-                indicator.classList.remove('hidden');
-            } else {
-                indicator.classList.add('hidden');
-            }
+            indicator.classList.toggle('hidden', this.scrollLeft <= 0);
         });
     }
 
-    // --- Subtask Functions ---
-    // Helper to format date for display (YYYY-MM-DD to DD/MM/YYYY)
     function formatDateDisplay(dateString) {
         if (!dateString) return '';
         const parts = dateString.split('-');
-        if (parts.length === 3) {
-            return `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/YYYY
-        }
-        return dateString; // Fallback if format is unexpected
+        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateString;
     }
 
-    // Helper to get parent dates (returns YYYY-MM-DD format for inputs)
     function getParentDates(parentId) {
         let parentStartDate = document.getElementById('start_date').value;
         let parentEndDate = document.getElementById('end_date').value;
+        
         if (parentId) {
             const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
             if (parentItem) {
@@ -639,15 +857,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (parentEndInput && parentEndInput.value) parentEndDate = parentEndInput.value;
             }
         }
+        
         return { parentStartDate, parentEndDate };
     }
 
-    // Function to set date limits for all subtasks based on their parents
     function setSubtaskDateLimits() {
         document.querySelectorAll('.subtask-item').forEach(item => {
             const parentIdInput = item.querySelector('input[name$="[parent_id]"]');
             const parentId = parentIdInput ? parentIdInput.value : null;
             const { parentStartDate, parentEndDate } = getParentDates(parentId);
+            
             const startInput = item.querySelector('input[name$="[start_date]"]');
             const endInput = item.querySelector('input[name$="[end_date]"]');
             const dateDisplaySpan = item.querySelector('.subtask-date span');
@@ -658,6 +877,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (startInput.value && startInput.value < parentStartDate) startInput.value = parentStartDate;
                 if (startInput.value && startInput.value > parentEndDate) startInput.value = parentEndDate;
             }
+            
             if (endInput) {
                 endInput.min = parentStartDate;
                 endInput.max = parentEndDate;
@@ -665,7 +885,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (endInput.value && endInput.value > parentEndDate) endInput.value = parentEndDate;
             }
 
-            // Update the displayed date range
             if (dateDisplaySpan) {
                 const displayStart = formatDateDisplay(startInput?.value || parentStartDate);
                 const displayEnd = formatDateDisplay(endInput?.value || parentEndDate);
@@ -674,88 +893,93 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Function to update date limits for children when a parent's dates change
     function updateChildSubtaskLimits(parentSubtaskId) {
         const parentItem = document.querySelector(`.subtask-item[data-id="${parentSubtaskId}"]`);
         if (!parentItem) return;
+        
         const parentStartInput = parentItem.querySelector('input[name$="[start_date]"]');
         const parentEndInput = parentItem.querySelector('input[name$="[end_date]"]');
         const parentStartDate = parentStartInput ? parentStartInput.value : '';
         const parentEndDate = parentEndInput ? parentEndInput.value : '';
+        
         if (!parentStartDate || !parentEndDate) return;
 
-        // Find direct children
-        const childSubtasks = document.querySelectorAll(`input[name$="[parent_id]"][value="${parentSubtaskId}"]`);
-        childSubtasks.forEach(childInput => {
+        // Find and update all direct children
+        document.querySelectorAll(`input[name$="[parent_id]"][value="${parentSubtaskId}"]`).forEach(childInput => {
             const childItem = childInput.closest('.subtask-item');
             if (!childItem) return;
+            
             const childStartInput = childItem.querySelector('input[name$="[start_date]"]');
             const childEndInput = childItem.querySelector('input[name$="[end_date]"]');
+            
             if (childStartInput) {
                 childStartInput.min = parentStartDate;
-                childStartInput.max = parentEndDate;
                 if (childStartInput.value < parentStartDate) childStartInput.value = parentStartDate;
                 if (childStartInput.value > parentEndDate) childStartInput.value = parentEndDate;
             }
+            
             if (childEndInput) {
                 childEndInput.min = parentStartDate;
                 childEndInput.max = parentEndDate;
                 if (childEndInput.value < parentStartDate) childEndInput.value = parentStartDate;
                 if (childEndInput.value > parentEndDate) childEndInput.value = parentEndDate;
             }
-            // Update the displayed date range for the child
+            
+            // Update the displayed date range
             const childDateDisplaySpan = childItem.querySelector('.subtask-date span');
             if (childDateDisplaySpan) {
                 const displayStart = formatDateDisplay(childStartInput?.value || parentStartDate);
                 const displayEnd = formatDateDisplay(childEndInput?.value || parentEndDate);
                 childDateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
             }
+            
             // Recursively update grandchildren
             const childId = childItem.dataset.id;
-            if (childId) {
-                updateChildSubtaskLimits(childId);
-            }
+            if (childId) updateChildSubtaskLimits(childId);
         });
     }
 
-    // Function to add a new subtask
     function addSubtask(parentId) {
         const subtasksContainer = document.querySelector('.subtasks-scroll-container');
         const noSubtasksMessage = document.getElementById('no-subtasks');
-        if (noSubtasksMessage) {
-            noSubtasksMessage.style.display = 'none';
-        }
-        const subtaskId = 'new-subtask-' + Date.now();
+        
+        if (noSubtasksMessage) noSubtasksMessage.style.display = 'none';
+        
+        const subtaskId = 'subtask-' + Date.now();
         let level = 0;
+        
         if (parentId) {
             const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
             if (parentItem) {
                 level = parseInt(parentItem.dataset.level || 0) + 1;
                 if (level >= 6) {
-                    alert('Maksimal level subtask adalah 6');
+                    showAlert('Maksimal level subtask adalah 6', 'warning');
                     return;
                 }
             }
         }
+        
         const { parentStartDate, parentEndDate } = getParentDates(parentId);
         const displayParentStart = formatDateDisplay(parentStartDate);
         const displayParentEnd = formatDateDisplay(parentEndDate);
 
         const subtaskElement = document.createElement('div');
-        subtaskElement.className = `subtask-item bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm relative`;
+        subtaskElement.className = `subtask-item bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm relative transition-all duration-200 hover:shadow-md`;
         subtaskElement.dataset.id = subtaskId;
         subtaskElement.dataset.level = level;
         subtaskElement.style.marginLeft = `${level * 16}px`;
+        
         if (level > 0) {
             subtaskElement.style.borderLeft = '2px solid #6366F1';
             subtaskElement.style.paddingLeft = '14px';
         }
+        
         subtaskElement.innerHTML = `
             <div class="flex flex-col md:flex-row md:items-center gap-4">
                 <div class="flex-1">
                     <div class="flex items-center gap-2">
                         <input type="text" name="subtasks[${subtaskId}][title]" placeholder="Judul subtask" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                         <div>
@@ -777,23 +1001,23 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                         </div>
                     </div>
-                    <div class="subtask-date mt-2">
-                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="subtask-date mt-2 flex items-center text-xs text-gray-500">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <span class="text-xs">${displayParentStart} - ${displayParentEnd}</span>
+                        <span>${displayParentStart} - ${displayParentEnd}</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <input type="hidden" name="subtasks[${subtaskId}][parent_id]" value="${parentId || ''}">
                     <button type="button" onclick="addSubtask('${subtaskId}')"
-                        class="p-2 text-indigo-600 hover:text-indigo-800 transition-colors" title="Tambah Child">
+                        class="p-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 rounded-full hover:bg-indigo-50" title="Tambah Child">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                     </button>
                     <button type="button" onclick="removeSubtask('${subtaskId}', false)"
-                        class="p-2 text-red-600 hover:text-red-800 transition-colors" title="Hapus">
+                        class="p-2 text-red-600 hover:text-red-800 transition-colors duration-200 rounded-full hover:bg-red-50" title="Hapus">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
@@ -801,56 +1025,58 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             </div>
         `;
+        
         subtasksContainer.appendChild(subtaskElement);
 
-        // Add event listeners for date changes on the new subtask
+        // Add event listeners for date changes
         const startDateInput = subtaskElement.querySelector('.start-date-input');
         const endDateInput = subtaskElement.querySelector('.end-date-input');
+        
         startDateInput.addEventListener('change', function() {
             endDateInput.min = this.value;
-            if (endDateInput.value < this.value) {
-                endDateInput.value = this.value;
-            }
+            if (endDateInput.value < this.value) endDateInput.value = this.value;
+            
             const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
             if (dateDisplaySpan) {
-                const displayStart = formatDateDisplay(this.value);
-                const displayEnd = formatDateDisplay(endDateInput.value);
-                dateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
+                dateDisplaySpan.textContent = `${formatDateDisplay(this.value)} - ${formatDateDisplay(endDateInput.value)}`;
             }
+            
             updateChildSubtaskLimits(subtaskId);
         });
+        
         endDateInput.addEventListener('change', function() {
             const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
             if (dateDisplaySpan) {
-                const displayStart = formatDateDisplay(startDateInput.value);
-                const displayEnd = formatDateDisplay(this.value);
-                dateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
+                dateDisplaySpan.textContent = `${formatDateDisplay(startDateInput.value)} - ${formatDateDisplay(this.value)}`;
             }
+            
             updateChildSubtaskLimits(subtaskId);
         });
+        
         checkScrollIndicator();
     }
 
-    // Function to remove a subtask (including children)
     function removeSubtask(subtaskId, isExisting = false) {
-        const childSubtasks = document.querySelectorAll(`input[name$="[parent_id]"][value="${subtaskId}"]`);
-        childSubtasks.forEach(childInput => {
+        // First remove all children
+        document.querySelectorAll(`input[name$="[parent_id]"][value="${subtaskId}"]`).forEach(childInput => {
             const childId = childInput.closest('.subtask-item')?.dataset.id;
-            if (childId) {
-                removeSubtask(childId, document.querySelector(`.subtask-item[data-id="${childId}"]`)?.dataset.existing === 'true');
-            }
+            if (childId) removeSubtask(childId, false);
         });
+        
+        // Then remove the subtask itself
         const subtaskElement = document.querySelector(`.subtask-item[data-id="${subtaskId}"]`);
         if (subtaskElement) {
-            subtaskElement.remove();
+            subtaskElement.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => subtaskElement.remove(), 200);
         }
+        
+        // Show empty message if no subtasks left
         const subtasksContainer = document.querySelector('.subtasks-scroll-container');
         if (subtasksContainer && subtasksContainer.querySelectorAll('.subtask-item').length === 0) {
             const noSubtasksMessage = document.getElementById('no-subtasks');
-            if (noSubtasksMessage) {
-                noSubtasksMessage.style.display = 'block';
-            }
+            if (noSubtasksMessage) noSubtasksMessage.style.display = 'block';
         }
+        
         checkScrollIndicator();
     }
 
@@ -858,82 +1084,62 @@ document.addEventListener('DOMContentLoaded', function () {
         const container = document.getElementById('subtasks-container');
         const scrollContainer = document.querySelector('.subtasks-scroll-container');
         const indicator = document.getElementById('scroll-indicator');
+        
         if (container && scrollContainer && indicator) {
-            if (scrollContainer.scrollWidth > container.clientWidth) {
-                indicator.classList.remove('hidden');
-            } else {
-                indicator.classList.add('hidden');
-            }
+            indicator.classList.toggle('hidden', scrollContainer.scrollWidth <= container.clientWidth);
         }
     }
 
-    // --- Initialize Event Listeners ---
-    document.querySelectorAll('.time-picker-input').forEach(input => {
-        input.addEventListener('focus', function() {
-            openTimePicker(this);
-        });
-    });
-    document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
-    document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
-    document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
-
-    const fullDayToggle = document.getElementById('full_day_toggle');
-    const startTimeInput = document.getElementById('start_time');
-    const endTimeInput = document.getElementById('end_time');
-    startTimeInput.dataset.originalTime = startTimeInput.value;
-    endTimeInput.dataset.originalTime = endTimeInput.value;
-    if (startTimeInput.value === '00:00' && endTimeInput.value === '23:59') {
-        fullDayToggle.checked = true;
-        toggleTimeInputs(true);
+    // --- Alert Notification ---
+    function showAlert(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        const colors = {
+            error: 'bg-red-100 border-red-400 text-red-700',
+            success: 'bg-green-100 border-green-400 text-green-700',
+            warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
+            info: 'bg-blue-100 border-blue-400 text-blue-700'
+        };
+        
+        alertDiv.className = `fixed top-4 right-4 border-l-4 ${colors[type]} px-4 py-3 rounded shadow-lg z-50 transition-all duration-300 transform translate-x-0 opacity-100`;
+        alertDiv.innerHTML = `
+            <div class="flex items-center">
+                <span class="mr-2">${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-auto">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        setTimeout(() => {
+            alertDiv.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => alertDiv.remove(), 300);
+        }, 3000);
     }
-    fullDayToggle.addEventListener('change', function() {
-        toggleTimeInputs(this.checked);
-    });
 
-    const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
-    [startDateInput, endDateInput].forEach(input => {
-        input.addEventListener('change', validateDates);
-    });
-
-    setupSubtaskScrollIndicator();
-    setSubtaskDateLimits();
-
-    // --- Form submission handling ---
-    document.getElementById('task-form').addEventListener('submit', function(e) {
-        validateDates();
-        const startDateInput = document.getElementById('start_date');
-        const endDateInput = document.getElementById('end_date');
-        const startTimeInput = document.getElementById('start_time');
-        const endTimeInput = document.getElementById('end_time');
-        if (startDateInput.value && endDateInput.value) {
-            const startDate = new Date(`${startDateInput.value}T${startTimeInput.value || '00:00'}`);
-            const endDate = new Date(`${endDateInput.value}T${endTimeInput.value || '23:59'}`);
-            if (endDate < startDate) {
-                e.preventDefault();
-                alert('Tanggal selesai tidak boleh sebelum tanggal mulai');
-                return false;
-            }
-        }
-        return true;
-    });
-
-    // --- Category Management Functions ---
+    // --- Category Management ---
     function openCategoryModal() {
         document.getElementById('category-modal').classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
     }
 
     function closeCategoryModal() {
         document.getElementById('category-modal').classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
     }
 
     function addCategory() {
         const nameInput = document.getElementById('new-category-name');
         const name = nameInput.value.trim();
+        
         if (!name) {
-            alert('Nama kategori tidak boleh kosong');
+            showAlert('Nama kategori tidak boleh kosong', 'error');
             return;
         }
+        
         fetch('{{ route("categories.store") }}', {
             method: 'POST',
             headers: {
@@ -941,16 +1147,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ name: name })
+            body: JSON.stringify({ name })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Add to select dropdown
                 const select = document.getElementById('category_id');
                 const option = document.createElement('option');
                 option.value = data.category.id;
                 option.textContent = data.category.name;
                 select.appendChild(option);
+                
+                // Add to table
                 const tbody = document.getElementById('categories-table-body');
                 const row = document.createElement('tr');
                 row.dataset.id = data.category.id;
@@ -970,14 +1179,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     </td>
                 `;
                 tbody.appendChild(row);
+                
                 nameInput.value = '';
+                showAlert('Kategori berhasil ditambahkan', 'success');
             } else {
-                alert(data.message || 'Terjadi kesalahan');
+                showAlert(data.message || 'Terjadi kesalahan', 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat menambahkan kategori');
+            showAlert('Terjadi kesalahan saat menambahkan kategori', 'error');
         });
     }
 
@@ -986,40 +1197,42 @@ document.addEventListener('DOMContentLoaded', function () {
         const id = row.dataset.id;
         const nameCell = row.querySelector('td:first-child div');
         const currentName = nameCell.textContent;
+        
         const newName = prompt('Edit nama kategori:', currentName);
-        if (newName && newName.trim() !== currentName) {
-            fetch(`/categories/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ name: newName.trim() })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    nameCell.textContent = data.category.name;
-                    const option = document.querySelector(`#category_id option[value="${id}"]`);
-                    if (option) {
-                        option.textContent = data.category.name;
-                    }
-                } else {
-                    alert(data.message || 'Terjadi kesalahan');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan saat mengedit kategori');
-            });
-        }
+        if (!newName || newName.trim() === currentName) return;
+        
+        fetch(`/categories/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ name: newName.trim() })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                nameCell.textContent = data.category.name;
+                
+                // Update select dropdown
+                const option = document.querySelector(`#category_id option[value="${id}"]`);
+                if (option) option.textContent = data.category.name;
+                
+                showAlert('Kategori berhasil diperbarui', 'success');
+            } else {
+                showAlert(data.message || 'Terjadi kesalahan', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Terjadi kesalahan saat mengedit kategori', 'error');
+        });
     }
 
     function deleteCategory(id) {
-        if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) {
-            return;
-        }
+        if (!confirm('Apakah Anda yakin ingin menghapus kategori ini?')) return;
+        
         fetch(`/categories/${id}`, {
             method: 'DELETE',
             headers: {
@@ -1031,20 +1244,84 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                document.querySelector(`#categories-table-body tr[data-id="${id}"]`).remove();
-                const option = document.querySelector(`#category_id option[value="${id}"]`);
-                if (option) {
-                    option.remove();
-                }
+                // Remove from table
+                document.querySelector(`#categories-table-body tr[data-id="${id}"]`)?.remove();
+                
+                // Remove from select dropdown
+                document.querySelector(`#category_id option[value="${id}"]`)?.remove();
+                
+                showAlert('Kategori berhasil dihapus', 'success');
             } else {
-                alert(data.message || 'Terjadi kesalahan');
+                showAlert(data.message || 'Terjadi kesalahan', 'error');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Terjadi kesalahan saat menghapus kategori');
+            showAlert('Terjadi kesalahan saat menghapus kategori', 'error');
         });
     }
+
+    // --- Initialize Event Listeners ---
+    function initializeEventListeners() {
+        // Time picker
+        document.querySelectorAll('.time-picker-input').forEach(input => {
+            input.addEventListener('focus', () => openTimePicker(this));
+        });
+        
+        document.getElementById('close-time-picker').addEventListener('click', closeTimePicker);
+        document.getElementById('cancel-time').addEventListener('click', closeTimePicker);
+        document.getElementById('ok-time').addEventListener('click', setTimeFromPicker);
+
+        // Full day toggle
+        const fullDayToggle = document.getElementById('full_day_toggle');
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+        
+        startTimeInput.dataset.originalTime = startTimeInput.value;
+        endTimeInput.dataset.originalTime = endTimeInput.value;
+        
+        if (startTimeInput.value === '00:00' && endTimeInput.value === '23:59') {
+            fullDayToggle.checked = true;
+            toggleTimeInputs(true);
+        }
+        
+        fullDayToggle.addEventListener('change', () => toggleTimeInputs(this.checked));
+
+        // Date validation
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        [startDateInput, endDateInput].forEach(input => {
+            input.addEventListener('change', validateDates);
+        });
+
+        // Form submission
+        document.getElementById('task-form').addEventListener('submit', function(e) {
+            validateDates();
+            const startDateInput = document.getElementById('start_date');
+            const endDateInput = document.getElementById('end_date');
+            const startTimeInput = document.getElementById('start_time');
+            const endTimeInput = document.getElementById('end_time');
+            
+            if (startDateInput.value && endDateInput.value) {
+                const startDate = new Date(`${startDateInput.value}T${startTimeInput.value || '00:00'}`);
+                const endDate = new Date(`${endDateInput.value}T${endTimeInput.value || '23:59'}`);
+                
+                if (endDate < startDate) {
+                    e.preventDefault();
+                    showAlert('Tanggal selesai tidak boleh sebelum tanggal mulai', 'error');
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+    }
+
+    // --- Initialize Everything ---
+    setupPrioritySelection();
+    initializeEventListeners();
+    setupSubtaskScrollIndicator();
+    setSubtaskDateLimits();
 
     // Make functions globally accessible
     window.addSubtask = addSubtask;
@@ -1054,6 +1331,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addCategory = addCategory;
     window.editCategory = editCategory;
     window.deleteCategory = deleteCategory;
+    window.showAlert = showAlert;
 });
 </script>
 @endpush
