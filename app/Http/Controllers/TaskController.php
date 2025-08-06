@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use App\Models\TaskRevision;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -443,8 +444,8 @@ class TaskController extends Controller
     private function submitRevisionForReview(Request $request, Task $task, array $validated)
     {
         return DB::transaction(function () use ($request, $task, $validated) {
-            // Data asli
-            $originalData = [
+            // Data asli task
+            $originalTaskData = [
                 'title' => $task->title,
                 'description' => $task->description,
                 'priority' => $task->priority,
@@ -456,8 +457,8 @@ class TaskController extends Controller
                 'is_all_day' => $task->is_all_day,
             ];
 
-            // Data usulan
-            $proposedData = [
+            // Data usulan task
+            $proposedTaskData = [
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
                 'priority' => $validated['priority'],
@@ -469,11 +470,75 @@ class TaskController extends Controller
                 'is_all_day' => isset($validated['full_day']) && $validated['full_day'] ?? false,
             ];
 
+            // Data asli subtasks
+            $originalSubtasks = [];
+            $proposedSubtasks = [];
+            $deletedSubtasks = [];
+
+            // Get current subtasks
+            foreach ($task->subTasks as $subtask) {
+                $originalSubtasks[$subtask->id] = [
+                    'id' => $subtask->id,
+                    'title' => $subtask->title,
+                    'parent_id' => $subtask->parent_id,
+                    'start_date' => $subtask->start_date?->format('Y-m-d'),
+                    'end_date' => $subtask->end_date?->format('Y-m-d'),
+                    'is_group' => $subtask->is_group,
+                ];
+            }
+
+            // Process deleted subtasks
+            if ($request->has('deleted_subtasks') && $request->deleted_subtasks) {
+                $deletedIds = array_filter(explode(',', $request->deleted_subtasks));
+                foreach ($deletedIds as $deletedId) {
+                    if (isset($originalSubtasks[$deletedId])) {
+                        $deletedSubtasks[$deletedId] = $originalSubtasks[$deletedId];
+                    }
+                }
+            }
+
+            // Process updated/new subtasks
+            if ($request->has('subtasks')) {
+                foreach ($validated['subtasks'] as $tempId => $subtaskData) {
+                    $proposedSubtasks[$tempId] = [
+                        'id' => $subtaskData['id'] ?? null,
+                        'title' => $subtaskData['title'],
+                        'parent_id' => $subtaskData['parent_id'] ?: null,
+                        'start_date' => $subtaskData['start_date'],
+                        'end_date' => $subtaskData['end_date'],
+                        'is_group' => $subtaskData['is_group'] ?? false,
+                        'is_new' => !isset($subtaskData['id']),
+                        'temp_id' => $tempId,
+                    ];
+                }
+            }
+
+            // Combine all data
+            $originalData = [
+                'task' => $originalTaskData,
+                'subtasks' => $originalSubtasks,
+            ];
+
+            $proposedData = [
+                'action' => 'update_task_with_subtasks',
+                'task' => $proposedTaskData,
+                'subtasks' => $proposedSubtasks,
+                'deleted_subtasks' => $deletedSubtasks,
+            ];
+
+            Log::info('Submitting revision for review', [
+                'task_id' => $task->id,
+                'collaborator_id' => Auth::id(),
+                'original_data' => $originalData,
+                'proposed_data' => $proposedData,
+                'validated_data' => $validated
+            ]);
+
             // Simpan revisi
             $revision = TaskRevision::create([
                 'task_id' => $task->id,
                 'collaborator_id' => Auth::id(),
-                'revision_type' => 'update',
+                'revision_type' => 'update_task_with_subtasks',
                 'original_data' => $originalData,
                 'proposed_data' => $proposedData,
                 'status' => 'pending'

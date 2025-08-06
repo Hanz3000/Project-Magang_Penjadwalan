@@ -288,7 +288,9 @@ class CollaborationController extends Controller
             Log::info('ReviewRevision called', [
                 'revision_id' => $revision->id,
                 'action' => $request->action,
-                'user_id' => Auth::id()
+                'user_id' => Auth::id(),
+                'revision_type' => $revision->revision_type,
+                'proposed_data' => $revision->proposed_data,
             ]);
 
             $request->validate([
@@ -330,7 +332,8 @@ class CollaborationController extends Controller
 
                 Log::info('Revision status updated', [
                     'revision_id' => $revision->id,
-                    'new_status' => $revision->status
+                    'new_status' => $revision->status,
+                    'revision_type' => $revision->revision_type
                 ]);
 
                 if ($action === 'approve') {
@@ -358,7 +361,7 @@ class CollaborationController extends Controller
     }
 
     /**
-     * Apply approved revision changes
+     * Apply approved revision changes with improved handling
      */
     private function applyRevisionChanges(TaskRevision $revision)
     {
@@ -370,8 +373,16 @@ class CollaborationController extends Controller
                     $this->createSubtaskFromRevision($revision, $proposedData['subtask_data']);
                     break;
                     
+                case 'create_multiple_subtasks':
+                    $this->createMultipleSubtasksFromRevision($revision, $proposedData['subtasks_data']);
+                    break;
+                    
                 case 'update_subtask':
                     $this->updateSubtaskFromRevision($revision, $proposedData);
+                    break;
+
+                case 'update_task_with_subtasks':
+                    $this->updateTaskWithSubtasksFromRevision($revision, $proposedData);
                     break;
                     
                 default:
@@ -386,11 +397,103 @@ class CollaborationController extends Controller
     }
 
     /**
-     * Create subtask from approved revision
+     * Update task and subtasks from approved revision
+     */
+    private function updateTaskWithSubtasksFromRevision(TaskRevision $revision, array $proposedData)
+    {
+        $task = $revision->task;
+        
+        // Update task data
+        if (isset($proposedData['task'])) {
+            $this->updateTaskFromRevision($revision, $proposedData['task']);
+        }
+        
+        // Handle deleted subtasks
+        if (isset($proposedData['deleted_subtasks']) && !empty($proposedData['deleted_subtasks'])) {
+            foreach ($proposedData['deleted_subtasks'] as $subtaskId => $subtaskData) {
+                $subtask = SubTask::find($subtaskId);
+                if ($subtask && $subtask->task_id === $task->id) {
+                    $subtask->delete();
+                    Log::info('Subtask deleted from revision', [
+                        'revision_id' => $revision->id,
+                        'subtask_id' => $subtaskId
+                    ]);
+                }
+            }
+        }
+        
+        // Handle updated/new subtasks
+        if (isset($proposedData['subtasks']) && !empty($proposedData['subtasks'])) {
+            $idMapping = [];
+            
+            // Sort by dependencies (parents first)
+            $sortedSubtasks = collect($proposedData['subtasks'])->sortBy(function($subtask) {
+                return $subtask['parent_id'] ? 1 : 0;
+            });
+
+            foreach ($sortedSubtasks as $tempId => $subtaskData) {
+                // Resolve parent_id mapping
+                $parentId = null;
+                if (!empty($subtaskData['parent_id'])) {
+                    $parentId = $idMapping[$subtaskData['parent_id']] ?? $subtaskData['parent_id'];
+                    
+                    // Verify parent exists
+                    if ($parentId && !SubTask::find($parentId)) {
+                        $parentId = null;
+                    }
+                }
+
+                if ($subtaskData['is_new'] ?? false) {
+                    // Create new subtask
+                    $newSubtask = SubTask::create([
+                        'task_id' => $task->id,
+                        'title' => $subtaskData['title'],
+                        'parent_id' => $parentId,
+                        'start_date' => Carbon::parse($subtaskData['start_date']),
+                        'end_date' => Carbon::parse($subtaskData['end_date']),
+                        'is_group' => $subtaskData['is_group'] ?? false,
+                        'completed' => false,
+                    ]);
+                    
+                    $idMapping[$tempId] = $newSubtask->id;
+                    
+                    Log::info('New subtask created from revision', [
+                        'revision_id' => $revision->id,
+                        'temp_id' => $tempId,
+                        'real_id' => $newSubtask->id,
+                        'parent_id' => $parentId
+                    ]);
+                } else if (isset($subtaskData['id'])) {
+                    // Update existing subtask
+                    $subtask = SubTask::find($subtaskData['id']);
+                    if ($subtask && $subtask->task_id === $task->id) {
+                        $subtask->update([
+                            'title' => $subtaskData['title'],
+                            'parent_id' => $parentId,
+                            'start_date' => Carbon::parse($subtaskData['start_date']),
+                            'end_date' => Carbon::parse($subtaskData['end_date']),
+                            'is_group' => $subtaskData['is_group'] ?? false,
+                        ]);
+                        
+                        $idMapping[$tempId] = $subtask->id;
+                        
+                        Log::info('Existing subtask updated from revision', [
+                            'revision_id' => $revision->id,
+                            'subtask_id' => $subtask->id,
+                            'parent_id' => $parentId
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Create single subtask from approved revision
      */
     private function createSubtaskFromRevision(TaskRevision $revision, array $subtaskData)
     {
-        SubTask::create([
+        $createdSubtask = SubTask::create([
             'task_id' => $revision->task_id,
             'title' => $subtaskData['title'],
             'description' => $subtaskData['description'] ?? null,
@@ -405,8 +508,64 @@ class CollaborationController extends Controller
 
         Log::info('Subtask created from revision', [
             'revision_id' => $revision->id,
+            'subtask_id' => $createdSubtask->id,
             'task_id' => $revision->task_id
         ]);
+
+        return $createdSubtask;
+    }
+
+    /**
+     * Create multiple nested subtasks from approved revision with proper parent_id mapping
+     */
+    private function createMultipleSubtasksFromRevision(TaskRevision $revision, array $subtasksData)
+    {
+        $idMapping = []; // Map temporary IDs to real database IDs
+        
+        // Sort subtasks by level to create parents before children
+        $sortedSubtasks = collect($subtasksData)->sortBy(function($subtask) {
+            return $subtask['level'] ?? 0;
+        });
+
+        foreach ($sortedSubtasks as $tempId => $subtaskData) {
+            // Resolve parent_id if it exists
+            $parentId = null;
+            if (!empty($subtaskData['parent_id'])) {
+                // If parent_id exists in mapping, use the real ID
+                $parentId = $idMapping[$subtaskData['parent_id']] ?? $subtaskData['parent_id'];
+                
+                // Verify parent exists
+                if (!SubTask::find($parentId)) {
+                    $parentId = null;
+                }
+            }
+
+            $createdSubtask = SubTask::create([
+                'task_id' => $revision->task_id,
+                'title' => $subtaskData['title'],
+                'description' => $subtaskData['description'] ?? null,
+                'parent_id' => $parentId,
+                'is_group' => $subtaskData['is_group'] ?? false,
+                'start_date' => Carbon::parse($subtaskData['start_date']),
+                'end_date' => Carbon::parse($subtaskData['end_date']),
+                'start_time' => $subtaskData['start_time'] ? Carbon::createFromFormat('H:i', $subtaskData['start_time']) : null,
+                'end_time' => $subtaskData['end_time'] ? Carbon::createFromFormat('H:i', $subtaskData['end_time']) : null,
+                'completed' => false,
+            ]);
+
+            // Store mapping for future children
+            $idMapping[$tempId] = $createdSubtask->id;
+
+            Log::info('Nested subtask created from revision', [
+                'revision_id' => $revision->id,
+                'temp_id' => $tempId,
+                'real_id' => $createdSubtask->id,
+                'parent_id' => $parentId,
+                'task_id' => $revision->task_id
+            ]);
+        }
+
+        return $idMapping;
     }
 
     /**
