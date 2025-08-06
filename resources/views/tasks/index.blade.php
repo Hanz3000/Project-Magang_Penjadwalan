@@ -279,6 +279,15 @@
                                                         <div class="collaboration-indicators flex gap-1" data-task-id="{{ $task['id'] }}">
                                                             <!-- Will be populated by JavaScript -->
                                                         </div>
+
+                                                        <!-- Pending revisions indicator for collaborators -->
+                                                        @if(!$task['is_owner'])
+                                                            <div class="pending-revision-indicator hidden" id="pending-revision-{{ $task['id'] }}">
+                                                                <span class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full border border-orange-300 animate-pulse">
+                                                                    ⏳ Menunggu Review
+                                                                </span>
+                                                            </div>
+                                                        @endif
                                                     </div>
                                                     
                                                     <div class="flex items-center gap-3 text-sm text-gray-500 mt-2 flex-wrap">
@@ -661,6 +670,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadCollaborationIndicators();
                 loadPendingRevisions();
                 checkInviteNotifications();
+                checkPendingRevisionsForCollaborators();
                 
                 console.log('Calendar application initialized successfully');
             } catch (error) {
@@ -675,6 +685,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     initializeApp();
 });
+
+// Check pending revisions for collaborators
+async function checkPendingRevisionsForCollaborators() {
+    try {
+        const response = await fetch('/collaboration/pending-revisions');
+        const data = await response.json();
+        
+        if (data.success && data.revisions.length > 0) {
+            // Show indicators for tasks that have pending revisions
+            data.revisions.forEach(revision => {
+                const indicator = document.getElementById(`pending-revision-${revision.task.id}`);
+                if (indicator) {
+                    indicator.classList.remove('hidden');
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error checking pending revisions for collaborators:', error);
+    }
+}
 
 // Collaboration Functions
 async function loadCollaborationIndicators() {
@@ -1221,8 +1251,99 @@ function renderRevisionModal(revisions) {
                     }).join('')}
                 </div>
             `;
+        } else if (revision.revision_type === 'update_task_with_subtasks') {
+            // Enhanced display for task + subtask changes
+            changesHtml = '<div class="space-y-4">';
+            
+            // Task changes
+            const taskOriginal = revision.original_data.task;
+            const taskProposed = revision.proposed_data.task;
+            
+            let taskChanges = '';
+            Object.keys(taskProposed).forEach(key => {
+                if (taskOriginal[key] !== taskProposed[key]) {
+                    taskChanges += `
+                        <div class="flex gap-4">
+                            <div class="flex-1">
+                                <span class="font-medium capitalize">${key.replace('_', ' ')}:</span>
+                                <div class="text-red-600 line-through">${taskOriginal[key] || 'Tidak ada'}</div>
+                                <div class="text-green-600 font-medium">${taskProposed[key] || 'Tidak ada'}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (taskChanges) {
+                changesHtml += `
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <h5 class="font-medium text-blue-800 mb-2">🏷️ Perubahan Task:</h5>
+                        <div class="text-sm space-y-2">${taskChanges}</div>
+                    </div>
+                `;
+            }
+            
+            // Subtask changes
+            const subtasks = revision.proposed_data.subtasks || {};
+            const deletedSubtasks = revision.proposed_data.deleted_subtasks || {};
+            
+            if (Object.keys(subtasks).length > 0) {
+                let subtaskChanges = '';
+                Object.values(subtasks).forEach(subtask => {
+                    if (subtask.is_new) {
+                        subtaskChanges += `
+                            <div class="bg-green-50 p-2 rounded border border-green-200">
+                                <span class="text-green-800 font-medium">➕ Subtask Baru: ${subtask.title}</span>
+                                <div class="text-xs text-green-600 mt-1">
+                                    📅 ${subtask.start_date} → ${subtask.end_date}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        subtaskChanges += `
+                            <div class="bg-blue-50 p-2 rounded border border-blue-200">
+                                <span class="text-blue-800 font-medium">✏️ Edit Subtask: ${subtask.title}</span>
+                                <div class="text-xs text-blue-600 mt-1">
+                                    📅 ${subtask.start_date} → ${subtask.end_date}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+                
+                if (subtaskChanges) {
+                    changesHtml += `
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                            <h5 class="font-medium text-gray-800 mb-2">📝 Perubahan Subtasks:</h5>
+                            <div class="space-y-2">${subtaskChanges}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            if (Object.keys(deletedSubtasks).length > 0) {
+                let deletedChanges = '';
+                Object.values(deletedSubtasks).forEach(subtask => {
+                    deletedChanges += `
+                        <div class="bg-red-50 p-2 rounded border border-red-200">
+                            <span class="text-red-800 font-medium">🗑️ Hapus Subtask: ${subtask.title}</span>
+                        </div>
+                    `;
+                });
+                
+                if (deletedChanges) {
+                    changesHtml += `
+                        <div class="bg-red-50 p-3 rounded-lg border border-red-200">
+                            <h5 class="font-medium text-red-800 mb-2">🗑️ Subtasks yang Dihapus:</h5>
+                            <div class="space-y-2">${deletedChanges}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            changesHtml += '</div>';
         } else {
-            // Task updates
+            // Legacy task updates
             changesHtml = `
                 <div class="space-y-2 text-sm">
                     ${Object.keys(revision.proposed_data).map(key => {
@@ -1267,6 +1388,7 @@ function renderRevisionModal(revisions) {
                     <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
                         ${revision.revision_type === 'create_subtask' ? '➕ Tambah Subtask' : 
                           revision.revision_type === 'update_subtask' ? '✏️ Edit Subtask' :
+                          revision.revision_type === 'update_task_with_subtasks' ? '🔄 Edit Task & Subtasks' :
                           revision.revision_type === 'update' ? '✏️ Edit Task' : '📝 Perubahan'}
                     </span>
                 </div>
@@ -2820,6 +2942,7 @@ function updateTaskFilter(taskId, newStatus) {
     }
 }
 
+<<<<<<< HEAD
 function openTaskModal(taskId) {
     const task = appState.tasksData.find(t => t.id == taskId);
     if (!task) {
@@ -2990,6 +3113,8 @@ function openTaskModal(taskId) {
     }, 10);
 }
 
+=======
+>>>>>>> 4b215187152e037006f6fe18d4f6cad494749f5a
 function renderModalSubtasks(subtasks, parentId = null, task, level = 0) {
     let html = '';
     
@@ -3304,6 +3429,363 @@ function hideAutoSaveIndicator() {
         max-width: none !important;
         max-height: calc(100vh - 4rem) !important;
     }
+}
+
+/* Enhanced button hover states */
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Task Filter Styles */
+.filter-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+.filter-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filter-btn.active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.task-item {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#filter-empty-state {
+    transition: all 0.3s ease-out;
+}
+
+/* Calendar Styles */
+.gantt-timeline {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#calendar {
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.fc-more-link,
+.fc-daygrid-more-link {
+    display: none !important;
+}
+
+.fc-daygrid-day-bottom {
+    display: none !important;
+}
+
+.fc-daygrid-day-events {
+    margin: 0 !important;
+    padding: 4px 2px !important;
+}
+
+.fc-daygrid-event-harness {
+    margin-bottom: 2px !important;
+    position: relative !important;
+}
+
+.fc-daygrid-event {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.force-show-event {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.fc-daygrid-day {
+    min-height: 120px !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 6px 4px !important;
+    border: 1px solid #e2e8f0 !important;
+    position: relative;
+}
+
+.fc-daygrid-day-frame {
+    min-height: 120px !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: relative;
+}
+
+.timegrid-event-container {
+    transition: all 0.2s ease;
+}
+
+.timegrid-event-container:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 20 !important;
+}
+
+.gantt-compact-bar {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-left: 3px solid #1e40af;
+}
+
+.gantt-compact-content {
+    position: absolute;
+    top: 50%;
+    left: 6px;
+    transform: translateY(-50%);
+    color: white;  
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.gantt-compact-duration {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.9);
+    font-weight: 700;
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+}
+
+.gantt-compact-progress {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    right: 2px;
+    height: 2px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.fc-day-today {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.12)) !important;
+    border: 2px solid rgba(59, 130, 246, 0.3) !important;
+    position: relative;
+}
+
+.fc-day-today::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    z-index: 1;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    margin: 4px;
+    box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
+    z-index: 2;
+    position: relative;
+}
+
+.fc-timegrid-slot {
+    height: 40px !important;
+    border-color: #f1f5f9 !important;
+}
+
+.fc-timegrid-slot-minor {
+    border-color: #f8fafc !important;
+}
+
+.fc-timegrid-axis {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-right: 2px solid #e2e8f0;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.fc-timegrid-event {
+    border-radius: 6px !important;
+    overflow: visible !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-timegrid-event .fc-event-main {
+    padding: 3px 6px !important;
+}
+
+.fc-col-header {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-bottom: 3px solid #e2e8f0;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fc-col-header-cell {
+    padding: 12px 6px;
+    position: relative;
+}
+
+.fc-col-header-cell::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day {
+    height: 50px !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+    padding: 2px !important;
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day-frame {
+    height: 50px !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+}
+
+.fc-multiMonthYear-view .fc-event {
+    font-size: 8px !important;
+    height: 16px !important;
+    line-height: 14px !important;
+    margin: 0px !important;
+    border-radius: 2px !important;
+    border-left-width: 2px !important;
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day-number {
+    font-size: 9px;
+    padding: 2px;
+    font-weight: 600;
+}
+
+.fc-multiMonthYear-view .fc-col-header-cell {
+    padding: 4px 2px;
+    font-size: 9px;
+}
+
+.fc-toolbar {
+    margin-bottom: 2rem;
+    padding: 0 6px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fc-button {
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    font-weight: 600 !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-button:hover {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    border-color: #9ca3af !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.fc-button:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+}
+
+.fc-button-active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    border-color: #1d4ed8 !important;
+    color: white !important;
+    box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4) !important;
+}
+
+.view-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 13px;
+    padding: 10px 18px;
+    font-weight: 600;
+}
+
+.view-btn.active-view,
+.view-btn:hover {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+    color: #3b82f6;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border: 1px solid #3b82f6;
+}
+
+#taskTooltip {
+    z-index: 1000;
+    box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.98);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 380px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#taskTooltip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
 }
 
 /* Enhanced button hover states */

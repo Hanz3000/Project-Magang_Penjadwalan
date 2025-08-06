@@ -1,12 +1,12 @@
 @props(['subtask', 'subtasksByParent', 'level', 'task'])
 
 @php
-    // Initialize defaults
+    // Inisialisasi default
     $defaultDate = now();
-    $task_start_date = isset($task) && $task->start_date ? \Carbon\Carbon::parse($task->start_date) : $defaultDate;
-    $task_end_date = isset($task) && $task->end_date ? \Carbon\Carbon::parse($task->end_date) : $defaultDate->copy()->addDay();
+    $task_start_date = $task->start_date ? \Carbon\Carbon::parse($task->start_date) : $defaultDate;
+    $task_end_date = $task->end_date ? \Carbon\Carbon::parse($task->end_date) : $defaultDate->copy()->addDay();
 
-    // Handle subtask data
+    // Handle data subtask
     if (!$subtask) {
         $subtask_title = old('subtasks.new.title', '');
         $subtask_start_date = $task_start_date;
@@ -21,7 +21,7 @@
         $parentId = $subtask->parent_id ?? null;
     }
 
-    // Determine parent date limits
+    // Tentukan batas tanggal parent
     $parentStartDateForLimits = $task_start_date;
     $parentEndDateForLimits = $task_end_date;
 
@@ -33,7 +33,7 @@
         }
     }
 
-    // Format dates
+    // Format tanggal
     $parentStartDateLimitString = $parentStartDateForLimits->format('Y-m-d');
     $parentEndDateLimitString = $parentEndDateForLimits->format('Y-m-d');
     $subtaskStartDateValueString = $subtask_start_date->format('Y-m-d');
@@ -41,7 +41,7 @@
     $displaySubtaskStart = $subtask_start_date->format('d/m/Y');
     $displaySubtaskEnd = $subtask_end_date->format('d/m/Y');
 
-    // Get children
+    // Ambil anak subtask
     $children = isset($subtasksByParent) && $subtasksByParent instanceof \Illuminate\Support\Collection
         ? $subtasksByParent->get($subtask_id, collect())
         : collect();
@@ -88,34 +88,43 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
+            @if(isset($subtask->id) && is_numeric($subtask->id))
+                <input type="hidden" name="subtasks[{{ $subtask_id }}][id]" value="{{ $subtask->id }}">
+            @endif
             <input type="hidden" name="subtasks[{{ $subtask_id }}][parent_id]" value="{{ $parentId ?? '' }}">
             @if($level < 5)
-            <button type="button" onclick="addSubtask('{{ $subtask_id }}')"
-                class="p-2 text-indigo-600 hover:text-indigo-800 transition-colors" title="Tambah Child">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-            </button>
+                <button type="button"
+                        onclick="addSubtask('{{ $subtask_id }}')"
+                        class="p-2 text-indigo-600 hover:text-indigo-800 transition-colors"
+                        title="Tambah Anak Subtask">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                </button>
             @endif
-            <button type="button" onclick="removeSubtask('{{ $subtask_id }}', {{ $subtask ? 'true' : 'false' }})"
-                class="p-2 text-red-600 hover:text-red-800 transition-colors" title="Hapus">
+            <button type="button"
+                    onclick="removeSubtask('{{ $subtask_id }}', {{ $subtask ? 'true' : 'false' }})"
+                    class="p-2 text-red-600 hover:text-red-800 transition-colors"
+                    title="Hapus Subtask">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 21m5-14v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
             </button>
         </div>
     </div>
 
-    @if($children->count() > 0)
-        @foreach($children as $childSubtask)
-            @if($childSubtask)
-                @include('tasks.partials.subtask-item', [
-                    'subtask' => $childSubtask,
-                    'subtasksByParent' => $subtasksByParent,
-                    'level' => $level + 1,
-                    'task' => $task
-                ])
-            @endif
-        @endforeach
-    @endif
+    <div class="subtask-children mt-2" data-parent="{{ $subtask_id }}">
+        @if($children->isNotEmpty())
+            @foreach($children as $childSubtask)
+                @if($childSubtask)
+                    @include('tasks.partials.subtask-item', [
+                        'subtask' => $childSubtask,
+                        'subtasksByParent' => $subtasksByParent,
+                        'level' => $level + 1,
+                        'task' => $task
+                    ])
+                @endif
+            @endforeach
+        @endif
+    </div>
 </div>

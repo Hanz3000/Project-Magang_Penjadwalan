@@ -55,6 +55,53 @@ class SubTaskController extends Controller
         }
     }
 
+    /**
+     * Store multiple subtasks with nested structure
+     */
+    public function storeMultiple(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'task_id' => 'required|exists:tasks,id',
+                'subtasks' => 'required|array',
+                'subtasks.*.title' => 'required|string|max:255',
+                'subtasks.*.description' => 'nullable|string',
+                'subtasks.*.parent_id' => 'nullable',
+                'subtasks.*.is_group' => 'boolean',
+                'subtasks.*.start_date' => 'required|date',
+                'subtasks.*.end_date' => 'required|date|after_or_equal:subtasks.*.start_date',
+                'subtasks.*.start_time' => 'nullable|date_format:H:i',
+                'subtasks.*.end_time' => 'nullable|date_format:H:i',
+                'subtasks.*.level' => 'nullable|integer',
+            ]);
+
+            $task = Task::findOrFail($validated['task_id']);
+
+            if (!$task->canEdit(Auth::id())) {
+                return response()->json(['success' => false, 'error' => 'Anda tidak memiliki izin untuk menambah subtask'], 403);
+            }
+
+            if ($task->user_id === Auth::id()) {
+                return $this->createMultipleSubtasksDirectly($task, $validated['subtasks']);
+            } else {
+                $collaborator = $task->collaborators()
+                    ->where('user_id', Auth::id())
+                    ->where('status', 'approved')
+                    ->where('can_edit', true)
+                    ->first();
+
+                if (!$collaborator) {
+                    return response()->json(['success' => false, 'error' => 'Anda tidak memiliki izin edit untuk task ini'], 403);
+                }
+
+                return $this->createMultipleSubtasksRevision($task, $validated['subtasks']);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error creating multiple subtasks:', ['error' => $e->getMessage(), 'user_id' => Auth::id(), 'request_data' => $request->all()]);
+            return response()->json(['success' => false, 'error' => 'Gagal menambah subtasks: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function update(Request $request, SubTask $subtask)
     {
         try {
@@ -112,6 +159,50 @@ class SubTaskController extends Controller
         });
     }
 
+    private function createMultipleSubtasksDirectly(Task $task, array $subtasksData)
+    {
+        return DB::transaction(function () use ($task, $subtasksData) {
+            $idMapping = [];
+            $createdSubtasks = [];
+            
+            // Sort by level to create parents before children
+            $sortedSubtasks = collect($subtasksData)->sortBy(function($subtask) {
+                return $subtask['level'] ?? 0;
+            });
+
+            foreach ($sortedSubtasks as $tempId => $subtaskData) {
+                // Resolve parent_id
+                $parentId = null;
+                if (!empty($subtaskData['parent_id'])) {
+                    $parentId = $idMapping[$subtaskData['parent_id']] ?? $subtaskData['parent_id'];
+                }
+
+                $subtask = SubTask::create([
+                    'task_id' => $task->id,
+                    'title' => $subtaskData['title'],
+                    'description' => $subtaskData['description'] ?? null,
+                    'parent_id' => $parentId,
+                    'is_group' => $subtaskData['is_group'] ?? false,
+                    'start_date' => Carbon::parse($subtaskData['start_date']),
+                    'end_date' => Carbon::parse($subtaskData['end_date']),
+                    'start_time' => $subtaskData['start_time'] ? Carbon::createFromFormat('H:i', $subtaskData['start_time']) : null,
+                    'end_time' => $subtaskData['end_time'] ? Carbon::createFromFormat('H:i', $subtaskData['end_time']) : null,
+                    'completed' => false,
+                ]);
+
+                $idMapping[$tempId] = $subtask->id;
+                $createdSubtasks[] = $subtask;
+            }
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Subtasks berhasil ditambahkan', 
+                'subtasks' => $createdSubtasks,
+                'id_mapping' => $idMapping
+            ]);
+        });
+    }
+
     private function createSubtaskRevision(Task $task, array $validated)
     {
         return DB::transaction(function () use ($task, $validated) {
@@ -123,7 +214,46 @@ class SubTaskController extends Controller
                 'proposed_data' => ['action' => 'create_subtask', 'subtask_data' => $validated],
                 'status' => 'pending'
             ]);
-            return response()->json(['success' => true, 'message' => 'Usulan penambahan subtask telah dikirim dan menunggu persetujuan', 'revision_id' => $revision->id]);
+            
+            Log::info('Subtask creation revision created', [
+                'revision_id' => $revision->id,
+                'task_id' => $task->id,
+                'collaborator_id' => Auth::id(),
+                'subtask_data' => $validated
+            ]);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => '✅ Usulan penambahan subtask telah dikirim dan menunggu persetujuan pemilik tugas', 
+                'revision_id' => $revision->id
+            ]);
+        });
+    }
+
+    private function createMultipleSubtasksRevision(Task $task, array $subtasksData)
+    {
+        return DB::transaction(function () use ($task, $subtasksData) {
+            $revision = TaskRevision::create([
+                'task_id' => $task->id,
+                'collaborator_id' => Auth::id(),
+                'revision_type' => 'create_multiple_subtasks',
+                'original_data' => null,
+                'proposed_data' => ['action' => 'create_multiple_subtasks', 'subtasks_data' => $subtasksData],
+                'status' => 'pending'
+            ]);
+            
+            Log::info('Multiple subtasks creation revision created', [
+                'revision_id' => $revision->id,
+                'task_id' => $task->id,
+                'collaborator_id' => Auth::id(),
+                'subtasks_count' => count($subtasksData)
+            ]);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => '✅ Usulan penambahan subtasks telah dikirim dan menunggu persetujuan pemilik tugas', 
+                'revision_id' => $revision->id
+            ]);
         });
     }
 
@@ -136,27 +266,51 @@ class SubTaskController extends Controller
     }
 
     private function updateSubtaskRevision(SubTask $subtask, array $validated)
-{
-    return DB::transaction(function () use ($subtask, $validated) {
-        $originalData = [
-            'title' => $subtask->title,
-            'description' => $subtask->description,
-            'start_date' => $subtask->start_date->format('Y-m-d'),
-            'end_date' => $subtask->end_date->format('Y-m-d'),
-            'start_time' => $subtask->start_time ? $subtask->start_time->format('H:i') : null,
-            'end_time' => $subtask->end_time ? $subtask->end_time->format('H:i') : null,
-        ];
-        $revision = TaskRevision::create([
-            'task_id' => $subtask->task_id,
-            'collaborator_id' => Auth::id(),
-            'revision_type' => 'update_subtask',
-            'original_data' => ['action' => 'update_subtask', 'subtask_id' => $subtask->id, 'subtask_data' => $originalData],
-            'proposed_data' => ['action' => 'update_subtask', 'subtask_id' => $subtask->id, 'subtask_data' => $validated],
-            'status' => 'pending'
-        ]);
-        return response()->json(['success' => true, 'message' => 'Usulan perubahan subtask telah dikirim dan menunggu persetujuan', 'revision_id' => $revision->id]);
-    });
-}
+    {
+        return DB::transaction(function () use ($subtask, $validated) {
+            $originalData = [
+                'title' => $subtask->title,
+                'description' => $subtask->description,
+                'start_date' => $subtask->start_date->format('Y-m-d'),
+                'end_date' => $subtask->end_date->format('Y-m-d'),
+                'start_time' => $subtask->start_time ? $subtask->start_time->format('H:i') : null,
+                'end_time' => $subtask->end_time ? $subtask->end_time->format('H:i') : null,
+            ];
+            
+            $revision = TaskRevision::create([
+                'task_id' => $subtask->task_id,
+                'collaborator_id' => Auth::id(),
+                'revision_type' => 'update_subtask',
+                'original_data' => [
+                    'action' => 'update_subtask', 
+                    'subtask_id' => $subtask->id, 
+                    'subtask_data' => $originalData
+                ],
+                'proposed_data' => [
+                    'action' => 'update_subtask', 
+                    'subtask_id' => $subtask->id, 
+                    'subtask_data' => $validated
+                ],
+                'status' => 'pending'
+            ]);
+            
+            Log::info('Subtask update revision created', [
+                'revision_id' => $revision->id,
+                'subtask_id' => $subtask->id,
+                'task_id' => $subtask->task_id,
+                'collaborator_id' => Auth::id(),
+                'original_data' => $originalData,
+                'proposed_data' => $validated
+            ]);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => '✅ Usulan perubahan subtask telah dikirim dan menunggu persetujuan pemilik tugas', 
+                'revision_id' => $revision->id
+            ]);
+        });
+    }
+
     private function deleteSubtaskRecursively(SubTask $subtask)
     {
         foreach ($subtask->children as $child) {
