@@ -15,15 +15,9 @@ use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
-    /**
-     * Display a listing of tasks.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
         try {
-            // 1. Get tasks: owned by user OR approved collaborations
             $tasksQuery = Task::with([
                 'user',
                 'category',
@@ -36,14 +30,13 @@ class TaskController extends Controller
             ])
             ->where(function ($query) {
                 $query->where('user_id', Auth::id())
-                      ->orWhereHas('collaborators', function ($q) {
-                          $q->where('user_id', Auth::id())->where('status', 'approved');
-                      });
+                        ->orWhereHas('collaborators', function ($q) {
+                            $q->where('user_id', Auth::id())->where('status', 'approved');
+                        });
             })
             ->orderBy('start_date', 'asc')
             ->get();
 
-            // 2. Transform data with proper null checks
             $tasks = $tasksQuery->map(function ($task) {
                 $durationDays = $task->start_date && $task->end_date
                     ? $task->start_date->diffInDays($task->end_date) + 1
@@ -103,15 +96,14 @@ class TaskController extends Controller
                 ];
             });
 
-            // 3. Calendar events
             $calendarEvents = $tasksQuery->map(function ($task) {
                 if (!$task->start_date || !$task->end_date) {
-                    return null; // Skip invalid dates
+                    return null;
                 }
 
                 $isAllDay = $task->is_all_day || !$task->start_time || !$task->end_time;
                 $eventStart = $task->start_date->format('Y-m-d');
-                $eventEnd = $task->end_date->copy()->addDay()->format('Y-m-d'); // FullCalendar uses exclusive end
+                $eventEnd = $task->end_date->copy()->addDay()->format('Y-m-d');
 
                 return [
                     'title' => $task->title,
@@ -128,9 +120,8 @@ class TaskController extends Controller
                     'borderColor' => $task->completed ? '#9CA3AF' : $this->getPriorityColor($task->priority),
                     'textColor' => '#FFFFFF'
                 ];
-            })->filter(); // Remove null events
+            })->filter();
 
-            // 4. Pending revisions
             $pendingRevisions = TaskRevision::with(['task', 'collaborator'])
                 ->whereHas('task', function ($q) {
                     $q->where('user_id', Auth::id());
@@ -139,12 +130,11 @@ class TaskController extends Controller
                 ->where('status', 'pending')
                 ->get();
 
-            // 5. Statistics
             $categories = Category::withCount(['tasks' => function ($query) {
                 $query->where('user_id', Auth::id())
-                      ->orWhereHas('collaborators', function ($q) {
-                          $q->where('user_id', Auth::id())->where('status', 'approved');
-                      });
+                        ->orWhereHas('collaborators', function ($q) {
+                            $q->where('user_id', Auth::id())->where('status', 'approved');
+                        });
             }])->get();
 
             $totalTasks = $tasks->count();
@@ -202,23 +192,12 @@ class TaskController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new task.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         $categories = Category::all();
         return view('tasks.create', compact('categories'));
     }
 
-    /**
-     * Store a newly created task in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -239,7 +218,6 @@ class TaskController extends Controller
             'subtasks.*.end_date' => 'required|date|after_or_equal:subtasks.*.start_date',
         ]);
 
-        // Additional time validation
         if ($request->start_time && $request->end_time) {
             $startDateTime = Carbon::createFromFormat('Y-m-d H:i', $request->start_date . ' ' . $request->start_time);
             $endDateTime = Carbon::createFromFormat('Y-m-d H:i', $request->end_date . ' ' . $request->end_time);
@@ -249,7 +227,6 @@ class TaskController extends Controller
             }
         }
 
-        // Validasi tanggal subtask
         if ($request->has('subtasks')) {
             $taskDummy = new Task($validated);
             $taskDummy->start_date = Carbon::parse($validated['start_date']);
@@ -274,9 +251,8 @@ class TaskController extends Controller
                 'completed' => false,
             ]);
 
-            // Simpan semua subtasks
             if ($request->has('subtasks')) {
-                $map = []; // untuk menyimpan id sementara dari front-end ke ID DB
+                $map = [];
                 foreach ($validated['subtasks'] as $tempId => $subtask) {
                     $newSub = new SubTask();
                     $newSub->task_id = $task->id;
@@ -297,15 +273,8 @@ class TaskController extends Controller
         });
     }
 
-    /**
-     * Show the form for editing the specified task.
-     *
-     * @param  \App\Models\Task  $task
-     * @return \Illuminate\Http\Response
-     */
     public function edit(Task $task)
     {
-        // Check if user can edit this task
         if (!$task->canView(Auth::id())) {
             abort(403, 'Anda tidak memiliki akses ke tugas ini.');
         }
@@ -314,16 +283,8 @@ class TaskController extends Controller
         return view('tasks.edit', compact('task', 'categories'));
     }
 
-    /**
-     * Update the specified task in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Task  $task
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Task $task)
     {
-        // Check if user can edit this task
         if (!$task->canView(Auth::id())) {
             abort(403, 'Anda tidak memiliki akses ke tugas ini.');
         }
@@ -348,18 +309,20 @@ class TaskController extends Controller
             'deleted_subtasks' => 'nullable|string',
         ]);
 
-        // Validasi tanggal subtask
+        // Validasi tanggal subtask menggunakan tanggal tugas utama yang baru
         if ($request->has('subtasks')) {
-            $this->validateSubtaskDatesRecursive($validated['subtasks'], $task, null);
+            $this->validateSubtaskDatesRecursive(
+                $validated['subtasks'],
+                $task,
+                null,
+                $validated['start_date'], // Gunakan tanggal mulai tugas utama yang baru
+                $validated['end_date']    // Gunakan tanggal selesai tugas utama yang baru
+            );
         }
 
-        // Cek apakah user adalah pemilik tugas
         if ($task->user_id === Auth::id()) {
-            // ✅ Pemilik: update langsung
             return $this->updateTaskDirectly($request, $task, $validated);
-        }
-        else {
-            // 🟡 Cek apakah user adalah kolaborator yang diizinkan edit
+        } else {
             $collaborator = $task->collaborators()
                 ->where('user_id', Auth::id())
                 ->where('status', 'approved')
@@ -369,7 +332,6 @@ class TaskController extends Controller
                 return back()->withErrors('Anda tidak memiliki izin untuk mengedit tugas ini.')->withInput();
             }
 
-            // 🟡 Kolaborator: kirim revisi untuk review
             return $this->submitRevisionForReview($request, $task, $validated);
         }
     }
@@ -377,17 +339,21 @@ class TaskController extends Controller
     private function updateTaskDirectly(Request $request, Task $task, array $validated)
     {
         return DB::transaction(function () use ($request, $task, $validated) {
+            // Simpan tanggal tugas utama yang baru
+            $newStartDate = Carbon::parse($validated['start_date']);
+            $newEndDate = Carbon::parse($validated['end_date']);
+
             // Update tugas utama
             $task->update([
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
                 'category_id' => $validated['category_id'],
                 'priority' => $validated['priority'],
-                'start_date' => Carbon::parse($validated['start_date']),
-                'end_date' => Carbon::parse($validated['end_date']),
+                'start_date' => $newStartDate,
+                'end_date' => $newEndDate,
                 'start_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['start_time'] ?? null),
                 'end_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['end_time'] ?? null),
-                'is_all_day' => isset($validated['full_day']) ? $validated['full_day'] : false, // Default to false if not provided
+                'is_all_day' => isset($validated['full_day']) ? $validated['full_day'] : false,
             ]);
 
             // Hapus subtask yang dihapus
@@ -401,9 +367,24 @@ class TaskController extends Controller
                 $subtasks = $validated['subtasks'];
                 $existingIds = $task->subTasks->pluck('id')->toArray();
                 $processedIds = [];
-                $map = []; // Mapping ID sementara ke ID database
+                $map = [];
 
                 foreach ($subtasks as $tempId => $subtaskData) {
+                    // Validasi dan sesuaikan tanggal subtask
+                    $subtaskStartDate = Carbon::parse($subtaskData['start_date']);
+                    $subtaskEndDate = Carbon::parse($subtaskData['end_date']);
+
+                    // Sesuaikan tanggal subtask jika di luar rentang
+                    if ($subtaskStartDate->lt($newStartDate)) {
+                        $subtaskData['start_date'] = $newStartDate->format('Y-m-d');
+                    }
+                    if ($subtaskEndDate->gt($newEndDate)) {
+                        $subtaskData['end_date'] = $newEndDate->format('Y-m-d');
+                    }
+                    if ($subtaskEndDate->lt($subtaskStartDate)) {
+                        $subtaskData['end_date'] = $subtaskData['start_date'];
+                    }
+
                     if (isset($subtaskData['id']) && in_array($subtaskData['id'], $existingIds)) {
                         // Update subtask yang sudah ada
                         $subtask = SubTask::find($subtaskData['id']);
@@ -435,15 +416,41 @@ class TaskController extends Controller
                 if (!empty($toDelete)) {
                     $task->subTasks()->whereIn('id', $toDelete)->delete();
                 }
+            } else {
+                // Jika tidak ada subtask dalam request, sesuaikan semua subtask yang ada
+                foreach ($task->subTasks as $subtask) {
+                    $subtaskStartDate = $subtask->start_date;
+                    $subtaskEndDate = $subtask->end_date;
+
+                    $updated = false;
+                    if ($subtaskStartDate->lt($newStartDate)) {
+                        $subtask->start_date = $newStartDate;
+                        $updated = true;
+                    }
+                    if ($subtaskEndDate->gt($newEndDate)) {
+                        $subtask->end_date = $newEndDate;
+                        $updated = true;
+                    }
+                    if ($subtask->end_date->lt($subtask->start_date)) {
+                        $subtask->end_date = $subtask->start_date;
+                        $updated = true;
+                    }
+                    if ($updated) {
+                        $subtask->save();
+                    }
+                }
             }
 
-            return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui!');
+            return redirect()->route('tasks.index')->with('success', 'Tugas berhasil diperbarui! Tanggal subtask telah disesuaikan sesuai rentang tugas utama.');
         });
     }
 
     private function submitRevisionForReview(Request $request, Task $task, array $validated)
     {
         return DB::transaction(function () use ($request, $task, $validated) {
+            $newStartDate = Carbon::parse($validated['start_date']);
+            $newEndDate = Carbon::parse($validated['end_date']);
+
             // Data asli task
             $originalTaskData = [
                 'title' => $task->title,
@@ -467,7 +474,7 @@ class TaskController extends Controller
                 'end_date' => $validated['end_date'],
                 'start_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['start_time'] ?? null),
                 'end_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['end_time'] ?? null),
-                'is_all_day' => isset($validated['full_day']) ? $validated['full_day'] : false, // Default to false if not provided
+                'is_all_day' => isset($validated['full_day']) ? $validated['full_day'] : false,
             ];
 
             // Data asli subtasks
@@ -475,7 +482,6 @@ class TaskController extends Controller
             $proposedSubtasks = [];
             $deletedSubtasks = [];
 
-            // Get current subtasks
             foreach ($task->subTasks as $subtask) {
                 $originalSubtasks[$subtask->id] = [
                     'id' => $subtask->id,
@@ -487,19 +493,23 @@ class TaskController extends Controller
                 ];
             }
 
-            // Process deleted subtasks
-            if ($request->has('deleted_subtasks') && $request->deleted_subtasks) {
-                $deletedIds = array_filter(explode(',', $request->deleted_subtasks));
-                foreach ($deletedIds as $deletedId) {
-                    if (isset($originalSubtasks[$deletedId])) {
-                        $deletedSubtasks[$deletedId] = $originalSubtasks[$deletedId];
-                    }
-                }
-            }
-
-            // Process updated/new subtasks
+            // Proses subtask yang diusulkan
             if ($request->has('subtasks')) {
                 foreach ($validated['subtasks'] as $tempId => $subtaskData) {
+                    $subtaskStartDate = Carbon::parse($subtaskData['start_date']);
+                    $subtaskEndDate = Carbon::parse($subtaskData['end_date']);
+
+                    // Sesuaikan tanggal subtask jika di luar rentang tugas utama
+                    if ($subtaskStartDate->lt($newStartDate)) {
+                        $subtaskData['start_date'] = $newStartDate->format('Y-m-d');
+                    }
+                    if ($subtaskEndDate->gt($newEndDate)) {
+                        $subtaskData['end_date'] = $newEndDate->format('Y-m-d');
+                    }
+                    if ($subtaskEndDate->lt($subtaskStartDate)) {
+                        $subtaskData['end_date'] = $subtaskData['start_date'];
+                    }
+
                     $proposedSubtasks[$tempId] = [
                         'id' => $subtaskData['id'] ?? null,
                         'title' => $subtaskData['title'],
@@ -513,7 +523,35 @@ class TaskController extends Controller
                 }
             }
 
-            // Combine all data
+            // Proses subtask yang dihapus
+            if ($request->has('deleted_subtasks') && $request->deleted_subtasks) {
+                $deletedIds = array_filter(explode(',', $request->deleted_subtasks));
+                foreach ($deletedIds as $deletedId) {
+                    if (isset($originalSubtasks[$deletedId])) {
+                        $deletedSubtasks[$deletedId] = $originalSubtasks[$deletedId];
+                    }
+                }
+            }
+
+            // Jika tidak ada subtask dalam request, sesuaikan tanggal subtask yang ada
+            if (!$request->has('subtasks')) {
+                foreach ($originalSubtasks as $subtaskId => $subtaskData) {
+                    $subtaskStartDate = Carbon::parse($subtaskData['start_date']);
+                    $subtaskEndDate = Carbon::parse($subtaskData['end_date']);
+
+                    if ($subtaskStartDate->lt($newStartDate)) {
+                        $subtaskData['start_date'] = $newStartDate->format('Y-m-d');
+                    }
+                    if ($subtaskEndDate->gt($newEndDate)) {
+                        $subtaskData['end_date'] = $newEndDate->format('Y-m-d');
+                    }
+                    if (Carbon::parse($subtaskData['end_date'])->lt(Carbon::parse($subtaskData['start_date']))) {
+                        $subtaskData['end_date'] = $subtaskData['start_date'];
+                    }
+                    $originalSubtasks[$subtaskId] = $subtaskData;
+                }
+            }
+
             $originalData = [
                 'task' => $originalTaskData,
                 'subtasks' => $originalSubtasks,
@@ -534,7 +572,6 @@ class TaskController extends Controller
                 'validated_data' => $validated
             ]);
 
-            // Simpan revisi
             $revision = TaskRevision::create([
                 'task_id' => $task->id,
                 'collaborator_id' => Auth::id(),
@@ -544,20 +581,13 @@ class TaskController extends Controller
                 'status' => 'pending'
             ]);
 
-            return redirect()->route('tasks.index')->with('success', 'Perubahan Anda telah diajukan dan menunggu persetujuan pemilik tugas.');
+            return redirect()->route('tasks.index')->with('success', 'Perubahan Anda telah diajukan dan menunggu persetujuan pemilik tugas. Tanggal subtask telah disesuaikan sesuai rentang tugas utama.');
         });
     }
 
-    /**
-     * Remove the specified task from storage.
-     *
-     * @param  \App\Models\Task  $task
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Task $task)
     {
         try {
-            // Check if user can delete this task
             if (!$task->canEdit(Auth::id())) {
                 return redirect()->route('tasks.index')
                     ->with('error', 'Anda tidak memiliki izin untuk menghapus tugas ini.');
@@ -566,8 +596,8 @@ class TaskController extends Controller
             DB::beginTransaction();
 
             $task->subTasks()->delete();
-            $task->collaborators()->delete(); // Remove collaborators
-            $task->revisions()->delete(); // Remove revisions
+            $task->collaborators()->delete();
+            $task->revisions()->delete();
             $task->delete();
 
             DB::commit();
@@ -582,71 +612,47 @@ class TaskController extends Controller
         }
     }
 
-    /**
-     * Validate subtask dates recursively against parent task or subtask.
-     *
-     * @param  array  $subtasks
-     * @param  \App\Models\Task  $task
-     * @param  int|null  $parentId
-     * @return void
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    private function validateSubtaskDatesRecursive($subtasks, $task, $parentId = null)
+    private function validateSubtaskDatesRecursive($subtasks, $task, $parentSubtask = null, $mainTaskStartDate = null, $mainTaskEndDate = null)
     {
-        foreach ($subtasks as $tempId => $subtask) {
-            // Determine parent dates
-            $parentStart = $parentId
-                ? ($task->subTasks->where('id', $parentId)->first()->start_date ?? $task->start_date)
-                : $task->start_date;
-            $parentEnd = $parentId
-                ? ($task->subTasks->where('id', $parentId)->first()->end_date ?? $task->end_date)
-                : $task->end_date;
+        foreach ($subtasks as $tempId => $subtaskData) {
+            $subtaskStartDate = Carbon::parse($subtaskData['start_date']);
+            $subtaskEndDate = Carbon::parse($subtaskData['end_date']);
+            $parentStartDate = $parentSubtask ? Carbon::parse($parentSubtask->start_date) : ($mainTaskStartDate ? Carbon::parse($mainTaskStartDate) : Carbon::parse($task->start_date));
+            $parentEndDate = $parentSubtask ? Carbon::parse($parentSubtask->end_date) : ($mainTaskEndDate ? Carbon::parse($mainTaskEndDate) : Carbon::parse($task->end_date));
 
-            $parentStart = Carbon::parse($parentStart);
-            $parentEnd = Carbon::parse($parentEnd);
-
-            // Validate subtask dates
-            if (!empty($subtask['start_date'])) {
-                $childStart = Carbon::parse($subtask['start_date']);
-                if ($childStart->lt($parentStart)) {
-                    throw ValidationException::withMessages([
-                        "subtasks.{$tempId}.start_date" => "Tanggal mulai subtask harus pada atau setelah tanggal mulai parent ({$parentStart->format('d/m/Y')}).",
-                    ]);
-                }
+            if ($subtaskStartDate->lt($parentStartDate)) {
+                throw ValidationException::withMessages([
+                    "subtasks.$tempId.start_date" => "Tanggal mulai subtask '{$subtaskData['title']}' harus pada atau setelah tanggal mulai parent ({$parentStartDate->format('d/m/Y')}).",
+                ]);
             }
 
-            if (!empty($subtask['end_date'])) {
-                $childEnd = Carbon::parse($subtask['end_date']);
-                if ($childEnd->gt($parentEnd)) {
-                    throw ValidationException::withMessages([
-                        "subtasks.{$tempId}.end_date" => "Tanggal selesai subtask harus pada atau sebelum tanggal selesai parent ({$parentEnd->format('d/m/Y')}).",
-                    ]);
-                }
+            if ($subtaskEndDate->gt($parentEndDate)) {
+                throw ValidationException::withMessages([
+                    "subtasks.$tempId.end_date" => "Tanggal selesai subtask '{$subtaskData['title']}' harus pada atau sebelum tanggal selesai parent ({$parentEndDate->format('d/m/Y')}).",
+                ]);
             }
 
-            if (!empty($subtask['start_date']) && !empty($subtask['end_date'])) {
-                $childStart = Carbon::parse($subtask['start_date']);
-                $childEnd = Carbon::parse($subtask['end_date']);
-                if ($childEnd->lt($childStart)) {
-                    throw ValidationException::withMessages([
-                        "subtasks.{$tempId}.end_date" => "Tanggal selesai subtask harus pada atau setelah tanggal mulai subtask.",
-                    ]);
-                }
+            if ($subtaskEndDate->lt($subtaskStartDate)) {
+                throw ValidationException::withMessages([
+                    "subtasks.$tempId.end_date" => "Tanggal selesai subtask '{$subtaskData['title']}' tidak boleh sebelum tanggal mulai subtask.",
+                ]);
             }
 
-            // Recursively validate child subtasks
-            if (isset($subtask['subtasks'])) {
-                $this->validateSubtaskDatesRecursive($subtask['subtasks'], $task, $subtask['id'] ?? $tempId);
+            if (isset($subtaskData['subtasks'])) {
+                $subtask = isset($subtaskData['id']) && $subtaskData['id'] ? SubTask::find($subtaskData['id']) : null;
+                if (!$subtask) {
+                    $subtask = new SubTask([
+                        'start_date' => $subtaskStartDate,
+                        'end_date' => $subtaskEndDate,
+                    ]);
+                }
+                $this->validateSubtaskDatesRecursive($subtaskData['subtasks'], $task, $subtask, $mainTaskStartDate, $mainTaskEndDate);
             }
         }
     }
 
-    /**
-     * Toggle task completion status and all its subtasks
-     */
     public function toggle(Request $request, Task $task)
     {
-        // Check if user can edit this task
         if (!$task->canEdit(Auth::id())) {
             return response()->json([
                 'success' => false,
@@ -660,16 +666,12 @@ class TaskController extends Controller
 
         $isCompleted = $request->completed;
 
-        // Use a transaction to ensure all updates are atomic
         return DB::transaction(function () use ($task, $isCompleted) {
-            // Update the main task's completion status
             $task->completed = $isCompleted;
             $task->save();
 
-            // Update all subtasks for this task to match the main task status
             $task->subTasks()->update(['completed' => $isCompleted]);
 
-            // Get leaf subtasks for progress calculation
             $leafSubTasks = $task->subTasks->filter(function ($st) use ($task) {
                 return $task->subTasks->where('parent_id', $st->id)->count() == 0;
             });
@@ -677,15 +679,12 @@ class TaskController extends Controller
             $subtaskCompleted = $isCompleted ? $leafSubTasks->count() : 0;
             $subtaskTotal = $leafSubTasks->count();
 
-            // Calculate progress percentage
             $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : ($isCompleted ? 100 : 0);
 
-            // Calculate global summary stats
             $totalTasks = Task::count();
             $completedTasks = Task::where('completed', true)->count();
             $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
 
-            // Return response with all necessary data
             return response()->json([
                 'success' => true,
                 'task' => [
@@ -702,14 +701,10 @@ class TaskController extends Controller
         });
     }
 
-    /**
-     * Toggle all subtasks for a task at once (alternative endpoint)
-     */
     public function toggleAll(Request $request, $taskId)
     {
         $task = Task::findOrFail($taskId);
 
-        // Check if user can edit this task
         if (!$task->canEdit(Auth::id())) {
             return response()->json([
                 'success' => false,
@@ -723,16 +718,12 @@ class TaskController extends Controller
 
         $isCompleted = $request->completed;
 
-        // Use a transaction to ensure all updates are atomic
         return DB::transaction(function () use ($task, $isCompleted) {
-            // Update all subtasks for this task
             $task->subTasks()->update(['completed' => $isCompleted]);
 
-            // Update the task's completion status
             $task->completed = $isCompleted;
             $task->save();
 
-            // Get leaf subtasks for progress calculation
             $leafSubTasks = $task->subTasks->filter(function ($st) use ($task) {
                 return $task->subTasks->where('parent_id', $st->id)->count() == 0;
             });
@@ -740,15 +731,12 @@ class TaskController extends Controller
             $subtaskCompleted = $isCompleted ? $leafSubTasks->count() : 0;
             $subtaskTotal = $leafSubTasks->count();
 
-            // Calculate progress percentage
             $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : 0;
 
-            // Calculate global summary stats
             $totalTasks = Task::count();
             $completedTasks = Task::where('completed', true)->count();
             $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
 
-            // Return response with all necessary data
             return response()->json([
                 'success' => true,
                 'task' => [
@@ -765,12 +753,8 @@ class TaskController extends Controller
         });
     }
 
-    /**
-     * Toggle subtask completion status
-     */
     public function toggleSubtask(Request $request, SubTask $subtask)
     {
-        // Check if user can edit the parent task
         if (!$subtask->task->canEdit(Auth::id())) {
             return response()->json([
                 'success' => false,
@@ -785,14 +769,11 @@ class TaskController extends Controller
         $isCompleted = $request->completed;
 
         return DB::transaction(function () use ($subtask, $isCompleted) {
-            // Update the subtask
             $subtask->completed = $isCompleted;
             $subtask->save();
 
-            // Get the parent task
             $task = $subtask->task;
 
-            // Check if all leaf subtasks are completed
             $leafSubTasks = $task->subTasks->filter(function ($st) use ($task) {
                 return $task->subTasks->where('parent_id', $st->id)->count() == 0;
             });
@@ -800,14 +781,11 @@ class TaskController extends Controller
             $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
             $subtaskTotal = $leafSubTasks->count();
 
-            // Update task completion status if all leaf subtasks are completed
             $task->completed = ($subtaskTotal > 0 && $subtaskCompleted === $subtaskTotal);
             $task->save();
 
-            // Calculate progress percentage
             $progressPercentage = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : ($task->completed ? 100 : 0);
 
-            // Calculate global summary stats
             $totalTasks = Task::count();
             $completedTasks = Task::where('completed', true)->count();
             $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
