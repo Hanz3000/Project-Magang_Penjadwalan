@@ -2942,7 +2942,6 @@ function updateTaskFilter(taskId, newStatus) {
     }
 }
 
-<<<<<<< HEAD
 function openTaskModal(taskId) {
     const task = appState.tasksData.find(t => t.id == taskId);
     if (!task) {
@@ -3113,8 +3112,6 @@ function openTaskModal(taskId) {
     }, 10);
 }
 
-=======
->>>>>>> 4b215187152e037006f6fe18d4f6cad494749f5a
 function renderModalSubtasks(subtasks, parentId = null, task, level = 0) {
     let html = '';
     
