@@ -55,7 +55,7 @@ class TaskController extends Controller
 
                 $completedCount = $leafSubTasks->where('completed', true)->count();
                 $totalCount = $leafSubTasks->count();
-                $calendarProgress = $totalCount > 0 
+                $calendarProgress = $totalCount > 0
                     ? round(($completedCount / $totalCount) * 100)
                     : ($task->completed ? 100 : 0);
 
@@ -357,7 +357,7 @@ class TaskController extends Controller
         if ($task->user_id === Auth::id()) {
             // ✅ Pemilik: update langsung
             return $this->updateTaskDirectly($request, $task, $validated);
-        } 
+        }
         else {
             // 🟡 Cek apakah user adalah kolaborator yang diizinkan edit
             $collaborator = $task->collaborators()
@@ -385,9 +385,9 @@ class TaskController extends Controller
                 'priority' => $validated['priority'],
                 'start_date' => Carbon::parse($validated['start_date']),
                 'end_date' => Carbon::parse($validated['end_date']),
-                'start_time' => $validated['full_day'] ? null : ($validated['start_time'] ?? null),
-                'end_time' => $validated['full_day'] ? null : ($validated['end_time'] ?? null),
-                'is_all_day' => $validated['full_day'] ?? false,
+                'start_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['start_time'] ?? null),
+                'end_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['end_time'] ?? null),
+                'is_all_day' => isset($validated['full_day']) ? $validated['full_day'] : false, // Default to false if not provided
             ]);
 
             // Hapus subtask yang dihapus
@@ -467,7 +467,7 @@ class TaskController extends Controller
                 'end_date' => $validated['end_date'],
                 'start_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['start_time'] ?? null),
                 'end_time' => isset($validated['full_day']) && $validated['full_day'] ? null : ($validated['end_time'] ?? null),
-                'is_all_day' => isset($validated['full_day']) && $validated['full_day'] ?? false,
+                'is_all_day' => isset($validated['full_day']) ? $validated['full_day'] : false, // Default to false if not provided
             ];
 
             // Data asli subtasks
@@ -708,7 +708,7 @@ class TaskController extends Controller
     public function toggleAll(Request $request, $taskId)
     {
         $task = Task::findOrFail($taskId);
-        
+
         // Check if user can edit this task
         if (!$task->canEdit(Auth::id())) {
             return response()->json([
