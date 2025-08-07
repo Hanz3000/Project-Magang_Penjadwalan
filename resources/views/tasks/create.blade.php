@@ -1023,128 +1023,148 @@
                         });
                 }
 
-                function addSubtask(parentId) {
-                    const subtasksContainer = document.querySelector('.subtasks-scroll-container');
-                    const noSubtasksMessage = document.getElementById('no-subtasks');
+        function addSubtask(parentId) {
+            const subtasksContainer = document.querySelector('.subtasks-scroll-container');
+            const noSubtasksMessage = document.getElementById('no-subtasks');
 
-                    if (noSubtasksMessage) noSubtasksMessage.style.display = 'none';
+            if (noSubtasksMessage) noSubtasksMessage.style.display = 'none';
 
-                    const subtaskId = 'subtask-' + Date.now();
-                    let level = 0;
+            const subtaskId = 'subtask-' + Date.now();
+            let level = 0;
 
-                    if (parentId) {
-                        const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
-                        if (parentItem) {
-                            level = parseInt(parentItem.dataset.level || 0) + 1;
-                            if (level >= 6) {
-                                showAlert('Maksimal level subtask adalah 6', 'warning');
-                                return;
-                            }
-                        }
+            if (parentId) {
+                const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
+                if (parentItem) {
+                    level = parseInt(parentItem.dataset.level || 0) + 1;
+                    if (level >= 6) {
+                        showAlert('Maksimal level subtask adalah 6', 'warning');
+                        return;
                     }
+                }
+            }
 
-                    const {
-                        parentStartDate,
-                        parentEndDate
-                    } = getParentDates(parentId);
-                    const displayParentStart = formatDateDisplay(parentStartDate);
-                    const displayParentEnd = formatDateDisplay(parentEndDate);
+            const { parentStartDate, parentEndDate } = getParentDates(parentId);
+            const displayParentStart = formatDateDisplay(parentStartDate);
+            const displayParentEnd = formatDateDisplay(parentEndDate);
 
-                    const subtaskElement = document.createElement('div');
-                    subtaskElement.className =
-                        `subtask-item bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm relative transition-all duration-200 hover:shadow-md`;
-                    subtaskElement.dataset.id = subtaskId;
-                    subtaskElement.dataset.level = level;
-                    subtaskElement.style.marginLeft = `${level * 16}px`;
+            const subtaskElement = document.createElement('div');
+            subtaskElement.className =
+                `subtask-item bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm relative transition-all duration-200 hover:shadow-md`;
+            subtaskElement.dataset.id = subtaskId;
+            subtaskElement.dataset.level = level;
+            subtaskElement.style.marginLeft = `${level * 16}px`;
 
-                    if (level > 0) {
-                        subtaskElement.style.borderLeft = '2px solid #6366F1';
-                        subtaskElement.style.paddingLeft = '14px';
-                    }
+            if (level > 0) {
+                subtaskElement.style.borderLeft = '2px solid #6366F1';
+                subtaskElement.style.paddingLeft = '14px';
+            }
 
-                    subtaskElement.innerHTML = `
-                        <div class="flex flex-col md:flex-row md:items-center gap-4">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                    <input type="text" name="subtasks[${subtaskId}][title]" placeholder="Judul subtask" required
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                                    <div>
-                                        <label class="block text-xs text-gray-500 mb-1">Tanggal Mulai</label>
-                                        <div class="relative">
-                                            <input type="date" name="subtasks[${subtaskId}][start_date]"
-                                                min="${parentStartDate}" max="${parentEndDate}"
-                                                value="${parentStartDate}"
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent start-date-input">
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs text-gray-500 mb-1">Tanggal Selesai</label>
-                                        <div class="relative">
-                                            <input type="date" name="subtasks[${subtaskId}][end_date]"
-                                                min="${parentStartDate}" max="${parentEndDate}"
-                                                value="${parentEndDate}"
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent end-date-input">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="subtask-date mt-2 flex items-center text-xs text-gray-500">
-                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <span>${displayParentStart} - ${displayParentEnd}</span>
+            subtaskElement.innerHTML = `
+                <div class="flex flex-col md:flex-row md:items-center gap-4">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <input type="text" name="subtasks[${subtaskId}][title]" placeholder="Judul subtask" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Tanggal Mulai</label>
+                                <div class="relative">
+                                    <input type="date" name="subtasks[${subtaskId}][start_date]"
+                                        min="${parentStartDate}" max="${parentEndDate}"
+                                        value="${parentStartDate}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent start-date-input">
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <input type="hidden" name="subtasks[${subtaskId}][parent_id]" value="${parentId || ''}">
-                                <button type="button" onclick="addSubtask('${subtaskId}')"
-                                    class="p-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 rounded-full hover:bg-indigo-50" title="Tambah Child">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                </button>
-                                <button type="button" onclick="removeSubtask('${subtaskId}', false)"
-                                    class="p-2 text-red-600 hover:text-red-800 transition-colors duration-200 rounded-full hover:bg-red-50" title="Hapus">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                </button>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Tanggal Selesai</label>
+                                <div class="relative">
+                                    <input type="date" name="subtasks[${subtaskId}][end_date]"
+                                        min="${parentStartDate}" max="${parentEndDate}"
+                                        value="${parentEndDate}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent end-date-input">
+                                </div>
                             </div>
                         </div>
-                    `;
+                        <div class="subtask-date mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>${displayParentStart} - ${displayParentEnd}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="hidden" name="subtasks[${subtaskId}][parent_id]" value="${parentId || ''}">
+                        <button type="button" onclick="addSubtask('${subtaskId}')"
+                            class="p-2 text-indigo-600 hover:text-indigo-800 transition-colors duration-200 rounded-full hover:bg-indigo-50" title="Tambah Child">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </button>
+                        <button type="button" onclick="removeSubtask('${subtaskId}', false)"
+                            class="p-2 text-red-600 hover:text-red-800 transition-colors duration-200 rounded-full hover:bg-red-50" title="Hapus">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
 
+            // --- PENAMBAHAN LOGIKA INSERT DI BAWAH PARENT DAN CHILD-NYA ---
+            if (parentId) {
+                // Cari parent
+                const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
+                if (parentItem) {
+                    // Cari child terakhir dari parent (berdasarkan urutan DOM dan parent_id)
+                    let insertAfter = parentItem;
+                    let found = true;
+                    while (found) {
+                        found = false;
+                        // Cari child langsung setelah insertAfter
+                        const nextSibling = insertAfter.nextElementSibling;
+                        if (nextSibling && nextSibling.querySelector(`input[name$="[parent_id]"]`)?.value === parentId) {
+                            insertAfter = nextSibling;
+                            found = true;
+                        }
+                    }
+                    insertAfter.after(subtaskElement);
+                } else {
                     subtasksContainer.appendChild(subtaskElement);
-
-                    // Add event listeners for date changes
-                    const startDateInput = subtaskElement.querySelector('.start-date-input');
-                    const endDateInput = subtaskElement.querySelector('.end-date-input');
-
-                    startDateInput.addEventListener('change', function() {
-                        endDateInput.min = this.value;
-                        if (endDateInput.value < this.value) endDateInput.value = this.value;
-
-                        const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
-                        if (dateDisplaySpan) {
-                            dateDisplaySpan.textContent =
-                                `${formatDateDisplay(this.value)} - ${formatDateDisplay(endDateInput.value)}`;
-                        }
-
-                        updateChildSubtaskLimits(subtaskId);
-                    });
-
-                    endDateInput.addEventListener('change', function() {
-                        const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
-                        if (dateDisplaySpan) {
-                            dateDisplaySpan.textContent =
-                                `${formatDateDisplay(startDateInput.value)} - ${formatDateDisplay(this.value)}`;
-                        }
-
-                        updateChildSubtaskLimits(subtaskId);
-                    });
-
-                    checkScrollIndicator();
                 }
+            } else {
+                subtasksContainer.appendChild(subtaskElement);
+            }
+
+            // ...existing event listeners for date changes...
+            const startDateInput = subtaskElement.querySelector('.start-date-input');
+            const endDateInput = subtaskElement.querySelector('.end-date-input');
+
+            startDateInput.addEventListener('change', function() {
+                endDateInput.min = this.value;
+                if (endDateInput.value < this.value) endDateInput.value = this.value;
+
+                const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
+                if (dateDisplaySpan) {
+                    dateDisplaySpan.textContent =
+                        `${formatDateDisplay(this.value)} - ${formatDateDisplay(endDateInput.value)}`;
+                }
+
+                updateChildSubtaskLimits(subtaskId);
+            });
+
+            endDateInput.addEventListener('change', function() {
+                const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
+                if (dateDisplaySpan) {
+                    dateDisplaySpan.textContent =
+                        `${formatDateDisplay(startDateInput.value)} - ${formatDateDisplay(this.value)}`;
+                }
+
+                updateChildSubtaskLimits(subtaskId);
+            });
+
+            checkScrollIndicator();
+        }
 
                 function removeSubtask(subtaskId, isExisting = false) {
                     document.querySelectorAll(`input[name$="[parent_id]"][value="${subtaskId}"]`).forEach(
