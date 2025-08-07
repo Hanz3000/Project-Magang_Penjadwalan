@@ -2878,9 +2878,13 @@ function updateTasksData(taskId, data, type) {
             if (subtaskIndex !== -1) {
                 appState.tasksData[taskIndex].sub_tasks[subtaskIndex].completed = data.subtask.completed;
             }
+            const allCompleted = appState.tasksData[taskIndex].sub_tasks.every(st => st.completed);
+            appState.tasksData[taskIndex].completed = allCompleted;
         }
     }
+        updateModalProgress(taskId);
 }
+    
 
 function updateCalendarEvent(taskId, completed) {
     if (!appState.calendar) return;
