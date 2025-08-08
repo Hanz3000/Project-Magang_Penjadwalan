@@ -1455,7 +1455,8 @@ function renderRevisionModal(revisions) {
         title: "Judul",
         description: "Deskripsi",
         start_date: "Tanggal Mulai",
-        end_date: "Tanggal Selesai"
+        end_date: "Tanggal Selesai",
+        priority: "Prioritas"
     };
 
     // Add header with revision count
@@ -1480,7 +1481,24 @@ function renderRevisionModal(revisions) {
     content.innerHTML = headerHtml + revisions.map(revision => {
         let changesHtml = '';
         
-        const formatValue = (val) => {
+        const formatValue = (val, fieldKey, revisionData = null) => {
+            // Special handling for category_id - show category name instead of ID
+            if (fieldKey === 'category_id' && revisionData) {
+                // Try to find category name from revision data
+                if (revisionData.categories) {
+                    const category = revisionData.categories.find(cat => cat.id == val);
+                    if (category) return category.name;
+                }
+                // Fallback: if we have task data with category info
+                if (revisionData.task && revisionData.task.category) {
+                    if (revisionData.task.category.id == val) {
+                        return revisionData.task.category.name;
+                    }
+                }
+                // If no category found, show ID with label
+                return val ? `Kategori ID: ${val}` : "Tidak ada";
+            }
+            
             if (val === true || val === 1 || val === "1" || val === "Ya") return "Ya";
             if (val === false || val === 0 || val === "0" || val === "Tidak") return "Tidak";
             if (val === null || val === undefined || val === '') return "Tidak ada";
@@ -1505,7 +1523,7 @@ function renderRevisionModal(revisions) {
         };
 
         // Enhanced function to only show changed fields with strict comparison
-        const renderChanges = (originalData, proposedData) => {
+        const renderChanges = (originalData, proposedData, revisionData = null) => {
             const changes = [];
             
             // Only compare fields that exist in both original and proposed data
@@ -1523,8 +1541,8 @@ function renderRevisionModal(revisions) {
                     if (!((!original || original === '') && (!proposed || proposed === ''))) {
                         changes.push({
                             field: fieldLabels[key] || key,
-                            original: formatValue(original),
-                            proposed: formatValue(proposed),
+                            original: formatValue(original, key, revisionData),
+                            proposed: formatValue(proposed, key, revisionData),
                             key: key
                         });
                     }
@@ -1543,7 +1561,6 @@ function renderRevisionModal(revisions) {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
                         <span class="font-medium text-gray-800">${change.field}</span>
-                        ${change.key ? `<span class="text-xs text-gray-400 ml-1">(${change.key})</span>` : ''}
                     </div>
                     <div class="ml-6 space-y-1">
                         <div class="flex items-center gap-2 text-sm">
@@ -1598,7 +1615,7 @@ function renderRevisionModal(revisions) {
                         <h5 class="font-semibold text-blue-800">Perubahan Subtugas</h5>
                     </div>
                     <div class="space-y-2">
-                        ${renderChanges(revision.original_data.subtask_data, revision.proposed_data.subtask_data)}
+                        ${renderChanges(revision.original_data.subtask_data, revision.proposed_data.subtask_data, revision)}
                     </div>
                 </div>
             `;
@@ -1606,7 +1623,7 @@ function renderRevisionModal(revisions) {
         else if (revision.revision_type === 'update_task_with_subtasks') {
             // Only show task changes if there are actual changes
             let taskChangesHtml = '';
-            const taskChanges = renderChanges(revision.original_data.task, revision.proposed_data.task);
+            const taskChanges = renderChanges(revision.original_data.task, revision.proposed_data.task, revision);
             
             // Only show task changes section if there are actual changes
             if (taskChanges && taskChanges.trim() !== '') {
@@ -1784,7 +1801,6 @@ function renderRevisionModal(revisions) {
         `;
     }).join('');
 }
-
 
 function closeRevisionModal() {
     document.getElementById('revisionModal').classList.add('hidden');
