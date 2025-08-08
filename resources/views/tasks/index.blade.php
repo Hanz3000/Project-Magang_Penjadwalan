@@ -1412,10 +1412,35 @@ function editSubtask(subtaskId, taskId) {
     openSubtaskModal(taskId, subtaskId);
 }
 
+// Enhanced Revision Review Functions with Category Name Resolution
+let categoryCache = {};
 
-// Enhanced Revision Review Functions
+// Function to load and cache categories
+async function loadCategories() {
+    try {
+        if (Object.keys(categoryCache).length === 0) {
+            const response = await fetch('/api/categories'); // URL tetap sama karena Laravel otomatis menambah prefix /api
+            const data = await response.json();
+            
+            if (data.success && data.categories) {
+                // Cache categories by ID for quick lookup
+                data.categories.forEach(category => {
+                    categoryCache[category.id] = category.name;
+                });
+            }
+        }
+        return categoryCache;
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        return categoryCache;
+    }
+}
+
 async function loadPendingRevisionsModal() {
     try {
+        // Load categories first
+        await loadCategories();
+        
         const response = await fetch('/collaboration/pending-revisions');
         const data = await response.json();
         
@@ -1482,21 +1507,60 @@ function renderRevisionModal(revisions) {
         let changesHtml = '';
         
         const formatValue = (val, fieldKey, revisionData = null) => {
-            // Special handling for category_id - show category name instead of ID
-            if (fieldKey === 'category_id' && revisionData) {
-                // Try to find category name from revision data
-                if (revisionData.categories) {
-                    const category = revisionData.categories.find(cat => cat.id == val);
-                    if (category) return category.name;
+            // Special handling for priority - show Indonesian labels
+            if (fieldKey === 'priority') {
+                const priorityLabels = {
+                    'urgent': 'Urgent',
+                    'high': 'Tinggi', 
+                    'medium': 'Sedang',
+                    'low': 'Rendah',
+                    '4': 'Urgent',
+                    '3': 'Tinggi',
+                    '2': 'Sedang', 
+                    '1': 'Rendah'
+                };
+                return priorityLabels[String(val).toLowerCase()] || val;
+            }
+            
+            // Special handling for category_id - show category name from cache
+            if (fieldKey === 'category_id') {
+                // First try to get from cache
+                if (val && categoryCache[val]) {
+                    return categoryCache[val];
                 }
-                // Fallback: if we have task data with category info
-                if (revisionData.task && revisionData.task.category) {
-                    if (revisionData.task.category.id == val) {
-                        return revisionData.task.category.name;
+                
+                // Try to find category name from revision data
+                if (revisionData) {
+                    // Try from categories array in revision data
+                    if (revisionData.categories) {
+                        const category = revisionData.categories.find(cat => cat.id == val);
+                        if (category) return category.name;
+                    }
+                    
+                    // Try from task data with category info
+                    if (revisionData.task && revisionData.task.category) {
+                        if (revisionData.task.category.id == val) {
+                            return revisionData.task.category.name;
+                        }
+                    }
+                    
+                    // Try from original_data
+                    if (revisionData.original_data && revisionData.original_data.task && revisionData.original_data.task.category) {
+                        if (revisionData.original_data.task.category.id == val) {
+                            return revisionData.original_data.task.category.name;
+                        }
+                    }
+                    
+                    // Try from proposed_data
+                    if (revisionData.proposed_data && revisionData.proposed_data.task && revisionData.proposed_data.task.category) {
+                        if (revisionData.proposed_data.task.category.id == val) {
+                            return revisionData.proposed_data.task.category.name;
+                        }
                     }
                 }
-                // If no category found, show ID with label
-                return val ? `Kategori ID: ${val}` : "Tidak ada";
+                
+                // If still not found, return descriptive text
+                return val ? `Kategori ID: ${val}` : "Tidak ada kategori";
             }
             
             if (val === true || val === 1 || val === "1" || val === "Ya") return "Ya";
@@ -1800,6 +1864,56 @@ function renderRevisionModal(revisions) {
             </div>
         `;
     }).join('');
+}
+
+// Function to handle revision approval/rejection  
+async function reviewRevision(revisionId, action) {
+    try {
+        const response = await fetch(`/collaboration/review-revision/${revisionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ action: action })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(
+                action === 'approve' ? 'Usulan perubahan berhasil disetujui' : 'Usulan perubahan berhasil ditolak', 
+                'success'
+            );
+            
+            // Reload the revisions to show updated list
+            await loadPendingRevisionsModal();
+            
+            // Refresh calendar if it exists
+            if (typeof refreshCalendar === 'function') {
+                refreshCalendar();
+            }
+        } else {
+            showNotification(data.message || 'Gagal memproses usulan perubahan', 'error');
+        }
+    } catch (error) {
+        console.error('Error reviewing revision:', error);
+        showNotification('Terjadi kesalahan saat memproses usulan perubahan', 'error');
+    }
+}
+
+// Clear category cache when needed
+function clearCategoryCache() {
+    categoryCache = {};
+}
+
+// Export functions if using modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        loadPendingRevisionsModal,
+        reviewRevision,
+        clearCategoryCache
+    };
 }
 
 function closeRevisionModal() {

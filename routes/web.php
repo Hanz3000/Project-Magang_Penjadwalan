@@ -7,6 +7,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CollaborationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Models\Category;
 
 // Public Routes (tidak perlu auth)
 Route::middleware('guest')->group(function () {
@@ -58,4 +59,15 @@ Route::middleware('auth')->group(function () {
         // Fix: Consistent route parameter
         Route::post('/revisions/{revision}', [CollaborationController::class, 'reviewRevision'])->name('collaboration.review');
     });
+
+ 
+
+// API endpoint untuk mengambil semua kategori
+Route::get('/api/categories', function() {
+    return response()->json([
+        'success' => true,
+        'categories' => Category::select('id', 'name')->get()
+    ]);
+});
+
 });
