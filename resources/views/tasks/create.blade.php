@@ -1243,7 +1243,6 @@
                 // --- Category Management ---
                 function openCategoryModal() {
                     document.getElementById('category-modal').classList.remove('hidden');
-                    document.body.classList.add('overflow-hidden');
                 }
 
                 function closeCategoryModal() {
