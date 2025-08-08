@@ -1413,7 +1413,7 @@ function editSubtask(subtaskId, taskId) {
 }
 
 
-// Revision Review Functions
+// Enhanced Revision Review Functions
 async function loadPendingRevisionsModal() {
     try {
         const response = await fetch('/collaboration/pending-revisions');
@@ -1434,212 +1434,357 @@ function renderRevisionModal(revisions) {
     
     if (revisions.length === 0) {
         content.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <p>Tidak ada usulan perubahan yang menunggu review</p>
+            <div class="text-center py-12">
+                <div class="bg-gray-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Tidak Ada Usulan Perubahan</h3>
+                <p class="text-gray-500">Saat ini tidak ada usulan perubahan yang menunggu persetujuan Anda</p>
             </div>
         `;
         return;
     }
     
-    content.innerHTML = revisions.map(revision => {
+    const fieldLabels = {
+        category_id: "Kategori",
+        start_time: "Waktu Mulai",
+        end_time: "Waktu Selesai",
+        is_all_day: "Sepanjang Hari",
+        title: "Judul",
+        description: "Deskripsi",
+        start_date: "Tanggal Mulai",
+        end_date: "Tanggal Selesai"
+    };
+
+    // Add header with revision count
+    const headerHtml = `
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg mb-6 border border-blue-100">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-100 p-2 rounded-full">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Review Usulan Perubahan</h3>
+                    <p class="text-sm text-gray-600">
+                        Terdapat <span class="font-medium text-blue-600">${revisions.length}</span> usulan perubahan yang menunggu persetujuan Anda
+                    </p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    content.innerHTML = headerHtml + revisions.map(revision => {
         let changesHtml = '';
         
-        if (revision.revision_type === 'create_subtask') {
-            changesHtml = `
-                <div class="bg-green-50 p-3 rounded-lg border border-green-200">
-                    <h5 class="font-medium text-green-800 mb-2">Subtask Baru:</h5>
-                    <p class="text-sm text-green-700"><strong>Judul:</strong> ${revision.proposed_data.subtask_data.title}</p>
-                    <p class="text-sm text-green-700"><strong>Tanggal:</strong> ${revision.proposed_data.subtask_data.start_date} → ${revision.proposed_data.subtask_data.end_date}</p>
-                </div>
-            `;
-        } else if (revision.revision_type === 'update_subtask') {
-            const originalData = revision.original_data.subtask_data;
-            const proposedData = revision.proposed_data.subtask_data;
+        const formatValue = (val) => {
+            if (val === true || val === 1 || val === "1" || val === "Ya") return "Ya";
+            if (val === false || val === 0 || val === "0" || val === "Tidak") return "Tidak";
+            if (val === null || val === undefined || val === '') return "Tidak ada";
+            return val;
+        };
+
+        // Function to normalize values for consistent comparison
+        const normalizeValue = (val, fieldKey) => {
+            // Special handling for boolean fields
+            if (fieldKey === 'is_all_day') {
+                if (val === true || val === 1 || val === "1" || val === "Ya") return "1";
+                if (val === false || val === 0 || val === "0" || val === "Tidak") return "0";
+            }
             
-            changesHtml = `
-                <div class="space-y-2 text-sm">
-                    ${Object.keys(proposedData).map(key => {
-                        const original = originalData[key];
-                        const proposed = proposedData[key];
-                        
-                        if (original !== proposed) {
-                            return `
-                                <div class="flex gap-4">
-                                    <div class="flex-1">
-                                        <span class="font-medium">${key}:</span>
-                                        <div class="text-red-600 line-through">${original || 'Tidak ada'}</div>
-                                        <div class="text-green-600 font-medium">${proposed || 'Tidak ada'}</div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                        return '';
-                    }).join('')}
-                </div>
-            `;
-        } else if (revision.revision_type === 'update_task_with_subtasks') {
-            // Enhanced display for task + subtask changes
-            changesHtml = '<div class="space-y-4">';
+            // Special handling for category_id - ensure both are strings
+            if (fieldKey === 'category_id') {
+                return String(val || '');
+            }
             
-            // Task changes
-            const taskOriginal = revision.original_data.task;
-            const taskProposed = revision.proposed_data.task;
+            // For other fields, convert to string and trim
+            return String(val || '').trim();
+        };
+
+        // Enhanced function to only show changed fields with strict comparison
+        const renderChanges = (originalData, proposedData) => {
+            const changes = [];
             
-            let taskChanges = '';
-            Object.keys(taskProposed).forEach(key => {
-                if (taskOriginal[key] !== taskProposed[key]) {
-                    taskChanges += `
-                        <div class="flex gap-4">
-                            <div class="flex-1">
-                                <span class="font-medium capitalize">${key.replace('_', ' ')}:</span>
-                                <div class="text-red-600 line-through">${taskOriginal[key] || 'Tidak ada'}</div>
-                                <div class="text-green-600 font-medium">${taskProposed[key] || 'Tidak ada'}</div>
-                            </div>
-                        </div>
-                    `;
+            // Only compare fields that exist in both original and proposed data
+            Object.keys(proposedData).forEach(key => {
+                const original = originalData[key];
+                const proposed = proposedData[key];
+                
+                // Normalize values for comparison
+                const normalizedOriginal = normalizeValue(original, key);
+                const normalizedProposed = normalizeValue(proposed, key);
+                
+                // Only add to changes if normalized values are actually different
+                if (normalizedOriginal !== normalizedProposed) {
+                    // Skip fields that are empty or null in both
+                    if (!((!original || original === '') && (!proposed || proposed === ''))) {
+                        changes.push({
+                            field: fieldLabels[key] || key,
+                            original: formatValue(original),
+                            proposed: formatValue(proposed),
+                            key: key
+                        });
+                    }
                 }
             });
+
+            // Return empty string if no real changes detected
+            if (changes.length === 0) {
+                return '';
+            }
+
+            return changes.map(change => `
+                <div class="bg-white p-3 rounded-lg border border-gray-100 mb-3 last:mb-0">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span class="font-medium text-gray-800">${change.field}</span>
+                        ${change.key ? `<span class="text-xs text-gray-400 ml-1">(${change.key})</span>` : ''}
+                    </div>
+                    <div class="ml-6 space-y-1">
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="text-red-600 font-medium">Dari:</span>
+                            <span class="bg-red-50 px-2 py-1 rounded text-red-800 line-through">${change.original}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="text-green-600 font-medium">Menjadi:</span>
+                            <span class="bg-green-50 px-2 py-1 rounded text-green-800 font-medium">${change.proposed}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        // Handle different revision types with enhanced UI
+        if (revision.revision_type === 'create_subtask') {
+            changesHtml = `
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="bg-green-100 p-1.5 rounded-full">
+                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <h5 class="font-semibold text-green-800">Tambah Subtugas Baru</h5>
+                    </div>
+                    <div class="bg-white p-3 rounded border border-green-100">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Judul:</span>
+                                <p class="text-green-700 font-medium">${revision.proposed_data.subtask_data.title}</p>
+                            </div>
+                            <div>
+                                <span class="text-sm font-medium text-gray-600">Periode:</span>
+                                <p class="text-green-700">${revision.proposed_data.subtask_data.start_date} → ${revision.proposed_data.subtask_data.end_date}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } 
+        else if (revision.revision_type === 'update_subtask') {
+            changesHtml = `
+                <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="bg-blue-100 p-1.5 rounded-full">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </div>
+                        <h5 class="font-semibold text-blue-800">Perubahan Subtugas</h5>
+                    </div>
+                    <div class="space-y-2">
+                        ${renderChanges(revision.original_data.subtask_data, revision.proposed_data.subtask_data)}
+                    </div>
+                </div>
+            `;
+        } 
+        else if (revision.revision_type === 'update_task_with_subtasks') {
+            // Only show task changes if there are actual changes
+            let taskChangesHtml = '';
+            const taskChanges = renderChanges(revision.original_data.task, revision.proposed_data.task);
             
-            if (taskChanges) {
-                changesHtml += `
-                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                        <h5 class="font-medium text-blue-800 mb-2">🏷️ Perubahan Task:</h5>
-                        <div class="text-sm space-y-2">${taskChanges}</div>
+            // Only show task changes section if there are actual changes
+            if (taskChanges && taskChanges.trim() !== '') {
+                taskChangesHtml = `
+                    <div class="bg-gradient-to-r from-yellow-50 to-amber-50 p-4 rounded-lg border border-yellow-200 mb-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="bg-yellow-100 p-1.5 rounded-full">
+                                <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </div>
+                            <h5 class="font-semibold text-yellow-800">Perubahan Tugas Utama</h5>
+                        </div>
+                        <div class="space-y-2">
+                            ${taskChanges}
+                        </div>
                     </div>
                 `;
             }
             
-            // Subtask changes
             const subtasks = revision.proposed_data.subtasks || {};
             const deletedSubtasks = revision.proposed_data.deleted_subtasks || {};
             
+            let subtaskChangesHtml = '';
             if (Object.keys(subtasks).length > 0) {
-                let subtaskChanges = '';
+                let subtaskItems = '';
                 Object.values(subtasks).forEach(subtask => {
                     if (subtask.is_new) {
-                        subtaskChanges += `
-                            <div class="bg-green-50 p-2 rounded border border-green-200">
-                                <span class="text-green-800 font-medium">➕ Subtask Baru: ${subtask.title}</span>
-                                <div class="text-xs text-green-600 mt-1">
-                                    📅 ${subtask.start_date} → ${subtask.end_date}
+                        subtaskItems += `
+                            <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <span class="text-green-800 font-medium">Tambah: ${subtask.title}</span>
                                 </div>
+                                <div class="ml-6 text-sm text-green-600">📅 ${subtask.start_date} → ${subtask.end_date}</div>
                             </div>
                         `;
                     } else {
-                        subtaskChanges += `
-                            <div class="bg-blue-50 p-2 rounded border border-blue-200">
-                                <span class="text-blue-800 font-medium">✏️ Edit Subtask: ${subtask.title}</span>
-                                <div class="text-xs text-blue-600 mt-1">
-                                    📅 ${subtask.start_date} → ${subtask.end_date}
+                        subtaskItems += `
+                            <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    <span class="text-blue-800 font-medium">Ubah: ${subtask.title}</span>
                                 </div>
+                                <div class="ml-6 text-sm text-blue-600">📅 ${subtask.start_date} → ${subtask.end_date}</div>
                             </div>
                         `;
                     }
                 });
                 
-                if (subtaskChanges) {
-                    changesHtml += `
-                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                            <h5 class="font-medium text-gray-800 mb-2">📝 Perubahan Subtasks:</h5>
-                            <div class="space-y-2">${subtaskChanges}</div>
+                subtaskChangesHtml = `
+                    <div class="bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-lg border border-gray-200 mb-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="bg-gray-100 p-1.5 rounded-full">
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                            </div>
+                            <h5 class="font-semibold text-gray-800">Perubahan Subtugas</h5>
                         </div>
-                    `;
-                }
+                        <div class="space-y-3">${subtaskItems}</div>
+                    </div>
+                `;
             }
             
+            let deletedChangesHtml = '';
             if (Object.keys(deletedSubtasks).length > 0) {
-                let deletedChanges = '';
+                let deletedItems = '';
                 Object.values(deletedSubtasks).forEach(subtask => {
-                    deletedChanges += `
-                        <div class="bg-red-50 p-2 rounded border border-red-200">
-                            <span class="text-red-800 font-medium">🗑️ Hapus Subtask: ${subtask.title}</span>
+                    deletedItems += `
+                        <div class="bg-red-50 p-3 rounded-lg border border-red-200">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                <span class="text-red-800 font-medium">Hapus: ${subtask.title}</span>
+                            </div>
                         </div>
                     `;
                 });
                 
-                if (deletedChanges) {
-                    changesHtml += `
-                        <div class="bg-red-50 p-3 rounded-lg border border-red-200">
-                            <h5 class="font-medium text-red-800 mb-2">🗑️ Subtasks yang Dihapus:</h5>
-                            <div class="space-y-2">${deletedChanges}</div>
+                deletedChangesHtml = `
+                    <div class="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-lg border border-red-200">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="bg-red-100 p-1.5 rounded-full">
+                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </div>
+                            <h5 class="font-semibold text-red-800">Subtugas yang Akan Dihapus</h5>
                         </div>
-                    `;
-                }
+                        <div class="space-y-3">${deletedItems}</div>
+                    </div>
+                `;
             }
             
-            changesHtml += '</div>';
-        } else {
-            // Legacy task updates
-            changesHtml = `
-                <div class="space-y-2 text-sm">
-                    ${Object.keys(revision.proposed_data).map(key => {
-                        const original = revision.original_data?.[key];
-                        const proposed = revision.proposed_data[key];
-                        
-                        if (original !== proposed) {
-                            return `
-                                <div class="flex gap-4">
-                                    <div class="flex-1">
-                                        <span class="font-medium">${key}:</span>
-                                        <div class="text-red-600 line-through">${original || 'Tidak ada'}</div>
-                                        <div class="text-green-600 font-medium">${proposed || 'Tidak ada'}</div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                        return '';
-                    }).join('')}
-                </div>
-            `;
+            changesHtml = taskChangesHtml + subtaskChangesHtml + deletedChangesHtml;
         }
-        
+
+        // Enhanced revision type labels
+        const getRevisionTypeLabel = (type) => {
+            const labels = {
+                'create_subtask': { text: 'Tambah Subtugas', icon: '➕', color: 'green' },
+                'update_subtask': { text: 'Ubah Subtugas', icon: '✏️', color: 'blue' },
+                'update_task_with_subtasks': { text: 'Ubah Tugas & Subtugas', icon: '🔄', color: 'yellow' },
+                'update': { text: 'Ubah Tugas', icon: '✏️', color: 'orange' }
+            };
+            return labels[type] || { text: 'Perubahan', icon: '📝', color: 'gray' };
+        };
+
+        const typeInfo = getRevisionTypeLabel(revision.revision_type);
+
         return `
-            <div class="border border-gray-200 rounded-xl p-4 mb-4">
-                <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <h4 class="font-semibold text-gray-800">${revision.task.title}</h4>
-                        <p class="text-sm text-gray-600">
-                            Usulan dari: <span class="font-medium">${revision.collaborator.name}</span>
-                        </p>
-                        <p class="text-xs text-gray-500">
-                            ${new Date(revision.created_at).toLocaleDateString('id-ID', { 
-                                day: 'numeric', 
-                                month: 'long', 
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            })}
-                        </p>
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-6 mb-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <h4 class="text-lg font-semibold text-gray-900">${revision.task.title}</h4>
+                            <span class="text-xs px-3 py-1.5 bg-${typeInfo.color}-100 text-${typeInfo.color}-700 rounded-full font-medium border border-${typeInfo.color}-200">
+                                ${typeInfo.icon} ${typeInfo.text}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm text-gray-600">
+                            <div class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <span>Oleh: <span class="font-medium text-gray-800">${revision.collaborator.name}</span></span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>${new Date(revision.created_at).toLocaleString('id-ID', { 
+                                    day: 'numeric', 
+                                    month: 'long', 
+                                    year: 'numeric', 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                })}</span>
+                            </div>
+                        </div>
                     </div>
-                    <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-full">
-                        ${revision.revision_type === 'create_subtask' ? '➕ Tambah Subtask' : 
-                          revision.revision_type === 'update_subtask' ? '✏️ Edit Subtask' :
-                          revision.revision_type === 'update_task_with_subtasks' ? '🔄 Edit Task & Subtasks' :
-                          revision.revision_type === 'update' ? '✏️ Edit Task' : '📝 Perubahan'}
-                    </span>
                 </div>
                 
-                <div class="mb-4">
+                <div class="mb-6">
                     ${changesHtml}
                 </div>
                 
-                <div class="flex gap-2">
-                    <button onclick="reviewRevision(${revision.id}, 'approve')" 
-                            class="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
-                        ✅ Setujui
+                <div class="flex gap-3 pt-4 border-t border-gray-100">
+                    <button 
+                        onclick="reviewRevision(${revision.id}, 'approve')" 
+                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-100 transition-all duration-200 font-medium"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Setujui Perubahan
                     </button>
-                    <button onclick="reviewRevision(${revision.id}, 'reject')" 
-                            class="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
-                        ❌ Tolak
+                    <button 
+                        onclick="reviewRevision(${revision.id}, 'reject')" 
+                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-100 transition-all duration-200 font-medium"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Tolak Perubahan
                     </button>
                 </div>
             </div>
         `;
     }).join('');
 }
+
 
 function closeRevisionModal() {
     document.getElementById('revisionModal').classList.add('hidden');
