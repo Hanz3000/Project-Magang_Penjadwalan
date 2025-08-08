@@ -269,9 +269,7 @@
                                         
                                         $html .= '<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">';
                                        
-                                        if ($task['is_owner'] && !str_starts_with($subTask['id'], 'temp_')) {
-                                            $html .= '<button type="button" onclick="deleteSubtask(' . $subTask['id'] . ')" class="text-gray-400 hover:text-red-600 p-1 rounded" title="Delete">🗑️</button>';
-                                        }
+                                        
                                         $html .= '</div>';
                                     }
 
@@ -1098,8 +1096,6 @@ async function removeCollaborator(collaboratorId) {
 
 function openTaskModal(taskId) {
     const task = appState.tasksData.find(t => t.id == taskId);
-    const modalEl = document.getElementById('taskModal');
-
     if (!task) {
         showNotification('Memuat data terbaru...', 'info');
         window.location.reload();
@@ -1109,7 +1105,6 @@ function openTaskModal(taskId) {
     appState.isModalOpen = true;
     appState.currentModalTaskId = taskId;
 
-    // Priority info
     let priorityText = '';
     let priorityClass = '';
     switch(task.priority) {
@@ -1131,38 +1126,33 @@ function openTaskModal(taskId) {
             break;
     }
 
-    // Hitung progres subtugas
     const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
         !task.sub_tasks.some(parent => parent.parent_id === st.id)
     ) : [];
     const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
     const subtaskTotal = leafSubTasks.length;
-    const progressPercentage = subtaskTotal > 0
-        ? Math.round((subtaskCompleted / subtaskTotal) * 100)
-        : (task.completed ? 100 : 0);
+    const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
 
-    // Penampilan waktu
     const timeDisplay = (task.start_time && task.end_time && !task.is_all_day)
         ? `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div class="flex items-center gap-2 mb-1">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span class="text-xs font-medium text-gray-600">Waktu</span>
-                </div>
-                <span class="font-semibold text-gray-800 text-sm">${task.start_time} - ${task.end_time}</span>
-            </div>`
+            <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-xs font-medium text-gray-600">Waktu</span>
+            </div>
+            <span class="font-semibold text-gray-800 text-sm">${task.start_time} - ${task.end_time}</span>
+        </div>`
         : `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <div class="flex items-center gap-2 mb-1">
-                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span class="text-xs font-medium text-gray-600">Durasi</span>
-                </div>
-                <span class="font-semibold text-gray-800 text-sm">Timeline Harian Penuh</span>
-            </div>`;
+            <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span class="text-xs font-medium text-gray-600">Durasi</span>
+            </div>
+            <span class="font-semibold text-gray-800 text-sm">Timeline Harian Penuh</span>
+        </div>`;
 
-    // Subtask list
     let subtasksHtml = '';
     if (task.sub_tasks && task.sub_tasks.length > 0) {
         subtasksHtml = `
@@ -1188,35 +1178,178 @@ function openTaskModal(taskId) {
         `;
     }
 
-    // Masukkan konten ke dalam modal
-    document.getElementById('taskModalContent').innerHTML = `
-        <div class="space-y-4">
-            <div class="flex flex-col gap-1">
-                <h2 class="text-lg font-bold text-gray-900">${task.title}</h2>
-                <span class="text-sm text-gray-500">${task.description ?? ''}</span>
-                <span class="inline-block mt-1 px-2 py-1 text-xs font-medium rounded ${priorityClass}">${priorityText}</span>
+    const modalContent = document.getElementById('taskModalContent');
+    modalContent.innerHTML = `
+        <div class="flex items-start gap-3 mb-4">
+            <form action="/tasks/${task.id}/toggle" method="POST" class="task-toggle-form-modal">
+                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                <input type="hidden" name="_method" value="PATCH">
+                <input type="checkbox"
+                    class="task-checkbox-modal w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                    data-task-id="${task.id}"
+                    ${task.completed ? 'checked' : ''}>
+            </form>
+            <div class="flex-1">
+                <h4 class="font-bold text-lg mb-2 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'} flex items-center gap-2" id="modal-task-title-${task.id}">
+                    📋 ${task.title}
+                </h4>
+                <div class="flex items-center gap-2 mb-3 flex-wrap">
+                    <span class="px-2 py-1 text-xs rounded-lg font-medium ${priorityClass}">
+                        ${priorityText}
+                    </span>
+                    ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg font-medium border border-gray-300">✅ Selesai</span>' : ''}
+                    ${subtaskTotal > 0 ? `<span id="modal-progress-badge" class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">📊 ${progressPercentage}% Progress</span>` : ''}
+                    <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-lg font-medium border border-green-300">⏱️ ${task.durationDays} hari</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-xs font-medium text-green-700">Start Timeline</span>
+                </div>
+                <span class="font-semibold text-green-800 text-sm">${formatDateString(task.start_date)}</span>
+            </div>
+            <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 border border-red-200">
+                <div class="flex items-center gap-2 mb-1">
+                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-xs font-medium text-red-700">End Timeline</span>
+                </div>
+                <span class="font-semibold text-red-800 text-sm">${formatDateString(task.end_date)}</span>
             </div>
             ${timeDisplay}
-            ${subtasksHtml}
+        </div>
+        
+        <div class="mb-4">
+            <h5 class="font-medium text-gray-800 mb-2 flex items-center gap-2 text-sm">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Deskripsi
+            </h5>
+            <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <p class="text-gray-700 leading-relaxed text-sm">${task.description || 'Tidak ada deskripsi tersedia'}</p>
+            </div>
+        </div>
+
+        ${subtasksHtml}
+        
+        <div class="flex gap-2 pt-4 border-t border-gray-200">
+            <a href="/tasks/${task.id}/edit" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
+                Edit Timeline
+            </a>
+            <button onclick="closeTaskModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
+                Tutup
+            </button>
         </div>
     `;
-
-    // Buka modal dengan animasi
-    modalEl.classList.remove('hidden');
-    document.body.classList.add('overflow-hidden'); // ✅ mencegah scroll halaman
-    modalEl.style.opacity = '0';
-    modalEl.style.transform = 'scale(0.95)';
-    modalEl.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-
+    
+    const taskModalEl = document.getElementById('taskModal');
+    taskModalEl.classList.remove('hidden');
+     document.body.classList.add('no-scroll');
+    
+    taskModalEl.style.opacity = '0';
+    taskModalEl.style.transform = 'scale(0.95)';
+    
     setTimeout(() => {
-        modalEl.style.opacity = '1';
-        modalEl.style.transform = 'scale(1)';
+        taskModalEl.style.opacity = '1';
+        taskModalEl.style.transform = 'scale(1)';
+        taskModalEl.style.transition = 'all 0.3s ease-out';
     }, 10);
 }
 
-function closeSubtaskModal() {
-    document.getElementById('subtaskModal').classList.add('hidden');
-    document.getElementById('subtaskForm').reset();
+function renderModalSubtasks(subtasks, parentId = null, task, level = 0) {
+    let html = '';
+    
+    const filteredSubtasks = subtasks.filter(st => st.parent_id === parentId);
+    
+    filteredSubtasks.forEach(subTask => {
+        const isParent = subtasks.some(st => st.parent_id === subTask.id);
+        const indentClass = level > 0 ? `ml-${level * 6}` : '';
+        const treeLineClass = level > 0 ? 'border-l-2 border-gray-200 pl-4' : '';
+        
+        const dateInfo = (subTask.start_date || subTask.end_date) ? 
+            `<div class="subtask-date" style="margin-top: 2px;">
+                <svg style="width: 10px; height: 10px; display: inline; margin-right: 3px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span style="font-size: 8px; color: #6B7280;">
+                    ${subTask.start_date ? formatDateString(subTask.start_date) : ''} ${subTask.end_date ? ' → ' + formatDateString(subTask.end_date) : ''}
+                </span>
+            </div>` : '';
+        
+        if (isParent) {
+            html += `
+                <div class="subtask-parent-modal relative bg-white rounded-lg p-2 border border-gray-200 ${treeLineClass}" data-subtask-id="${subTask.id}">
+                    ${level > 0 ? `<div class="absolute left-0 top-0 w-3 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>` : ''}
+                    <div class="flex items-center gap-2 py-1 ${indentClass}">
+                        <button class="subtask-parent-toggle-btn-modal text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50" 
+                                data-subtask-id="${subTask.id}" 
+                                data-expanded="true">
+                            <svg class="w-3 h-3 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0"></div>
+                        <span class="text-xs font-semibold text-gray-700">📁 ${subTask.title}</span>
+                    </div>
+                    ${dateInfo}
+                    <div class="subtask-children-modal relative border-l-2 border-gray-200 ml-4" id="modal-subtask-children-${subTask.id}">
+                        ${renderModalSubtasks(subtasks, subTask.id, task, level + 1)}
+                    </div>
+                </div>
+            `;
+        } else {
+            const lineClass = subTask.completed ? 'line-through text-gray-400' : 'text-gray-700';
+            html += `
+                <div class="subtask-item-modal relative flex items-center gap-2 py-1 px-2 bg-white rounded border border-gray-200 hover:border-blue-300 transition-all duration-200 ${treeLineClass}" data-subtask-id="${subTask.id}">
+                    ${level > 0 ? `<div class="absolute left-0 top-0 w-4 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>` : ''}
+                    <form action="/subtasks/${subTask.id}/toggle" method="POST" class="subtask-toggle-form-modal">
+                        <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
+                        <input type="hidden" name="_method" value="PATCH">
+                        <input type="checkbox"
+                            class="subtask-checkbox-modal w-3 h-3 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                            data-sub-task-id="${subTask.id}"
+                            data-task-id="${task.id}"
+                            ${subTask.completed ? 'checked' : ''}>
+                    </form>
+                    <div class="flex-1 ${indentClass}">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
+                            <span class="text-xs ${lineClass} subtask-text-modal">📝 ${subTask.title}</span>
+                        </div>
+                        ${dateInfo}
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    return html;
+}
+
+function closeTaskModal() {
+    const modalEl = document.getElementById('taskModal');
+    modalEl.style.opacity = '0';
+    modalEl.style.transform = 'scale(0.95)';
+    
+    setTimeout(() => {
+        modalEl.classList.add('hidden');
+        modalEl.style.opacity = '';
+        modalEl.style.transform = '';
+        modalEl.style.transition = '';
+        appState.isModalOpen = false;
+        appState.currentModalTaskId = null;
+
+        // Hapus kelas no-scroll dari body
+        document.body.classList.remove('no-scroll');
+    }, 300);
 }
 
 // Handle subtask form submission
