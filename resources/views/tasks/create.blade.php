@@ -768,17 +768,20 @@
                     }, 200);
                 }
 
+                // Ganti fungsi populateTimeLists dengan yang ini:
                 function populateTimeLists(selectedHour, selectedMinute) {
                     const hourList = document.getElementById('hour-list');
                     const minuteList = document.getElementById('minute-list');
                     hourList.innerHTML = '';
                     minuteList.innerHTML = '';
 
-                    // Create hour options (00-23)
+                    // Buat opsi jam (00-23)
                     for (let i = 0; i <= 23; i++) {
                         const hourDiv = document.createElement('div');
                         hourDiv.className =
-                            `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${i === selectedHour ? 'bg-blue-100 font-medium text-blue-700 selected' : ''}`;
+                            `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${
+                i === selectedHour ? 'bg-blue-100 font-medium text-blue-700 selected' : ''
+            }`;
                         hourDiv.textContent = i.toString().padStart(2, '0');
                         hourDiv.dataset.value = i;
                         hourDiv.addEventListener('click', function() {
@@ -791,11 +794,13 @@
                         hourList.appendChild(hourDiv);
                     }
 
-                    // Create minute options (every 5 minutes)
-                    for (let i = 0; i <= 59; i += 5) {
+                    // BUAT OPSI MENIT (00-59) - PERUBAHAN UTAMA DI SINI
+                    for (let i = 0; i <= 59; i++) { // Ubah dari i += 5 menjadi i++
                         const minuteDiv = document.createElement('div');
                         minuteDiv.className =
-                            `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${i === selectedMinute || (i === 0 && selectedMinute < 5) ? 'bg-blue-100 font-medium text-blue-700 selected' : ''}`;
+                            `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${
+                i === selectedMinute ? 'bg-blue-100 font-medium text-blue-700 selected' : ''
+            }`;
                         minuteDiv.textContent = i.toString().padStart(2, '0');
                         minuteDiv.dataset.value = i;
                         minuteDiv.addEventListener('click', function() {
@@ -808,17 +813,20 @@
                         minuteList.appendChild(minuteDiv);
                     }
 
-                    // Scroll to selected options
+                    // Scroll ke jam dan menit yang dipilih
                     const selectedHourElement = hourList.querySelector(`.time-option[data-value="${selectedHour}"]`);
                     const selectedMinuteElement = minuteList.querySelector(
-                        `.time-option[data-value="${selectedMinute}"], .time-option[data-value="0"]`);
+                        `.time-option[data-value="${selectedMinute}"]`);
+
                     if (selectedHourElement) {
-                        hourList.scrollTop = selectedHourElement.offsetTop - hourList.offsetHeight / 2 +
-                            selectedHourElement.offsetHeight / 2;
+                        selectedHourElement.scrollIntoView({
+                            block: 'center'
+                        });
                     }
                     if (selectedMinuteElement) {
-                        minuteList.scrollTop = selectedMinuteElement.offsetTop - minuteList.offsetHeight / 2 +
-                            selectedMinuteElement.offsetHeight / 2;
+                        selectedMinuteElement.scrollIntoView({
+                            block: 'center'
+                        });
                     }
                 }
 

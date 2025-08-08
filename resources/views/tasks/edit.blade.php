@@ -752,10 +752,10 @@
 
         /* Allow background scrolling (optional, uncomment if needed) */
         /*
-                                            body.modal-open {
-                                                overflow: auto !important;
-                                            }
-                                            */
+                                                body.modal-open {
+                                                    overflow: auto !important;
+                                                }
+                                                */
     </style>
 @endpush
 
@@ -850,105 +850,66 @@
                 }, 200);
             }
 
+            // Ganti fungsi populateTimeLists dengan yang ini:
             function populateTimeLists(selectedHour, selectedMinute) {
                 const hourList = document.getElementById('hour-list');
                 const minuteList = document.getElementById('minute-list');
                 hourList.innerHTML = '';
                 minuteList.innerHTML = '';
 
-                // Isi daftar jam (0-23)
+                // Buat opsi jam (00-23)
                 for (let i = 0; i <= 23; i++) {
                     const hourDiv = document.createElement('div');
-                    hourDiv.className = `time-option px-4 py-4 text-center cursor-pointer hover:bg-blue-50 ${
-                        i === selectedHour ? 'bg-blue-100 font-medium text-blue-700 selected' : ''
-                    }`;
+                    hourDiv.className =
+                        `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${
+                i === selectedHour ? 'bg-blue-100 font-medium text-blue-700 selected' : ''
+            }`;
                     hourDiv.textContent = i.toString().padStart(2, '0');
                     hourDiv.dataset.value = i;
-                    hourDiv.tabIndex = 0;
                     hourDiv.addEventListener('click', function() {
                         document.querySelectorAll('#hour-list .time-option').forEach(opt =>
                             opt.classList.remove('bg-blue-100', 'font-medium', 'text-blue-700',
                                 'selected')
                         );
                         this.classList.add('bg-blue-100', 'font-medium', 'text-blue-700', 'selected');
-                        this.focus();
-                        scrollToOption(hourList, this);
-                    });
-                    hourDiv.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            this.click();
-                        } else if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            const prev = this.previousElementSibling;
-                            if (prev) {
-                                prev.focus();
-                                prev.click();
-                                scrollToOption(hourList, prev);
-                            }
-                        } else if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            const next = this.nextElementSibling;
-                            if (next) {
-                                next.focus();
-                                next.click();
-                                scrollToOption(hourList, next);
-                            }
-                        }
                     });
                     hourList.appendChild(hourDiv);
                 }
 
-                // Isi daftar menit (0-59, kelipatan 5)
-                for (let i = 0; i <= 59; i += 5) {
+                // BUAT OPSI MENIT (00-59) - PERUBAHAN UTAMA DI SINI
+                for (let i = 0; i <= 59; i++) { // Ubah dari i += 5 menjadi i++
                     const minuteDiv = document.createElement('div');
-                    minuteDiv.className = `time-option px-4 py-4 text-center cursor-pointer hover:bg-blue-50 ${
-                        i === selectedMinute || (i === 0 && selectedMinute < 5) ? 'bg-blue-100 font-medium text-blue-700 selected' : ''
-                    }`;
+                    minuteDiv.className =
+                        `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${
+                i === selectedMinute ? 'bg-blue-100 font-medium text-blue-700 selected' : ''
+            }`;
                     minuteDiv.textContent = i.toString().padStart(2, '0');
                     minuteDiv.dataset.value = i;
-                    minuteDiv.tabIndex = 0;
                     minuteDiv.addEventListener('click', function() {
                         document.querySelectorAll('#minute-list .time-option').forEach(opt =>
                             opt.classList.remove('bg-blue-100', 'font-medium', 'text-blue-700',
                                 'selected')
                         );
                         this.classList.add('bg-blue-100', 'font-medium', 'text-blue-700', 'selected');
-                        this.focus();
-                        scrollToOption(minuteList, this);
-                    });
-                    minuteDiv.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            this.click();
-                        } else if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            const prev = this.previousElementSibling;
-                            if (prev) {
-                                prev.focus();
-                                prev.click();
-                                scrollToOption(minuteList, prev);
-                            }
-                        } else if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            const next = this.nextElementSibling;
-                            if (next) {
-                                next.focus();
-                                next.click();
-                                scrollToOption(minuteList, next);
-                            }
-                        }
                     });
                     minuteList.appendChild(minuteDiv);
                 }
 
-                // Posisikan scroll ke opsi terpilih
+                // Scroll ke jam dan menit yang dipilih
                 const selectedHourElement = hourList.querySelector(`.time-option[data-value="${selectedHour}"]`);
                 const selectedMinuteElement = minuteList.querySelector(
-                    `.time-option[data-value="${selectedMinute}"], .time-option[data-value="0"]`
-                );
-                if (selectedHourElement) scrollToOption(hourList, selectedHourElement);
-                if (selectedMinuteElement) scrollToOption(minuteList, selectedMinuteElement);
+                    `.time-option[data-value="${selectedMinute}"]`);
+
+                if (selectedHourElement) {
+                    selectedHourElement.scrollIntoView({
+                        block: 'center'
+                    });
+                }
+                if (selectedMinuteElement) {
+                    selectedMinuteElement.scrollIntoView({
+                        block: 'center'
+                    });
+                }
             }
 
             function scrollToOption(list, option) {
