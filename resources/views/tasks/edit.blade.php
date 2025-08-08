@@ -596,44 +596,45 @@
     </div>
 
     <!-- Time Picker Modal -->
-    <div id="time-picker-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black bg-opacity-50">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div class="p-6 bg-gradient-to-b from-blue-50 to-white">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-semibold text-gray-900">Pilih Waktu</h3>
-                        <button id="close-time-picker"
-                            class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
+    <div id="time-picker-modal"
+        class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center p-4 overflow-y-auto">
+        <div
+            class="bg-white rounded-xl shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto scrollbar-custom">
+            <div class="p-6 bg-gradient-to-b from-blue-50 to-white">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900">Pilih Waktu</h3>
+                    <button id="close-time-picker" class="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
 
-                    <div class="flex justify-center items-center gap-4 mb-6">
-                        <div class="relative flex flex-col items-center">
-                            <div
-                                class="w-20 h-40 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-100">
-                                <div id="hour-list" class="flex flex-col items-center py-2"></div>
-                            </div>
-                            <span
-                                class="absolute top-1/2 left-1/2 transform -translate-y-1/2 -translate-x-full text-gray-500 text-xl mr-2">:</span>
-                        </div>
-                        <div class="relative flex flex-col items-center">
-                            <div
-                                class="w-20 h-40 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-gray-100">
-                                <div id="minute-list" class="flex flex-col items-center py-2"></div>
-                            </div>
+                <div class="flex justify-center items-center gap-8 mb-6">
+                    <!-- Hour List -->
+                    <div class="relative flex flex-col items-center">
+                        <label class="text-xs font-medium text-gray-600 mb-2">Jam</label>
+                        <div
+                            class="w-28 h-64 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm scrollbar-custom">
+                            <div id="hour-list" class="flex flex-col items-center py-4"></div>
                         </div>
                     </div>
-
-                    <div class="flex justify-end gap-4">
-                        <button id="cancel-time"
-                            class="px-4 py-2 text-gray-700 font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200">Batal</button>
-                        <button id="ok-time"
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200">OK</button>
+                    <!-- Minute List -->
+                    <div class="relative flex flex-col items-center">
+                        <label class="text-xs font-medium text-gray-600 mb-2">Menit</label>
+                        <div
+                            class="w-28 h-64 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-sm scrollbar-custom">
+                            <div id="minute-list" class="flex flex-col items-center py-4"></div>
+                        </div>
                     </div>
+                </div>
+
+                <div class="flex justify-end gap-4">
+                    <button id="cancel-time"
+                        class="px-4 py-2 text-gray-700 font-medium bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200">Batal</button>
+                    <button id="ok-time"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200">OK</button>
                 </div>
             </div>
         </div>
@@ -643,64 +644,87 @@
 @push('styles')
     <style>
         /* Scrollbar Styles */
-        .scrollbar-thin {
+        .scrollbar-custom {
             scrollbar-width: thin;
             scrollbar-color: #3B82F6 #E5E7EB;
+            -webkit-overflow-scrolling: touch;
+            /* Dukungan scroll sentuh untuk mobile */
         }
 
-        .scrollbar-thin::-webkit-scrollbar {
-            width: 6px;
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 10px;
+            /* Lebar scrollbar lebih besar untuk visibilitas */
         }
 
-        .scrollbar-thin::-webkit-scrollbar-track {
-            background: #E5E7EB;
-            border-radius: 3px;
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #F1F5F9;
+            /* Warna track terang */
+            border-radius: 8px;
+            margin: 8px 0;
+            /* Margin untuk estetika */
         }
 
-        .scrollbar-thin::-webkit-scrollbar-thumb {
+        .scrollbar-custom::-webkit-scrollbar-thumb {
             background: #3B82F6;
-            border-radius: 3px;
+            /* Warna thumb biru cerah */
+            border-radius: 8px;
+            border: 2px solid #F1F5F9;
+            /* Border untuk kontras */
         }
 
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
             background: #2563EB;
+            /* Warna lebih gelap saat hover */
         }
 
         /* Time Picker Styles */
         .time-option {
-            padding: 8px;
+            padding: 12px 16px;
+            /* Padding lebih besar untuk kemudahan sentuh */
             text-align: center;
             cursor: pointer;
-            transition: background-color 0.2s, color 0.2s;
+            font-size: 1.1rem;
+            /* Ukuran font lebih besar */
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            width: 100%;
+            /* Memastikan opsi memenuhi lebar container */
         }
 
         .time-option:hover {
             background-color: #EFF6FF;
+            transform: scale(1.03);
+            /* Efek zoom kecil saat hover */
         }
 
         .time-option.selected {
             background-color: #DBEAFE;
             color: #1E40AF;
             font-weight: 600;
+            transform: scale(1.03);
+            /* Efek zoom untuk opsi terpilih */
         }
 
-        /* Subtask Date Styles */
-        .subtask-date {
-            font-size: 0.7rem;
-            color: #6B7280;
-            margin-top: 2px;
-            display: flex;
-            gap: 4px;
-            align-items: center;
+        .time-option:focus {
+            outline: 2px solid #3B82F6;
+            /* Fokus jelas untuk keyboard */
+            outline-offset: 2px;
         }
 
-        .subtask-date svg {
-            width: 10px;
-            height: 10px;
-            flex-shrink: 0;
+        /* Smooth Scroll Behavior for Time Lists */
+        #hour-list,
+        #minute-list {
+            scroll-behavior: smooth;
+            /* Scroll mulus */
+            scroll-snap-type: y mandatory;
+            /* Snap ke opsi untuk pengalaman lebih baik */
         }
 
-        /* Time Picker Modal Transition */
+        .time-option {
+            scroll-snap-align: center;
+            /* Opsi snap ke tengah saat scroll */
+        }
+
+        /* Modal Transition */
         #time-picker-modal {
             transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
         }
@@ -711,6 +735,27 @@
             cursor: not-allowed;
             opacity: 0.7;
         }
+
+        /* Touch Support for Mobile */
+        @media (hover: none) {
+            .time-option:active {
+                background-color: #DBEAFE;
+                transform: scale(1.03);
+            }
+        }
+
+        /* Ensure modal content is scrollable */
+        #time-picker-modal>div {
+            -webkit-overflow-scrolling: touch;
+            /* Scroll sentuh untuk modal */
+        }
+
+        /* Allow background scrolling (optional, uncomment if needed) */
+        /*
+                                            body.modal-open {
+                                                overflow: auto !important;
+                                            }
+                                            */
     </style>
 @endpush
 
@@ -724,8 +769,6 @@
             // --- Priority Selection Enhancement ---
             function setupPrioritySelection() {
                 const priorityOptions = document.querySelectorAll('.priority-option');
-
-                // Highlight selected priority on page load if there's old input
                 const selectedPriority = "{{ old('priority', $task->priority) }}";
                 if (selectedPriority) {
                     const selectedOption = document.querySelector(
@@ -736,55 +779,38 @@
                     }
                 }
 
-                // Add click handlers for all priority options
                 priorityOptions.forEach(option => {
                     const radioInput = option.querySelector('input[type="radio"]');
-
                     option.addEventListener('click', function() {
-                        // Remove highlight from all options
                         priorityOptions.forEach(opt => {
                             opt.classList.remove('ring-2', 'ring-offset-2');
                             const icon = opt.querySelector('.priority-check-icon');
                             if (icon) icon.classList.add('hidden');
                         });
-
-                        // Highlight selected option
                         highlightSelectedPriority(radioInput);
-
-                        // Add visual feedback
                         option.classList.add('transform', 'scale-95');
-                        setTimeout(() => {
-                            option.classList.remove('transform', 'scale-95');
-                        }, 150);
+                        setTimeout(() => option.classList.remove('transform', 'scale-95'), 150);
                     });
 
-                    // Change handler for keyboard navigation
                     radioInput.addEventListener('change', function() {
-                        if (this.checked) {
-                            highlightSelectedPriority(this);
-                        }
+                        if (this.checked) highlightSelectedPriority(this);
                     });
                 });
             }
 
             function highlightSelectedPriority(radioInput) {
                 if (!radioInput) return;
-
                 const parentOption = radioInput.closest('.priority-option');
                 if (!parentOption) return;
-
                 parentOption.classList.add('ring-2', 'ring-offset-2');
-
                 const icon = parentOption.querySelector('.priority-check-icon');
                 if (icon) icon.classList.remove('hidden');
-
                 const priority = radioInput.value;
                 let ringColor = 'ring-blue-500';
                 if (priority === 'urgent') ringColor = 'ring-red-500';
                 if (priority === 'high') ringColor = 'ring-yellow-500';
                 if (priority === 'medium') ringColor = 'ring-blue-500';
                 if (priority === 'low') ringColor = 'ring-green-500';
-
                 parentOption.classList.add(ringColor);
             }
 
@@ -803,7 +829,15 @@
                     modal.classList.remove('opacity-0', 'scale-95');
                     modal.classList.add('opacity-100', 'scale-100');
                 }, 50);
-                document.body.classList.add('overflow-hidden');
+
+                const hourList = document.getElementById('hour-list');
+                if (hourList) {
+                    const selectedHourElement = hourList.querySelector('.time-option.selected');
+                    if (selectedHourElement) {
+                        selectedHourElement.focus();
+                        scrollToOption(hourList, selectedHourElement);
+                    }
+                }
             }
 
             function closeTimePicker() {
@@ -812,7 +846,6 @@
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     modal.classList.remove('opacity-0', 'scale-95', 'opacity-100', 'scale-100');
-                    document.body.classList.remove('overflow-hidden');
                     currentTimeInput = null;
                 }, 200);
             }
@@ -823,54 +856,110 @@
                 hourList.innerHTML = '';
                 minuteList.innerHTML = '';
 
+                // Isi daftar jam (0-23)
                 for (let i = 0; i <= 23; i++) {
                     const hourDiv = document.createElement('div');
-                    hourDiv.className = `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${
+                    hourDiv.className = `time-option px-4 py-4 text-center cursor-pointer hover:bg-blue-50 ${
                         i === selectedHour ? 'bg-blue-100 font-medium text-blue-700 selected' : ''
                     }`;
                     hourDiv.textContent = i.toString().padStart(2, '0');
                     hourDiv.dataset.value = i;
+                    hourDiv.tabIndex = 0;
                     hourDiv.addEventListener('click', function() {
                         document.querySelectorAll('#hour-list .time-option').forEach(opt =>
                             opt.classList.remove('bg-blue-100', 'font-medium', 'text-blue-700',
                                 'selected')
                         );
                         this.classList.add('bg-blue-100', 'font-medium', 'text-blue-700', 'selected');
+                        this.focus();
+                        scrollToOption(hourList, this);
+                    });
+                    hourDiv.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            this.click();
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            const prev = this.previousElementSibling;
+                            if (prev) {
+                                prev.focus();
+                                prev.click();
+                                scrollToOption(hourList, prev);
+                            }
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            const next = this.nextElementSibling;
+                            if (next) {
+                                next.focus();
+                                next.click();
+                                scrollToOption(hourList, next);
+                            }
+                        }
                     });
                     hourList.appendChild(hourDiv);
                 }
 
+                // Isi daftar menit (0-59, kelipatan 5)
                 for (let i = 0; i <= 59; i += 5) {
                     const minuteDiv = document.createElement('div');
-                    minuteDiv.className = `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${
+                    minuteDiv.className = `time-option px-4 py-4 text-center cursor-pointer hover:bg-blue-50 ${
                         i === selectedMinute || (i === 0 && selectedMinute < 5) ? 'bg-blue-100 font-medium text-blue-700 selected' : ''
                     }`;
                     minuteDiv.textContent = i.toString().padStart(2, '0');
                     minuteDiv.dataset.value = i;
+                    minuteDiv.tabIndex = 0;
                     minuteDiv.addEventListener('click', function() {
                         document.querySelectorAll('#minute-list .time-option').forEach(opt =>
                             opt.classList.remove('bg-blue-100', 'font-medium', 'text-blue-700',
                                 'selected')
                         );
                         this.classList.add('bg-blue-100', 'font-medium', 'text-blue-700', 'selected');
+                        this.focus();
+                        scrollToOption(minuteList, this);
+                    });
+                    minuteDiv.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            this.click();
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            const prev = this.previousElementSibling;
+                            if (prev) {
+                                prev.focus();
+                                prev.click();
+                                scrollToOption(minuteList, prev);
+                            }
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            const next = this.nextElementSibling;
+                            if (next) {
+                                next.focus();
+                                next.click();
+                                scrollToOption(minuteList, next);
+                            }
+                        }
                     });
                     minuteList.appendChild(minuteDiv);
                 }
 
+                // Posisikan scroll ke opsi terpilih
                 const selectedHourElement = hourList.querySelector(`.time-option[data-value="${selectedHour}"]`);
                 const selectedMinuteElement = minuteList.querySelector(
                     `.time-option[data-value="${selectedMinute}"], .time-option[data-value="0"]`
                 );
-                if (selectedHourElement) {
-                    hourList.scrollTop =
-                        selectedHourElement.offsetTop - hourList.offsetHeight / 2 + selectedHourElement
-                        .offsetHeight / 2;
-                }
-                if (selectedMinuteElement) {
-                    minuteList.scrollTop =
-                        selectedMinuteElement.offsetTop - minuteList.offsetHeight / 2 + selectedMinuteElement
-                        .offsetHeight / 2;
-                }
+                if (selectedHourElement) scrollToOption(hourList, selectedHourElement);
+                if (selectedMinuteElement) scrollToOption(minuteList, selectedMinuteElement);
+            }
+
+            function scrollToOption(list, option) {
+                if (!list || !option) return;
+                const listHeight = list.offsetHeight;
+                const optionHeight = option.offsetHeight;
+                const optionTop = option.offsetTop;
+                list.scrollTo({
+                    top: optionTop - listHeight / 2 + optionHeight / 2,
+                    behavior: 'smooth'
+                });
             }
 
             function setTimeFromPicker() {
@@ -924,12 +1013,10 @@
                 if (endDateTime < startDateTime && !fullDayToggle.checked) {
                     showAlert('Tanggal/waktu selesai tidak boleh sebelum tanggal/waktu mulai', 'error');
                     endDateInput.value = startDateInput.value;
-
                     if (startDateInput.value === endDateInput.value) {
                         const [hours, minutes] = (startTimeInput.value || '00:00').split(':').map(Number);
                         let endHours = hours;
                         let endMinutes = minutes + 30;
-
                         if (endMinutes >= 60) {
                             endHours += 1;
                             endMinutes -= 60;
@@ -938,13 +1025,10 @@
                             endHours = 23;
                             endMinutes = 59;
                         }
-
                         endTimeInput.value =
                             `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
                     }
                 }
-
-                // Update subtask date limits and values
                 updateAllSubtaskDates();
             }
 
@@ -1148,7 +1232,8 @@
                 if (adjusted) {
                     showAlert(
                         `Tanggal subtask anak dari '${parentTitle}' telah disesuaikan agar sesuai dengan rentang tanggal subtask induk.`,
-                        'info');
+                        'info'
+                    );
                 }
             }
 
@@ -1374,31 +1459,36 @@
                         if (startInput.value < parentStartDate) {
                             showAlert(
                                 `Tanggal mulai subtask '${title}' harus pada atau setelah ${formatDateDisplay(parentStartDate)}.`,
-                                'error');
+                                'error'
+                            );
                             isValid = false;
                         }
                         if (startInput.value > parentEndDate) {
                             showAlert(
                                 `Tanggal mulai subtask '${title}' harus pada atau sebelum ${formatDateDisplay(parentEndDate)}.`,
-                                'error');
+                                'error'
+                            );
                             isValid = false;
                         }
                         if (endInput.value < parentStartDate) {
                             showAlert(
                                 `Tanggal selesai subtask '${title}' harus pada atau setelah ${formatDateDisplay(parentStartDate)}.`,
-                                'error');
+                                'error'
+                            );
                             isValid = false;
                         }
                         if (endInput.value > parentEndDate) {
                             showAlert(
                                 `Tanggal selesai subtask '${title}' harus pada atau sebelum ${formatDateDisplay(parentEndDate)}.`,
-                                'error');
+                                'error'
+                            );
                             isValid = false;
                         }
                         if (endInput.value < startInput.value) {
                             showAlert(
                                 `Tanggal selesai subtask '${title}' tidak boleh sebelum tanggal mulai.`,
-                                'error');
+                                'error'
+                            );
                             isValid = false;
                         }
                     }

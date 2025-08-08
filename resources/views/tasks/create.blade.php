@@ -755,7 +755,6 @@
                         modal.classList.remove('opacity-0', 'scale-95');
                         modal.classList.add('opacity-100', 'scale-100');
                     }, 50);
-                    document.body.classList.add('overflow-hidden');
                 }
 
                 function closeTimePicker() {
@@ -967,7 +966,7 @@
                             if (endInput.value && endInput.value < parentStartDate) endInput.value =
                                 parentStartDate;
                             if (endInput.value && endInput.value > parentEndDate) endInput.value =
-                            parentEndDate;
+                                parentEndDate;
                         }
 
                         if (dateDisplaySpan) {
@@ -1000,7 +999,7 @@
                             if (childStartInput) {
                                 childStartInput.min = parentStartDate;
                                 if (childStartInput.value < parentStartDate) childStartInput.value =
-                                parentStartDate;
+                                    parentStartDate;
                                 if (childStartInput.value > parentEndDate) childStartInput.value = parentEndDate;
                             }
 
@@ -1023,43 +1022,46 @@
                         });
                 }
 
-        function addSubtask(parentId) {
-            const subtasksContainer = document.querySelector('.subtasks-scroll-container');
-            const noSubtasksMessage = document.getElementById('no-subtasks');
+                function addSubtask(parentId) {
+                    const subtasksContainer = document.querySelector('.subtasks-scroll-container');
+                    const noSubtasksMessage = document.getElementById('no-subtasks');
 
-            if (noSubtasksMessage) noSubtasksMessage.style.display = 'none';
+                    if (noSubtasksMessage) noSubtasksMessage.style.display = 'none';
 
-            const subtaskId = 'subtask-' + Date.now();
-            let level = 0;
+                    const subtaskId = 'subtask-' + Date.now();
+                    let level = 0;
 
-            if (parentId) {
-                const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
-                if (parentItem) {
-                    level = parseInt(parentItem.dataset.level || 0) + 1;
-                    if (level >= 6) {
-                        showAlert('Maksimal level subtask adalah 6', 'warning');
-                        return;
+                    if (parentId) {
+                        const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
+                        if (parentItem) {
+                            level = parseInt(parentItem.dataset.level || 0) + 1;
+                            if (level >= 6) {
+                                showAlert('Maksimal level subtask adalah 6', 'warning');
+                                return;
+                            }
+                        }
                     }
-                }
-            }
 
-            const { parentStartDate, parentEndDate } = getParentDates(parentId);
-            const displayParentStart = formatDateDisplay(parentStartDate);
-            const displayParentEnd = formatDateDisplay(parentEndDate);
+                    const {
+                        parentStartDate,
+                        parentEndDate
+                    } = getParentDates(parentId);
+                    const displayParentStart = formatDateDisplay(parentStartDate);
+                    const displayParentEnd = formatDateDisplay(parentEndDate);
 
-            const subtaskElement = document.createElement('div');
-            subtaskElement.className =
-                `subtask-item bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm relative transition-all duration-200 hover:shadow-md`;
-            subtaskElement.dataset.id = subtaskId;
-            subtaskElement.dataset.level = level;
-            subtaskElement.style.marginLeft = `${level * 16}px`;
+                    const subtaskElement = document.createElement('div');
+                    subtaskElement.className =
+                        `subtask-item bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm relative transition-all duration-200 hover:shadow-md`;
+                    subtaskElement.dataset.id = subtaskId;
+                    subtaskElement.dataset.level = level;
+                    subtaskElement.style.marginLeft = `${level * 16}px`;
 
-            if (level > 0) {
-                subtaskElement.style.borderLeft = '2px solid #6366F1';
-                subtaskElement.style.paddingLeft = '14px';
-            }
+                    if (level > 0) {
+                        subtaskElement.style.borderLeft = '2px solid #6366F1';
+                        subtaskElement.style.paddingLeft = '14px';
+                    }
 
-            subtaskElement.innerHTML = `
+                    subtaskElement.innerHTML = `
                 <div class="flex flex-col md:flex-row md:items-center gap-4">
                     <div class="flex-1">
                         <div class="flex items-center gap-2">
@@ -1111,67 +1113,68 @@
                 </div>
             `;
 
-            // --- PENAMBAHAN LOGIKA INSERT DI BAWAH PARENT DAN CHILD-NYA ---
-            if (parentId) {
-                // Cari parent
-                const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
-                if (parentItem) {
-                    // Cari child terakhir dari parent (berdasarkan urutan DOM dan parent_id)
-                    let insertAfter = parentItem;
-                    let found = true;
-                    while (found) {
-                        found = false;
-                        // Cari child langsung setelah insertAfter
-                        const nextSibling = insertAfter.nextElementSibling;
-                        if (nextSibling && nextSibling.querySelector(`input[name$="[parent_id]"]`)?.value === parentId) {
-                            insertAfter = nextSibling;
-                            found = true;
+                    // --- PENAMBAHAN LOGIKA INSERT DI BAWAH PARENT DAN CHILD-NYA ---
+                    if (parentId) {
+                        // Cari parent
+                        const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
+                        if (parentItem) {
+                            // Cari child terakhir dari parent (berdasarkan urutan DOM dan parent_id)
+                            let insertAfter = parentItem;
+                            let found = true;
+                            while (found) {
+                                found = false;
+                                // Cari child langsung setelah insertAfter
+                                const nextSibling = insertAfter.nextElementSibling;
+                                if (nextSibling && nextSibling.querySelector(`input[name$="[parent_id]"]`)?.value ===
+                                    parentId) {
+                                    insertAfter = nextSibling;
+                                    found = true;
+                                }
+                            }
+                            insertAfter.after(subtaskElement);
+                        } else {
+                            subtasksContainer.appendChild(subtaskElement);
                         }
+                    } else {
+                        subtasksContainer.appendChild(subtaskElement);
                     }
-                    insertAfter.after(subtaskElement);
-                } else {
-                    subtasksContainer.appendChild(subtaskElement);
+
+                    // ...existing event listeners for date changes...
+                    const startDateInput = subtaskElement.querySelector('.start-date-input');
+                    const endDateInput = subtaskElement.querySelector('.end-date-input');
+
+                    startDateInput.addEventListener('change', function() {
+                        endDateInput.min = this.value;
+                        if (endDateInput.value < this.value) endDateInput.value = this.value;
+
+                        const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
+                        if (dateDisplaySpan) {
+                            dateDisplaySpan.textContent =
+                                `${formatDateDisplay(this.value)} - ${formatDateDisplay(endDateInput.value)}`;
+                        }
+
+                        updateChildSubtaskLimits(subtaskId);
+                    });
+
+                    endDateInput.addEventListener('change', function() {
+                        const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
+                        if (dateDisplaySpan) {
+                            dateDisplaySpan.textContent =
+                                `${formatDateDisplay(startDateInput.value)} - ${formatDateDisplay(this.value)}`;
+                        }
+
+                        updateChildSubtaskLimits(subtaskId);
+                    });
+
+                    checkScrollIndicator();
                 }
-            } else {
-                subtasksContainer.appendChild(subtaskElement);
-            }
-
-            // ...existing event listeners for date changes...
-            const startDateInput = subtaskElement.querySelector('.start-date-input');
-            const endDateInput = subtaskElement.querySelector('.end-date-input');
-
-            startDateInput.addEventListener('change', function() {
-                endDateInput.min = this.value;
-                if (endDateInput.value < this.value) endDateInput.value = this.value;
-
-                const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
-                if (dateDisplaySpan) {
-                    dateDisplaySpan.textContent =
-                        `${formatDateDisplay(this.value)} - ${formatDateDisplay(endDateInput.value)}`;
-                }
-
-                updateChildSubtaskLimits(subtaskId);
-            });
-
-            endDateInput.addEventListener('change', function() {
-                const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
-                if (dateDisplaySpan) {
-                    dateDisplaySpan.textContent =
-                        `${formatDateDisplay(startDateInput.value)} - ${formatDateDisplay(this.value)}`;
-                }
-
-                updateChildSubtaskLimits(subtaskId);
-            });
-
-            checkScrollIndicator();
-        }
 
                 function removeSubtask(subtaskId, isExisting = false) {
                     document.querySelectorAll(`input[name$="[parent_id]"][value="${subtaskId}"]`).forEach(
-                    childInput => {
-                        const childId = childInput.closest('.subtask-item')?.dataset.id;
-                        if (childId) removeSubtask(childId, false);
-                    });
+                        childInput => {
+                            const childId = childInput.closest('.subtask-item')?.dataset.id;
+                            if (childId) removeSubtask(childId, false);
+                        });
 
                     const subtaskElement = document.querySelector(`.subtask-item[data-id="${subtaskId}"]`);
                     if (subtaskElement) {
