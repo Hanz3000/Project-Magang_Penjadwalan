@@ -16,163 +16,434 @@ use Illuminate\Support\Facades\Log;
 class TaskController extends Controller
 {
     public function index()
-    {
-        try {
-            $tasksQuery = Task::with([
-                'user',
-                'category',
-                'subTasks' => function ($query) {
-                    $query->orderBy('parent_id')->orderBy('created_at');
-                },
-                'collaborators' => function ($query) {
-                    $query->where('status', 'approved')->with('user');
+{
+    try {
+        // 1. Buat query tanpa get() dulu
+        $tasksQuery = Task::with([
+            'user',
+            'category',
+            'subTasks' => function ($query) {
+                $query->orderBy('parent_id')->orderBy('created_at');
+            },
+            'collaborators' => function ($query) {
+                $query->where('status', 'approved')->with('user');
+            },
+            'revisions' => function($query) {
+                // Load semua revisi yang pending untuk task ini
+                $query->where('status', 'pending');
+            }
+        ])
+        ->where(function ($query) {
+            $query->where('user_id', Auth::id())
+                  ->orWhereHas('collaborators', function ($q) {
+                      $q->where('user_id', Auth::id())->where('status', 'approved');
+                  });
+        })
+        ->orderBy('start_date', 'asc');
+
+        // 2. Ambil sekali
+        $tasksCollection = $tasksQuery->get();
+
+        // 3. Mapping data dengan revision_status dan preview system
+        $taskData = $tasksCollection->map(function ($task) {
+            $durationDays = 0;
+            if ($task->start_date && $task->end_date) {
+                $start = \Carbon\Carbon::parse($task->start_date);
+                $end = \Carbon\Carbon::parse($task->end_date);
+                $durationDays = $end->diffInDays($start) + 1;
+            }
+
+            $isOwner = $task->user_id === Auth::id();
+            $isCollaborator = $task->collaborators->where('user_id', Auth::id())->where('status', 'approved')->isNotEmpty();
+            
+            // Ambil revisi pending untuk task ini
+            $pendingRevisions = $task->revisions->where('status', 'pending');
+            
+            // Untuk collaborator: tampilkan preview perubahan mereka
+            // Untuk owner: tampilkan data asli + indikator ada pending revisions
+            $displaySubTasks = $this->getDisplaySubTasks($task, $isOwner, $isCollaborator, $pendingRevisions);
+            
+            $leafSubTasks = $displaySubTasks->filter(function ($st) use ($displaySubTasks) {
+                return $displaySubTasks->where('parent_id', $st['id'])->count() == 0;
+            });
+            $subtaskCompleted = $leafSubTasks->where('completed', true)->count();
+            $subtaskTotal = $leafSubTasks->count();
+            $calendarProgress = $subtaskTotal > 0 ? round(($subtaskCompleted / $subtaskTotal) * 100) : ($task->completed ? 100 : 0);
+
+            // Untuk task level, cek apakah ada revisi pending
+            $taskRevisionStatus = null;
+            $taskDisplayData = $task->toArray();
+            
+            if (!$isOwner && $isCollaborator) {
+                // Collaborator melihat preview perubahan mereka
+                $userPendingRevision = $pendingRevisions
+                    ->where('collaborator_id', Auth::id())
+                    ->where('revision_type', 'update_task_with_subtasks')
+                    ->sortByDesc('created_at')
+                    ->first();
+                    
+                if ($userPendingRevision && isset($userPendingRevision->proposed_data['task'])) {
+                    $taskRevisionStatus = 'pending';
+                    // Override data dengan proposed data untuk preview
+                    $proposedTaskData = $userPendingRevision->proposed_data['task'];
+                    foreach ($proposedTaskData as $field => $value) {
+                        if (isset($taskDisplayData[$field])) {
+                            $taskDisplayData[$field] = $value;
+                        }
+                    }
                 }
-            ])
-            ->where(function ($query) {
-                $query->where('user_id', Auth::id())
-                        ->orWhereHas('collaborators', function ($q) {
-                            $q->where('user_id', Auth::id())->where('status', 'approved');
-                        });
+            } else if ($isOwner) {
+                // Owner melihat status pending dari collaborator
+                $hasTaskPendingRevisions = $pendingRevisions->whereIn('revision_type', [
+                    'update_task_with_subtasks', 'update'
+                ])->isNotEmpty();
+                
+                if ($hasTaskPendingRevisions) {
+                    $taskRevisionStatus = 'has_pending';
+                }
+            }
+
+            return [
+                'id' => $task->id,
+                'title' => $taskDisplayData['title'] ?? $task->title,
+                'description' => $taskDisplayData['description'] ?? $task->description,
+                'priority' => $taskDisplayData['priority'] ?? $task->priority,
+                'start_date' => isset($taskDisplayData['start_date']) ? 
+                    \Carbon\Carbon::parse($taskDisplayData['start_date'])->format('Y-m-d') : 
+                    $task->start_date?->format('Y-m-d'),
+                'end_date' => isset($taskDisplayData['end_date']) ? 
+                    \Carbon\Carbon::parse($taskDisplayData['end_date'])->format('Y-m-d') : 
+                    $task->end_date?->format('Y-m-d'),
+                'start_date_formatted' => isset($taskDisplayData['start_date']) ? 
+                    \Carbon\Carbon::parse($taskDisplayData['start_date'])->format('M d') : 
+                    $task->start_date?->format('M d'),
+                'end_date_formatted' => isset($taskDisplayData['end_date']) ? 
+                    \Carbon\Carbon::parse($taskDisplayData['end_date'])->format('M d') : 
+                    $task->end_date?->format('M d'),
+                'start_time' => $taskDisplayData['start_time'] ?? ($task->start_time ? $task->start_time->format('H:i') : null),
+                'end_time' => $taskDisplayData['end_time'] ?? ($task->end_time ? $task->end_time->format('H:i') : null),
+                'is_all_day' => $taskDisplayData['is_all_day'] ?? $task->is_all_day,
+                'completed' => $task->completed, // Status completed tidak bisa diubah via revisi
+                'durationDays' => $durationDays,
+                'calendarProgress' => $calendarProgress,
+                'category_id' => $taskDisplayData['category_id'] ?? $task->category_id,
+                'category_name' => $task->category?->name ?? null,
+                'category_color' => $task->category?->color ?? '#6B7280',
+                'is_owner' => $isOwner,
+                'owner_name' => $task->user?->name ?? 'Unknown',
+                'revision_status' => $taskRevisionStatus, // Status revisi untuk task
+                'sub_tasks' => $displaySubTasks->values()->toArray(),
+                'collaborators' => $task->collaborators->map(function ($collab) {
+                    return [
+                        'id' => $collab->id,
+                        'user_id' => $collab->user?->id,
+                        'name' => $collab->user?->name ?? 'Deleted User',
+                        'email' => $collab->user?->email ?? '',
+                        'can_edit' => $collab->can_edit,
+                        'status' => $collab->status
+                    ];
+                })->values()->toArray()
+            ];
+        });
+
+        $tasks = $taskData; // gunakan $taskData sebagai $tasks
+
+        // Calendar Events
+        $calendarEvents = $tasksCollection->map(function ($task) {
+            if (!$task->start_date || !$task->end_date) return null;
+
+            $isAllDay = $task->is_all_day || !$task->start_time || !$task->end_time;
+            $eventStart = $task->start_date->format('Y-m-d');
+            $eventEnd = $task->end_date->copy()->addDay()->format('Y-m-d');
+
+            return [
+                'title' => $task->title,
+                'start' => $isAllDay ? $eventStart : $task->start_date->format('Y-m-d\TH:i:s'),
+                'end' => $isAllDay ? $eventEnd : $task->end_date->format('Y-m-d\TH:i:s'),
+                'allDay' => $isAllDay,
+                'extendedProps' => [
+                    'taskId' => $task->id,
+                    'priority' => $task->priority,
+                    'completed' => $task->completed,
+                    'is_owner' => $task->user_id === Auth::id(),
+                ],
+                'backgroundColor' => $this->getPriorityColor($task->priority),
+                'borderColor' => $task->completed ? '#9CA3AF' : $this->getPriorityColor($task->priority),
+                'textColor' => '#FFFFFF'
+            ];
+        })->filter();
+
+        // Pending Revisions
+        $pendingRevisions = TaskRevision::with(['task', 'collaborator'])
+            ->whereHas('task', function ($q) {
+                $q->where('user_id', Auth::id());
             })
-            ->orderBy('start_date', 'asc')
+            ->orWhere('collaborator_id', Auth::id())
+            ->where('status', 'pending')
             ->get();
 
-            $tasks = $tasksQuery->map(function ($task) {
-                $durationDays = $task->start_date && $task->end_date
-                    ? $task->start_date->diffInDays($task->end_date) + 1
-                    : 0;
+        // Categories
+        $categories = Category::withCount(['tasks' => function ($query) {
+            $query->where('user_id', Auth::id())
+                  ->orWhereHas('collaborators', function ($q) {
+                      $q->where('user_id', Auth::id())->where('status', 'approved');
+                  });
+        }])->get();
 
-                $leafSubTasks = $task->subTasks->filter(function ($subTask) use ($task) {
-                    return !$task->subTasks->where('parent_id', $subTask->id)->count();
-                });
+        // Stats
+        $totalTasks = $tasks->count();
+        $completedTasks = $tasks->where('completed', true)->count();
+        $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
 
-                $completedCount = $leafSubTasks->where('completed', true)->count();
-                $totalCount = $leafSubTasks->count();
-                $calendarProgress = $totalCount > 0
-                    ? round(($completedCount / $totalCount) * 100)
-                    : ($task->completed ? 100 : 0);
+        $priorityCounts = [
+            'urgent' => $tasks->where('priority', 'urgent')->count(),
+            'high' => $tasks->where('priority', 'high')->count(),
+            'medium' => $tasks->where('priority', 'medium')->count(),
+            'low' => $tasks->where('priority', 'low')->count(),
+        ];
 
-                return [
-                    'id' => $task->id,
-                    'title' => $task->title,
-                    'description' => $task->description,
-                    'priority' => $task->priority,
-                    'start_date' => $task->start_date?->format('Y-m-d'),
-                    'end_date' => $task->end_date?->format('Y-m-d'),
-                    'start_date_formatted' => $task->start_date?->format('M d'),
-                    'end_date_formatted' => $task->end_date?->format('M d'),
-                    'start_time' => $task->start_time ? $task->start_time->format('H:i') : null,
-                    'end_time' => $task->end_time ? $task->end_time->format('H:i') : null,
-                    'is_all_day' => $task->is_all_day,
-                    'completed' => $task->completed,
-                    'durationDays' => $durationDays,
-                    'calendarProgress' => $calendarProgress,
-                    'category_id' => $task->category_id,
-                    'category_name' => $task->category?->name ?? null,
-                    'category_color' => $task->category?->color ?? '#6B7280',
-                    'is_owner' => $task->user_id === Auth::id(),
-                    'owner_name' => $task->user?->name ?? 'Unknown',
-                    'sub_tasks' => $task->subTasks->map(function ($subtask) {
-                        return [
-                            'id' => $subtask->id,
-                            'title' => $subtask->title,
-                            'completed' => $subtask->completed,
-                            'parent_id' => $subtask->parent_id,
-                            'is_group' => $subtask->is_group,
-                            'start_date' => $subtask->start_date?->format('Y-m-d'),
-                            'end_date' => $subtask->end_date?->format('Y-m-d'),
-                        ];
-                    })->all(),
-                    'collaborators' => $task->collaborators->map(function ($collab) {
-                        return [
-                            'id' => $collab->id,
-                            'user_id' => $collab->user?->id,
-                            'name' => $collab->user?->name ?? 'Deleted User',
-                            'email' => $collab->user?->email ?? '',
-                            'can_edit' => $collab->can_edit,
-                            'status' => $collab->status
-                        ];
-                    })->all()
-                ];
-            });
+        return view('tasks.index', compact(
+            'tasks',
+            'taskData',
+            'calendarEvents',
+            'pendingRevisions',
+            'categories',
+            'priorityCounts',
+            'totalTasks',
+            'completedTasks',
+            'overallProgress'
+        ));
 
-            $calendarEvents = $tasksQuery->map(function ($task) {
-                if (!$task->start_date || !$task->end_date) {
-                    return null;
-                }
+    } catch (\Exception $e) {
+        \Log::error('TaskController Error', [
+            'user' => Auth::id(),
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'input' => request()->all()
+        ]);
 
-                $isAllDay = $task->is_all_day || !$task->start_time || !$task->end_time;
-                $eventStart = $task->start_date->format('Y-m-d');
-                $eventEnd = $task->end_date->copy()->addDay()->format('Y-m-d');
+        return response()->view('errors.custom', [
+            'message' => 'Error loading task data.',
+            'error' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ], 500);
+    }
+}
 
-                return [
-                    'title' => $task->title,
-                    'start' => $isAllDay ? $eventStart : $task->start_date->format('Y-m-d\TH:i:s'),
-                    'end' => $isAllDay ? $eventEnd : $task->end_date->format('Y-m-d\TH:i:s'),
-                    'allDay' => $isAllDay,
-                    'extendedProps' => [
-                        'taskId' => $task->id,
-                        'priority' => $task->priority,
-                        'completed' => $task->completed,
-                        'is_owner' => $task->user_id === Auth::id(),
-                    ],
-                    'backgroundColor' => $this->getPriorityColor($task->priority),
-                    'borderColor' => $task->completed ? '#9CA3AF' : $this->getPriorityColor($task->priority),
-                    'textColor' => '#FFFFFF'
-                ];
-            })->filter();
-
-            $pendingRevisions = TaskRevision::with(['task', 'collaborator'])
-                ->whereHas('task', function ($q) {
-                    $q->where('user_id', Auth::id());
-                })
-                ->orWhere('collaborator_id', Auth::id())
-                ->where('status', 'pending')
-                ->get();
-
-            $categories = Category::withCount(['tasks' => function ($query) {
-                $query->where('user_id', Auth::id())
-                        ->orWhereHas('collaborators', function ($q) {
-                            $q->where('user_id', Auth::id())->where('status', 'approved');
-                        });
-            }])->get();
-
-            $totalTasks = $tasks->count();
-            $completedTasks = $tasks->where('completed', true)->count();
-            $overallProgress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
-
-            $priorityCounts = [
-                'urgent' => $tasks->where('priority', 'urgent')->count(),
-                'high' => $tasks->where('priority', 'high')->count(),
-                'medium' => $tasks->where('priority', 'medium')->count(),
-                'low' => $tasks->where('priority', 'low')->count(),
+    /**
+     * Get display subtasks based on user role and pending revisions
+     */
+    private function getDisplaySubTasks($task, $isOwner, $isCollaborator, $pendingRevisions)
+    {
+        $originalSubTasks = collect($task->subTasks)->map(function($st) {
+            return [
+                'id' => $st->id,
+                'title' => $st->title,
+                'completed' => $st->completed,
+                'parent_id' => $st->parent_id,
+                'is_group' => $st->is_group,
+                'start_date' => $st->start_date?->format('Y-m-d'),
+                'end_date' => $st->end_date?->format('Y-m-d'),
+                'revision_status' => null,
+                'is_preview' => false
             ];
-
-            return view('tasks.index', compact(
-                'tasks',
-                'calendarEvents',
-                'pendingRevisions',
-                'categories',
-                'priorityCounts',
-                'totalTasks',
-                'completedTasks',
-                'overallProgress'
-            ));
-
-        } catch (\Exception $e) {
-            \Log::error('TaskController Error', [
-                'user' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'input' => request()->all()
-            ]);
-
-            return response()->view('errors.custom', [
-                'message' => 'Error loading task data.',
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ], 500);
+        });
+        
+        if (!$isOwner && $isCollaborator) {
+            // Collaborator: tampilkan preview perubahan mereka
+            return $this->getCollaboratorPreviewSubTasks($originalSubTasks, $pendingRevisions);
+        } else if ($isOwner) {
+            // Owner: tampilkan data asli dengan indikator pending
+            return $this->getOwnerViewSubTasks($originalSubTasks, $pendingRevisions);
+        }
+        
+        return $originalSubTasks;
+    }
+    
+    /**
+     * Get collaborator preview subtasks (with their pending changes)
+     */
+    private function getCollaboratorPreviewSubTasks($originalSubTasks, $pendingRevisions)
+    {
+        $userPendingRevision = $pendingRevisions
+            ->where('collaborator_id', Auth::id())
+            ->whereIn('revision_type', ['update_task_with_subtasks', 'create_subtask', 'create_multiple_subtasks'])
+            ->sortByDesc('created_at')
+            ->first();
+            
+        if (!$userPendingRevision) {
+            return $originalSubTasks;
+        }
+        
+        $displaySubTasks = $originalSubTasks->keyBy('id');
+        
+        // Handle different revision types
+        switch ($userPendingRevision->revision_type) {
+            case 'update_task_with_subtasks':
+                $this->applyTaskWithSubtasksPreview($displaySubTasks, $userPendingRevision);
+                break;
+                
+            case 'create_subtask':
+                $this->applyCreateSubtaskPreview($displaySubTasks, $userPendingRevision);
+                break;
+                
+            case 'create_multiple_subtasks':
+                $this->applyCreateMultipleSubtasksPreview($displaySubTasks, $userPendingRevision);
+                break;
+        }
+        
+        return $displaySubTasks->values();
+    }
+    
+    /**
+     * Get owner view subtasks (with pending indicators)
+     */
+    private function getOwnerViewSubTasks($originalSubTasks, $pendingRevisions)
+    {
+        $displaySubTasks = $originalSubTasks->keyBy('id');
+        
+        foreach ($pendingRevisions as $revision) {
+            switch ($revision->revision_type) {
+                case 'update_task_with_subtasks':
+                    $this->applyOwnerPendingIndicators($displaySubTasks, $revision);
+                    break;
+                    
+                case 'create_subtask':
+                case 'create_multiple_subtasks':
+                    // Owner akan melihat indikator ada subtask baru yang pending
+                    // Bisa ditambahkan logic untuk menampilkan preview subtask baru
+                    break;
+            }
+        }
+        
+        return $displaySubTasks->values();
+    }
+    
+    /**
+     * Apply task with subtasks preview for collaborator
+     */
+    private function applyTaskWithSubtasksPreview($displaySubTasks, $revision)
+    {
+        $proposedData = $revision->proposed_data;
+        
+        // Handle updated/new subtasks
+        if (isset($proposedData['subtasks'])) {
+            foreach ($proposedData['subtasks'] as $tempId => $subtaskData) {
+                if (isset($subtaskData['id']) && $displaySubTasks->has($subtaskData['id'])) {
+                    // Update existing subtask with preview
+                    $existing = $displaySubTasks->get($subtaskData['id']);
+                    $existing['title'] = $subtaskData['title'];
+                    $existing['start_date'] = $subtaskData['start_date'];
+                    $existing['end_date'] = $subtaskData['end_date'];
+                    $existing['is_group'] = $subtaskData['is_group'] ?? false;
+                    $existing['revision_status'] = 'pending';
+                    $existing['is_preview'] = true;
+                    $displaySubTasks->put($subtaskData['id'], $existing);
+                } else if ($subtaskData['is_new'] ?? false) {
+                    // Add new subtask preview
+                    $newSubtask = [
+                        'id' => 'temp_' . $tempId, // Temporary ID for new items
+                        'title' => $subtaskData['title'],
+                        'completed' => false,
+                        'parent_id' => $subtaskData['parent_id'],
+                        'is_group' => $subtaskData['is_group'] ?? false,
+                        'start_date' => $subtaskData['start_date'],
+                        'end_date' => $subtaskData['end_date'],
+                        'revision_status' => 'pending',
+                        'is_preview' => true
+                    ];
+                    $displaySubTasks->put('temp_' . $tempId, $newSubtask);
+                }
+            }
+        }
+        
+        // Handle deleted subtasks (mark as deleted preview)
+        if (isset($proposedData['deleted_subtasks'])) {
+            foreach ($proposedData['deleted_subtasks'] as $subtaskId => $subtaskData) {
+                if ($displaySubTasks->has($subtaskId)) {
+                    $existing = $displaySubTasks->get($subtaskId);
+                    $existing['revision_status'] = 'pending_delete';
+                    $existing['is_preview'] = true;
+                    $displaySubTasks->put($subtaskId, $existing);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Apply create subtask preview for collaborator
+     */
+    private function applyCreateSubtaskPreview($displaySubTasks, $revision)
+    {
+        $subtaskData = $revision->proposed_data['subtask_data'] ?? [];
+        
+        $newSubtask = [
+            'id' => 'temp_new_' . $revision->id,
+            'title' => $subtaskData['title'] ?? 'New Subtask',
+            'completed' => false,
+            'parent_id' => $subtaskData['parent_id'] ?? null,
+            'is_group' => $subtaskData['is_group'] ?? false,
+            'start_date' => $subtaskData['start_date'] ?? null,
+            'end_date' => $subtaskData['end_date'] ?? null,
+            'revision_status' => 'pending',
+            'is_preview' => true
+        ];
+        
+        $displaySubTasks->put('temp_new_' . $revision->id, $newSubtask);
+    }
+    
+    /**
+     * Apply create multiple subtasks preview for collaborator
+     */
+    private function applyCreateMultipleSubtasksPreview($displaySubTasks, $revision)
+    {
+        $subtasksData = $revision->proposed_data['subtasks_data'] ?? [];
+        
+        foreach ($subtasksData as $index => $subtaskData) {
+            $newSubtask = [
+                'id' => 'temp_multi_' . $revision->id . '_' . $index,
+                'title' => $subtaskData['title'] ?? 'New Subtask',
+                'completed' => false,
+                'parent_id' => $subtaskData['parent_id'] ?? null,
+                'is_group' => $subtaskData['is_group'] ?? false,
+                'start_date' => $subtaskData['start_date'] ?? null,
+                'end_date' => $subtaskData['end_date'] ?? null,
+                'revision_status' => 'pending',
+                'is_preview' => true
+            ];
+            
+            $displaySubTasks->put('temp_multi_' . $revision->id . '_' . $index, $newSubtask);
+        }
+    }
+    
+    /**
+     * Apply pending indicators for owner view
+     */
+    private function applyOwnerPendingIndicators($displaySubTasks, $revision)
+    {
+        $proposedData = $revision->proposed_data;
+        
+        // Mark subtasks that have pending changes
+        if (isset($proposedData['subtasks'])) {
+            foreach ($proposedData['subtasks'] as $subtaskData) {
+                if (isset($subtaskData['id']) && $displaySubTasks->has($subtaskData['id'])) {
+                    $existing = $displaySubTasks->get($subtaskData['id']);
+                    $existing['revision_status'] = 'has_pending';
+                    $displaySubTasks->put($subtaskData['id'], $existing);
+                }
+            }
+        }
+        
+        // Mark subtasks that will be deleted
+        if (isset($proposedData['deleted_subtasks'])) {
+            foreach ($proposedData['deleted_subtasks'] as $subtaskId => $subtaskData) {
+                if ($displaySubTasks->has($subtaskId)) {
+                    $existing = $displaySubTasks->get($subtaskId);
+                    $existing['revision_status'] = 'pending_delete';
+                    $displaySubTasks->put($subtaskId, $existing);
+                }
+            }
         }
     }
 

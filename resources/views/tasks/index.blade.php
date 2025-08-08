@@ -133,80 +133,148 @@
                         @php
                         function renderSubtasks($subtasks, $parentId = null, $task = null, $level = 0) {
                             $html = '';
+
+                            // Konversi ke collection jika array
                             if (is_array($subtasks)) {
                                 $subtasks = collect($subtasks);
                             }
 
+                            // Status label untuk revisi
+                            $statusLabels = [
+                                'pending' => ['text' => 'Menunggu Review', 'icon' => '⏳', 'class' => 'bg-yellow-100 text-yellow-800 border-yellow-300'],
+                                'pending_delete' => ['text' => 'Akan Dihapus', 'icon' => '🗑️', 'class' => 'bg-red-100 text-red-800 border-red-300'],
+                                'has_pending' => ['text' => 'Ada Usulan', 'icon' => '📝', 'class' => 'bg-blue-100 text-blue-800 border-blue-300'],
+                                'approved' => ['text' => 'Disetujui', 'icon' => '✅', 'class' => 'bg-green-100 text-green-800 border-green-300'],
+                                'rejected' => ['text' => 'Ditolak', 'icon' => '❌', 'class' => 'bg-red-100 text-red-800 border-red-300'],
+                            ];
+
                             foreach ($subtasks->where('parent_id', $parentId) as $subTask) {
-                                $isParent = $subtasks->where('parent_id', $subTask['id'])->count() > 0;
-                                $indentClass = 'ml-' . ($level * 6);
-                                $lineClass = $level > 0 ? 'border-l-2 border-gray-200 pl-4' : '';
+                                $children = $subtasks->where('parent_id', $subTask['id']);
+                                $isParent = $children->isNotEmpty();
+                                $indentClass = $level > 0 ? 'ml-' . ($level * 6) : '';
+                                $lineClass = $level > 0 ? 'pl-4 border-l-2 border-gray-200' : '';
+                                
+                                // Styling untuk preview items
+                                $previewClass = '';
+                                if (isset($subTask['is_preview']) && $subTask['is_preview']) {
+                                    if ($subTask['revision_status'] === 'pending_delete') {
+                                        $previewClass = 'opacity-50 bg-red-50 border-red-200';
+                                    } else {
+                                        $previewClass = 'bg-blue-50 border-blue-200';
+                                    }
+                                }
+
+                                // Render badge revisi jika ada
+                                $revisionBadge = '';
+                                if (!empty($subTask['revision_status'])) {
+                                    $status = $statusLabels[$subTask['revision_status']] ?? $statusLabels['pending'];
+                                    $revisionBadge = '<span 
+                                        class="revision-status-badge ml-2 px-2 py-0.5 inline-flex items-center gap-1 rounded-full text-xs font-medium border ' . $status['class'] . '"
+                                        data-subtask-id="' . $subTask['id'] . '">
+                                        ' . $status['icon'] . ' ' . $status['text'] . '
+                                        <button type="button" onclick="removeRevisionBadge(this)" class="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                                    </span>';
+                                }
 
                                 if ($isParent) {
-                                    $html .= '<div class="subtask-parent group relative ' . $lineClass . '" data-subtask-id="' . $subTask['id'] . '">';
-                                    
+                                    // === PARENT TASK ===
+                                    $html .= '<div class="subtask-parent group relative ' . $lineClass . ' ' . $previewClass . '" data-subtask-id="' . $subTask['id'] . '">';
+
+                                    // Garis vertikal untuk hierarki (kecuali level 0)
                                     if ($level > 0) {
                                         $html .= '<div class="absolute left-0 top-0 w-2 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
                                     }
-                                    
+
+                                    // Judul parent dengan tombol toggle
                                     $html .= '<div class="flex items-center gap-3 py-2 ' . $indentClass . '">';
-                                    $html .= '<button class="subtask-parent-toggle-btn text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50" 
-                                                data-subtask-id="' . $subTask['id'] . '" 
-                                                data-expanded="true">
-                                                <svg class="w-4 h-4 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
-                                            </button>';
+                                    $html .= '<button 
+                                        class="subtask-parent-toggle-btn text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50"
+                                        data-subtask-id="' . $subTask['id'] . '" 
+                                        data-expanded="true">';
+                                    $html .= '<svg class="w-4 h-4 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                              </svg>';
+                                    $html .= '</button>';
                                     $html .= '<div class="flex items-center gap-2">';
-                                    $html .= '<div class="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0"></div>';
-                                    $html .= '<span class="text-sm font-semibold text-gray-700 cursor-pointer subtask-parent-title hover:text-blue-600 transition-colors duration-200" data-subtask-id="' . $subTask['id'] . '">' . e($subTask['title']) . '</span>';
+                                    $html .= '<div class="w-2 h-2 bg-blue-400 rounded-full"></div>';
+                                    $html .= '<span class="text-sm font-semibold text-gray-700 subtask-parent-title hover:text-blue-600 cursor-pointer" data-subtask-id="' . $subTask['id'] . '">' . e($subTask['title']) . '</span>';
                                     $html .= '</div>';
+                                    $html .= $revisionBadge;
                                     $html .= '</div>';
 
-                                    $html .= '<div class="subtask-children relative border-l-2 border-gray-200 ml-4" id="subtask-children-' . $subTask['id'] . '">';
+                                    // Anak-anak (recursive)
+                                    $html .= '<div class="subtask-children ml-4 border-l-2 border-gray-200 mt-1" id="subtask-children-' . $subTask['id'] . '">';
                                     $html .= renderSubtasks($subtasks, $subTask['id'], $task, $level + 1);
                                     $html .= '</div>';
+
                                     $html .= '</div>';
                                 } else {
+                                    // === LEAF TASK (bukan parent) ===
                                     $checked = $subTask['completed'] ? 'checked' : '';
-                                    $lineClass = $subTask['completed'] ? 'line-through text-gray-400' : 'text-gray-700';
-
-                                    $html .= '<div class="subtask-item group relative flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-blue-50 transition-all duration-200 ' . $indentClass . '" data-subtask-id="' . $subTask['id'] . '">';
+                                    $textClass = $subTask['completed'] ? 'line-through text-gray-400' : 'text-gray-700';
                                     
-                                    if ($level > 0) {
-                                        $html .= '<div class="absolute left-0 top-0 w-4 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
+                                    // Untuk preview items, tambahkan indikator visual
+                                    if (isset($subTask['is_preview']) && $subTask['is_preview']) {
+                                        if ($subTask['revision_status'] === 'pending_delete') {
+                                            $textClass .= ' line-through opacity-60';
+                                        } else {
+                                            $textClass .= ' font-medium';
+                                        }
                                     }
-                                    
-                                    $html .= '<form action="' . route('subtasks.toggle', $subTask['id']) . '" method="POST" class="subtask-toggle-form">';
-                                    $html .= csrf_field() . method_field('PATCH');
-                                    $html .= '<input type="checkbox"
-                                        class="subtask-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                                        data-sub-task-id="' . $subTask['id'] . '"
-                                        data-task-id="' . $task['id'] . '"
-                                        data-is-leaf="true"
-                                        data-parent-id="' . $subTask['parent_id'] . '" ' . $checked . '>';
-                                    $html .= '</form>';
-                                    
+
+                                    $html .= '<div class="subtask-item group relative flex items-center gap-3 py-1 px-3 rounded hover:bg-blue-50 ' . $indentClass . ' ' . $lineClass . ' ' . $previewClass . '" data-subtask-id="' . $subTask['id'] . '">';
+
+                                    // Garis vertikal untuk hierarki
+                                    if ($level > 0) {
+                                        $html .= '<div class="absolute left-0 top-0 w-2 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
+                                    }
+
+                                    // Form toggle status (hanya untuk items yang bukan preview atau preview yang bukan delete)
+                                    if (!isset($subTask['is_preview']) || $subTask['revision_status'] !== 'pending_delete') {
+                                        // Skip checkbox untuk temporary IDs (new items)
+                                        if (!str_starts_with($subTask['id'], 'temp_')) {
+                                            $html .= '<form action="' . route('subtasks.toggle', $subTask['id']) . '" method="POST" class="subtask-toggle-form inline">';
+                                            $html .= csrf_field() . method_field('PATCH');
+                                            $html .= '<input type="checkbox" 
+                                                class="subtask-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                                data-sub-task-id="' . $subTask['id'] . '"
+                                                data-task-id="' . $task['id'] . '"
+                                                data-is-leaf="true"
+                                                data-parent-id="' . ($subTask['parent_id'] ?? '') . '"
+                                                ' . $checked . '>';
+                                            $html .= '</form>';
+                                        } else {
+                                            // Untuk item baru (preview), tampilkan checkbox disabled
+                                            $html .= '<input type="checkbox" class="w-4 h-4 text-blue-600 rounded opacity-50" disabled>';
+                                        }
+                                    } else {
+                                        // Untuk item yang akan dihapus, tampilkan icon delete
+                                        $html .= '<div class="w-4 h-4 flex items-center justify-center text-red-500">🗑️</div>';
+                                    }
+
+                                    // Icon dan teks
                                     $html .= '<div class="flex items-center gap-2 flex-1">';
-                                    $html .= '<div class="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>';
-                                    $html .= '<span class="text-sm ' . $lineClass . ' subtask-text flex-1">' . e($subTask['title']) . '</span>';
-                                    
-                                    // Add edit/delete buttons for subtasks if user has permission
-                                    if ($task['is_owner'] || (isset($task['collaborators']) && collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty())) {
-                                        $html .= '<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">';
-                                        $html .= '<button onclick="editSubtask(' . $subTask['id'] . ', ' . $task['id'] . ')" class="text-gray-400 hover:text-blue-600 p-1 rounded" title="Edit">';
-                                        $html .= '</button>';
+                                    $html .= '<div class="w-2 h-2 bg-green-400 rounded-full"></div>';
+                                    $html .= '<span class="text-sm ' . $textClass . ' subtask-text">' . e($subTask['title']) . '</span>';
+                                    $html .= '</div>';
+
+                                    // Tampilkan badge
+                                    $html .= $revisionBadge;
+
+                                    // Tombol edit/hapus jika punya izin (hanya untuk non-preview items)
+                                    if (($task['is_owner'] || 
+                                        (isset($task['collaborators']) && 
+                                         collect($task['collaborators'])->where('user_id', Auth::id())->where('can_edit', true)->isNotEmpty())) &&
+                                        (!isset($subTask['is_preview']) || !$subTask['is_preview'])) {
                                         
-                                        // Only owners can delete
-                                        if ($task['is_owner']) {
-                                            $html .= '<button onclick="deleteSubtask(' . $subTask['id'] . ')" class="text-gray-400 hover:text-red-600 p-1 rounded" title="Delete">';
-                                            
-                                            $html .= '</button>';
+                                        $html .= '<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">';
+                                       
+                                        if ($task['is_owner'] && !str_starts_with($subTask['id'], 'temp_')) {
+                                            $html .= '<button type="button" onclick="deleteSubtask(' . $subTask['id'] . ')" class="text-gray-400 hover:text-red-600 p-1 rounded" title="Delete">🗑️</button>';
                                         }
                                         $html .= '</div>';
                                     }
-                                    
-                                    $html .= '</div>';
+
                                     $html .= '</div>';
                                 }
                             }
@@ -228,9 +296,33 @@
                             $progressPercentage = $subtaskTotal > 0
                                 ? round(($subtaskCompleted / $subtaskTotal) * 100)
                                 : ($task['completed'] ? 100 : 0);
+                                
+                            // Styling untuk task preview
+                            $taskPreviewClass = '';
+                            $taskRevisionBadge = '';
+                            
+                            // Status label untuk task revisi
+                            $taskStatusLabels = [
+                                'pending' => ['text' => 'Perubahan Pending', 'icon' => '⏳', 'class' => 'bg-yellow-100 text-yellow-800 border-yellow-300'],
+                                'has_pending' => ['text' => 'Ada Usulan', 'icon' => '📝', 'class' => 'bg-blue-100 text-blue-800 border-blue-300'],
+                            ];
+                            
+                            if (!empty($task['revision_status'])) {
+                                if ($task['revision_status'] === 'pending') {
+                                    $taskPreviewClass = 'bg-blue-50 border-blue-200';
+                                }
+                                
+                                $status = $taskStatusLabels[$task['revision_status']] ?? $taskStatusLabels['pending'];
+                                $taskRevisionBadge = '<span 
+                                    class="revision-status-badge ml-2 px-2 py-0.5 inline-flex items-center gap-1 rounded-full text-xs font-medium border ' . $status['class'] . '"
+                                    data-task-id="' . $task['id'] . '">
+                                    ' . $status['icon'] . ' ' . $status['text'] . '
+                                    <button onclick="removeRevisionBadge(this)" class="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                                </span>';
+                            }
                             @endphp
 
-                            <div class="border border-gray-200 rounded-xl p-5 transition-all duration-300 hover:border-blue-300 hover:shadow-lg bg-white backdrop-blur-sm task-item group" 
+                            <div class="border border-gray-200 rounded-xl p-5 transition-all duration-300 hover:border-blue-300 hover:shadow-lg bg-white backdrop-blur-sm task-item group {{ $taskPreviewClass }}" 
                                  id="task-item-{{ $task['id'] }}" 
                                  data-task-status="{{ $task['completed'] ? 'completed' : 'active' }}">
                                 <div class="flex items-start gap-4">
@@ -263,6 +355,9 @@
                                                             onclick="openTaskModal({{ $task['id'] }})">
                                                             {{ $task['title'] }}
                                                         </h3>
+                                                        
+                                                        <!-- Task revision badge -->
+                                                        {!! $taskRevisionBadge !!}
                                                         
                                                         <!-- Ownership indicator -->
                                                         @if($task['is_owner'])
@@ -654,8 +749,9 @@ let collaborationState = {
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize existing functionality
     console.log('Initializing calendar application...');
+
+    
 
     function initializeApp() {
         if (typeof FullCalendar !== 'undefined') {
@@ -2946,176 +3042,6 @@ function updateTaskFilter(taskId, newStatus) {
     }
 }
 
-function openTaskModal(taskId) {
-    const task = appState.tasksData.find(t => t.id == taskId);
-    if (!task) {
-        showNotification('Memuat data terbaru...', 'info');
-        window.location.reload();
-        return;
-    }
-
-    appState.isModalOpen = true;
-    appState.currentModalTaskId = taskId;
-
-    let priorityText = '';
-    let priorityClass = '';
-    switch(task.priority) {
-        case 'urgent':
-            priorityText = 'Sangat Mendesak';
-            priorityClass = 'bg-red-100 text-red-800 border border-red-300';
-            break;
-        case 'high':
-            priorityText = 'Tinggi';
-            priorityClass = 'bg-orange-100 text-orange-800 border border-orange-300';
-            break;
-        case 'medium':
-            priorityText = 'Sedang';
-            priorityClass = 'bg-yellow-100 text-yellow-800 border border-yellow-300';
-            break;
-        case 'low':
-            priorityText = 'Rendah';
-            priorityClass = 'bg-green-100 text-green-800 border border-green-300';
-            break;
-    }
-
-    const leafSubTasks = task.sub_tasks ? task.sub_tasks.filter(st => 
-        !task.sub_tasks.some(parent => parent.parent_id === st.id)
-    ) : [];
-    const subtaskCompleted = leafSubTasks.filter(st => st.completed).length;
-    const subtaskTotal = leafSubTasks.length;
-    const progressPercentage = subtaskTotal > 0 ? Math.round((subtaskCompleted / subtaskTotal) * 100) : (task.completed ? 100 : 0);
-
-    const timeDisplay = (task.start_time && task.end_time && !task.is_all_day)
-        ? `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div class="flex items-center gap-2 mb-1">
-                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="text-xs font-medium text-gray-600">Waktu</span>
-            </div>
-            <span class="font-semibold text-gray-800 text-sm">${task.start_time} - ${task.end_time}</span>
-        </div>`
-        : `<div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-            <div class="flex items-center gap-2 mb-1">
-                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <span class="text-xs font-medium text-gray-600">Durasi</span>
-            </div>
-            <span class="font-semibold text-gray-800 text-sm">Timeline Harian Penuh</span>
-        </div>`;
-
-    let subtasksHtml = '';
-    if (task.sub_tasks && task.sub_tasks.length > 0) {
-        subtasksHtml = `
-            <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                <div class="flex justify-between items-center mb-3">
-                    <h5 class="font-medium text-gray-800 flex items-center gap-2 text-sm">
-                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"></path>
-                        </svg>
-                        Timeline Subtugas (<span id="modal-subtask-count">${subtaskCompleted}/${subtaskTotal}</span>)
-                    </h5>
-                    <div class="flex items-center gap-2">
-                        <div class="w-20 h-2 bg-white rounded-full overflow-hidden shadow-inner">
-                            <div id="modal-progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500" style="width: ${progressPercentage}%"></div>
-                        </div>
-                        <span id="modal-progress-percentage" class="text-xs font-semibold text-blue-600">${progressPercentage}%</span>
-                    </div>
-                </div>
-                <div class="space-y-1 max-h-40 overflow-y-auto">
-                    ${renderModalSubtasks(task.sub_tasks, null, task, 0)}
-                </div>
-            </div>
-        `;
-    }
-
-    const modalContent = document.getElementById('taskModalContent');
-    modalContent.innerHTML = `
-        <div class="flex items-start gap-3 mb-4">
-            <form action="/tasks/${task.id}/toggle" method="POST" class="task-toggle-form-modal">
-                <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').getAttribute('content')}">
-                <input type="hidden" name="_method" value="PATCH">
-                <input type="checkbox"
-                    class="task-checkbox-modal w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                    data-task-id="${task.id}"
-                    ${task.completed ? 'checked' : ''}>
-            </form>
-            <div class="flex-1">
-                <h4 class="font-bold text-lg mb-2 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'} flex items-center gap-2" id="modal-task-title-${task.id}">
-                    📋 ${task.title}
-                </h4>
-                <div class="flex items-center gap-2 mb-3 flex-wrap">
-                    <span class="px-2 py-1 text-xs rounded-lg font-medium ${priorityClass}">
-                        ${priorityText}
-                    </span>
-                    ${task.completed ? '<span class="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-lg font-medium border border-gray-300">✅ Selesai</span>' : ''}
-                    ${subtaskTotal > 0 ? `<span id="modal-progress-badge" class="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-lg font-medium border border-blue-300">📊 ${progressPercentage}% Progress</span>` : ''}
-                    <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-lg font-medium border border-green-300">⏱️ ${task.durationDays} hari</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
-                <div class="flex items-center gap-2 mb-1">
-                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span class="text-xs font-medium text-green-700">Start Timeline</span>
-                </div>
-                <span class="font-semibold text-green-800 text-sm">${formatDateString(task.start_date)}</span>
-            </div>
-            <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 border border-red-200">
-                <div class="flex items-center gap-2 mb-1">
-                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 01-2 2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span class="text-xs font-medium text-red-700">End Timeline</span>
-                </div>
-                <span class="font-semibold text-red-800 text-sm">${formatDateString(task.end_date)}</span>
-            </div>
-            ${timeDisplay}
-        </div>
-        
-        <div class="mb-4">
-            <h5 class="font-medium text-gray-800 mb-2 flex items-center gap-2 text-sm">
-                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                Deskripsi
-            </h5>
-            <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <p class="text-gray-700 leading-relaxed text-sm">${task.description || 'Tidak ada deskripsi tersedia'}</p>
-            </div>
-        </div>
-
-        ${subtasksHtml}
-        
-        <div class="flex gap-2 pt-4 border-t border-gray-200">
-            <a href="/tasks/${task.id}/edit" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
-                Edit Timeline
-            </a>
-            <button onclick="closeTaskModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg font-medium transition-all duration-300 text-sm">
-                Tutup
-            </button>
-        </div>
-    `;
-    
-    const taskModalEl = document.getElementById('taskModal');
-    taskModalEl.classList.remove('hidden');
-     document.body.classList.add('no-scroll');
-    
-    taskModalEl.style.opacity = '0';
-    taskModalEl.style.transform = 'scale(0.95)';
-    
-    setTimeout(() => {
-        taskModalEl.style.opacity = '1';
-        taskModalEl.style.transform = 'scale(1)';
-        taskModalEl.style.transition = 'all 0.3s ease-out';
-    }, 10);
-}
-
 function renderModalSubtasks(subtasks, parentId = null, task, level = 0) {
     let html = '';
     
@@ -3200,7 +3126,7 @@ function closeTaskModal() {
         appState.currentModalTaskId = null;
 
         // Hapus kelas no-scroll dari body
-        document.body.classList.remove('no-scroll');
+        document.body.classList.remove('overflow-hidden');
     }, 300);
 }
 
@@ -3362,6 +3288,79 @@ function hideAutoSaveIndicator() {
         indicator.classList.add('hidden');
     }
 }
+
+function removeRevisionBadge(button) {
+    const badge = button.closest('.revision-status-badge');
+    if (!badge) return;
+    
+    const subtaskId = badge.getAttribute('data-subtask-id');
+    const taskId = badge.getAttribute('data-task-id');
+    
+    if (subtaskId || taskId) {
+        let hidden = JSON.parse(localStorage.getItem('hiddenRevisionBadges') || '[]');
+        const itemId = subtaskId || taskId;
+        if (!hidden.includes(itemId)) {
+            hidden.push(itemId);
+            localStorage.setItem('hiddenRevisionBadges', JSON.stringify(hidden));
+        }
+    }
+
+    badge.remove();
+    showNotification('Notifikasi revisi disembunyikan', 'info', 2000);
+}
+
+async function refreshRevisionStatuses() {
+    try {
+        const response = await fetch('/api/tasks/revision-statuses'); // Buat endpoint ini
+        const data = await response.json();
+
+        data.subtasks.forEach(st => {
+            const badge = document.querySelector(`.revision-status-badge[data-subtask-id="${st.subtask_id}"]`);
+            if (badge && st.status) {
+                // Update badge sesuai status baru
+                const statusLabels = {
+                    pending: { text: 'Pending', icon: '⏳', class: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+                    approved: { text: 'Disetujui', icon: '✅', class: 'bg-green-100 text-green-800 border-green-300' },
+                    rejected: { text: 'Ditolak', icon: '❌', class: 'bg-red-100 text-red-800 border-red-300' }
+                };
+                const s = statusLabels[st.status];
+                if (s) {
+                    badge.className = `revision-status-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${s.class}`;
+                    badge.innerHTML = `${s.icon} ${s.text} <button class="ml-1 text-gray-500 hover:text-gray-700 text-xs" onclick="removeRevisionBadge(this)" title="Sembunyikan">&times;</button>`;
+                }
+            }
+        });
+    } catch (e) {
+        console.error('Gagal refresh status revisi:', e);
+    }
+}
+function getRevisionBadge(subtask) {
+    if (!subtask.revision_status) return '';
+
+    const statusMap = {
+        pending: { text: 'Pending', icon: '⏳', class: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+        approved: { text: 'Disetujui', icon: '✅', class: 'bg-green-100 text-green-800 border-green-300' },
+        rejected: { text: 'Ditolak', icon: '❌', class: 'bg-red-100 text-red-800 border-red-300' }
+    };
+
+    const status = statusMap[subtask.revision_status] || statusMap.pending;
+
+    return `
+        <span class="revision-status-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${status.class}" 
+              data-subtask-id="${subtask.id}">
+            ${status.icon} ${status.text}
+            <button onclick="removeRevisionBadge(this)" class="ml-1 text-gray-500 hover:text-gray-700 text-xs" title="Sembunyikan">&times;</button>
+        </span>
+    `;
+}
+
+
+// Cek apakah badge harus disembunyikan
+function isBadgeHidden(subtaskId) {
+    const hidden = JSON.parse(localStorage.getItem('hiddenRevisionBadges') || '[]');
+    return hidden.includes(subtaskId);
+}
+
 </script>
 
 <style>
@@ -3430,6 +3429,363 @@ function hideAutoSaveIndicator() {
         max-width: none !important;
         max-height: calc(100vh - 4rem) !important;
     }
+}
+
+/* Enhanced button hover states */
+button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Task Filter Styles */
+.filter-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+}
+
+.filter-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.filter-btn.active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.task-item {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#filter-empty-state {
+    transition: all 0.3s ease-out;
+}
+
+/* Calendar Styles */
+.gantt-timeline {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#calendar {
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.fc-more-link,
+.fc-daygrid-more-link {
+    display: none !important;
+}
+
+.fc-daygrid-day-bottom {
+    display: none !important;
+}
+
+.fc-daygrid-day-events {
+    margin: 0 !important;
+    padding: 4px 2px !important;
+}
+
+.fc-daygrid-event-harness {
+    margin-bottom: 2px !important;
+    position: relative !important;
+}
+
+.fc-daygrid-event {
+    white-space: nowrap !important;
+    overflow: visible !important;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.force-show-event {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.fc-daygrid-day {
+    min-height: 120px !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 6px 4px !important;
+    border: 1px solid #e2e8f0 !important;
+    position: relative;
+}
+
+.fc-daygrid-day-frame {
+    min-height: 120px !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: relative;
+}
+
+.timegrid-event-container {
+    transition: all 0.2s ease;
+}
+
+.timegrid-event-container:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 20 !important;
+}
+
+.gantt-compact-bar {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-left: 3px solid #1e40af;
+}
+
+.gantt-compact-content {
+    position: absolute;
+    top: 50%;
+    left: 6px;
+    transform: translateY(-50%);
+    color: white;  
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.gantt-compact-duration {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.9);
+    font-weight: 700;
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+}
+
+.gantt-compact-progress {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    right: 2px;
+    height: 2px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.fc-day-today {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.12)) !important;
+    border: 2px solid rgba(59, 130, 246, 0.3) !important;
+    position: relative;
+}
+
+.fc-day-today::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+    z-index: 1;
+}
+
+.fc-day-today .fc-daygrid-day-number {
+    backgroun: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    margin: 4px;
+    box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4);
+    z-index: 2;
+    position: relative;
+}
+
+.fc-timegrid-slot {
+    height: 40px !important;
+    border-color: #f1f5f9 !important;
+}
+
+.fc-timegrid-slot-minor {
+    border-color: #f8fafc !important;
+}
+
+.fc-timegrid-axis {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-right: 2px solid #e2e8f0;
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.fc-timegrid-event {
+    border-radius: 6px !important;
+    overflow: visible !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-timegrid-event .fc-event-main {
+    padding: 3px 6px !important;
+}
+
+.fc-col-header {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-bottom: 3px solid #e2e8f0;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fc-col-header-cell {
+    padding: 12px 6px;
+    position: relative;
+}
+
+.fc-col-header-cell::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day {
+    height: 50px !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+    padding: 2px !important;
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day-frame {
+    height: 50px !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+}
+
+.fc-multiMonthYear-view .fc-event {
+    font-size: 8px !important;
+    height: 16px !important;
+    line-height: 14px !important;
+    margin: 0px !important;
+    border-radius: 2px !important;
+    border-left-width: 2px !important;
+}
+
+.fc-multiMonthYear-view .fc-daygrid-day-number {
+    font-size: 9px;
+    padding: 2px;
+    font-weight: 600;
+}
+
+.fc-multiMonthYear-view .fc-col-header-cell {
+    padding: 4px 2px;
+    font-size: 9px;
+}
+
+.fc-toolbar {
+    margin-bottom: 2rem;
+    padding: 0 6px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fc-button {
+    background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+    font-weight: 600 !important;
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc-button:hover {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    border-color: #9ca3af !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.fc-button:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+}
+
+.fc-button-active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    border-color: #1d4ed8 !important;
+    color: white !important;
+    box-shadow: 0 3px 6px rgba(59, 130, 246, 0.4) !important;
+}
+
+.view-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 13px;
+    padding: 10px 18px;
+    font-weight: 600;
+}
+
+.view-btn.active-view,
+.view-btn:hover {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+    color: #3b82f6;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border: 1px solid #3b82f6;
+}
+
+#taskTooltip {
+    z-index: 1000;
+    box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.98);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-width: 380px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+#taskTooltip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #1d4ed8);
 }
 
 /* Enhanced button hover states */
@@ -4476,6 +4832,82 @@ button:hover {
     margin-bottom: 2px !important;
 }
 
+/* Revision status styling */
+.revision-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+    animation: fadeInScale 0.3s ease-out;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Preview item styling */
+.bg-blue-50 {
+    background-color: rgba(239, 246, 255, 0.8);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    position: relative;
+}
+
+.bg-blue-50::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+    border-radius: 0 2px 2px 0;
+}
+
+.bg-red-50 {
+    background-color: rgba(254, 242, 242, 0.8);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    position: relative;
+}
+
+.bg-red-50::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, #ef4444, #dc2626);
+    border-radius: 0 2px 2px 0;
+}
+
+/* Status colors */
+.bg-yellow-100 { background-color: #fef3c7; }
+.text-yellow-800 { color: #92400e; }
+.border-yellow-300 { border-color: #fcd34d; }
+
+.bg-green-100 { background-color: #dcfce7; }
+.text-green-800 { color: #166534; }
+.border-green-300 { border-color: #86efac; }
+
+.bg-red-100 { background-color: #fee2e2; }
+.text-red-800 { color: #991b1b; }
+.border-red-300 { border-color: #fca5a5; }
+
+.bg-blue-100 { background-color: #dbeafe; }
+.text-blue-800 { color: #1e40af; }
+.border-blue-300 { border-color: #93c5fd; }
 
 </style>
+
 @endpush
