@@ -20,9 +20,13 @@
                 <!-- Collaboration Invites Button -->
                 <a href="{{ route('collaboration.invites') }}"
                     class="relative bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-4 h-4">
+                <circle cx="6" cy="12" r="2"></circle>
+                <circle cx="18" cy="6" r="2"></circle>
+                <circle cx="18" cy="18" r="2"></circle>
+                <line x1="8" y1="12" x2="16" y2="6" stroke="currentColor" stroke-width="2"></line>
+                <line x1="8" y1="12" x2="16" y2="18" stroke="currentColor" stroke-width="2"></line>
+            </svg>
                     Kolaborasi
                     <span id="invite-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
                 </a>
@@ -180,12 +184,8 @@
                                     // === PARENT TASK ===
                                     $html .= '<div class="subtask-parent group relative ' . $lineClass . ' ' . $previewClass . '" data-subtask-id="' . $subTask['id'] . '">';
 
-                                    // Garis vertikal untuk hierarki (kecuali level 0)
-                                    if ($level > 0) {
-                                        $html .= '<div class="absolute left-0 top-0 w-2 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
-                                    }
-
-                                    // Judul parent dengan tombol toggle
+                                    
+                                                                        // Judul parent dengan tombol toggle
                                     $html .= '<div class="flex items-center gap-3 py-2 ' . $indentClass . '">';
                                     $html .= '<button 
                                         class="subtask-parent-toggle-btn text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-lg hover:bg-blue-50"
@@ -203,7 +203,7 @@
                                     $html .= '</div>';
 
                                     // Anak-anak (recursive)
-                                    $html .= '<div class="subtask-children ml-4 border-l-2 border-gray-200 mt-1" id="subtask-children-' . $subTask['id'] . '">';
+                                    $html .= '<div class="subtask-children ml-4 mt-1" id="subtask-children-' . $subTask['id'] . '">';
                                     $html .= renderSubtasks($subtasks, $subTask['id'], $task, $level + 1);
                                     $html .= '</div>';
 
@@ -224,10 +224,7 @@
 
                                     $html .= '<div class="subtask-item group relative flex items-center gap-3 py-1 px-3 rounded hover:bg-blue-50 ' . $indentClass . ' ' . $lineClass . ' ' . $previewClass . '" data-subtask-id="' . $subTask['id'] . '">';
 
-                                    // Garis vertikal untuk hierarki
-                                    if ($level > 0) {
-                                        $html .= '<div class="absolute left-0 top-0 w-2 h-6 border-l-2 border-b-2 border-gray-300 rounded-bl-md"></div>';
-                                    }
+                                    
 
                                     // Form toggle status (hanya untuk items yang bukan preview atau preview yang bukan delete)
                                     if (!isset($subTask['is_preview']) || $subTask['revision_status'] !== 'pending_delete') {
@@ -465,7 +462,7 @@
                                         </div>
 
                                         @if(count($task['sub_tasks']) > 0)
-                                        <div class="mt-4 ml-8 pl-4 border-l-2 border-blue-100 task-subtasks-container" id="subtasks-container-{{ $task['id'] }}">
+                                        <div class="mt-4 ml-8 pl-4  task-subtasks-container" id="subtasks-container-{{ $task['id'] }}">
                                             <div class="flex justify-between items-center mb-3">
                                                 <div class="text-xs text-gray-500 subtask-progress-text font-medium">
                                                     Subtugas ({{ $subtaskCompleted }}/{{ $subtaskTotal }})

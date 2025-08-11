@@ -64,7 +64,7 @@
                 <div class="flex items-center">
                     <a href="{{ route('tasks.index') }}" class="flex items-center text-xl font-semibold text-gray-900">
                         <i class="fas fa-tasks text-indigo-600 mr-2"></i>
-                        TaskFlow
+                        Task Manager
                     </a>
                     
                 </div>
