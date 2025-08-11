@@ -105,12 +105,12 @@ async function loadCollaboratedTasks() {
                         <div class="flex-1">
                             <h3 class="font-semibold text-gray-800 mb-2">${task.title}</h3>
                             <p class="text-sm text-gray-600 mb-2">
-                                Owner: <span class="font-medium">${task.owner?.name || 'Unknown'}</span>
+                                Owner: <span class="font-medium">${task.user?.name || 'Tidak diketahui'}</span>
                             </p>
                             <div class="flex items-center gap-4 text-xs text-gray-500">
-                                <span>📅 ${task.start_date_formatted} → ${task.end_date_formatted}</span>
-                                <span>⏱️ ${task.durationDays} hari</span>
-                                <span>📊 ${task.calendarProgress}% Progress</span>
+                                <span>📅 ${task.start_date_formatted || '-' } → ${task.end_date_formatted || '-' }</span>
+                                <span>⏱️ ${task.duration_days ?? 0} hari</span>
+                                <span>📊 ${task.calendar_progress ?? 0}% Progress</span>
                             </div>
                         </div>
                         <div class="flex gap-2">

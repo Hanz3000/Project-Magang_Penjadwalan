@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Carbon\Carbon;
 
 class Task extends Model
 {
@@ -31,7 +32,19 @@ class Task extends Model
         'is_all_day' => 'boolean',
     ];
 
-    // ✅ Relasi user (pemilik tugas)
+    // ✅ Supaya ikut di JSON
+    protected $appends = [
+        'start_date_formatted',
+        'end_date_formatted',
+        'duration_days',
+        'calendar_progress',
+        'formatted_start_time',
+        'formatted_end_time',
+        'start_date_time',
+        'end_date_time'
+    ];
+
+    /** ===== RELASI ===== */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -67,6 +80,17 @@ class Task extends Model
         return $this->hasMany(TaskRevision::class)->where('status', 'pending');
     }
 
+    /** ===== ACCESSOR ===== */
+    public function getStartDateFormattedAttribute()
+    {
+        return $this->start_date ? $this->start_date->format('d M Y') : null;
+    }
+
+    public function getEndDateFormattedAttribute()
+    {
+        return $this->end_date ? $this->end_date->format('d M Y') : null;
+    }
+
     public function getDurationDaysAttribute()
     {
         if ($this->start_date && $this->end_date) {
@@ -75,29 +99,14 @@ class Task extends Model
         return 0;
     }
 
-    public function canEdit($userId): bool
+    public function getCalendarProgressAttribute()
     {
-        if ($this->user_id === $userId) {
-            return true;
-        }
+        if (!$this->start_date || !$this->end_date) return 0;
 
-        return $this->collaborators()
-            ->where('user_id', $userId)
-            ->where('status', 'approved')
-            ->where('can_edit', true)
-            ->exists();
-    }
+        $total = $this->start_date->diffInDays($this->end_date) + 1;
+        $elapsed = $this->start_date->diffInDays(now()) + 1;
 
-    public function canView($userId): bool
-    {
-        if ($this->user_id === $userId) {
-            return true;
-        }
-
-        return $this->collaborators()
-            ->where('user_id', $userId)
-            ->where('status', 'approved')
-            ->exists();
+        return min(100, max(0, round(($elapsed / $total) * 100)));
     }
 
     public function getFormattedStartTimeAttribute()
@@ -126,6 +135,7 @@ class Task extends Model
         return $this->end_date ? $this->end_date->format('Y-m-d') : null;
     }
 
+    /** ===== SCOPE ===== */
     public function scopeAccessibleBy($query, $userId)
     {
         return $query->where('user_id', $userId)
@@ -133,5 +143,31 @@ class Task extends Model
                 $q->where('user_id', $userId)
                   ->where('status', 'approved');
             });
+    }
+
+    /** ===== PERMISSION ===== */
+    public function canEdit($userId): bool
+    {
+        if ($this->user_id === $userId) {
+            return true;
+        }
+
+        return $this->collaborators()
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->where('can_edit', true)
+            ->exists();
+    }
+
+    public function canView($userId): bool
+    {
+        if ($this->user_id === $userId) {
+            return true;
+        }
+
+        return $this->collaborators()
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->exists();
     }
 }
