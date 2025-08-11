@@ -1412,18 +1412,18 @@ function editSubtask(subtaskId, taskId) {
     openSubtaskModal(taskId, subtaskId);
 }
 
-// Enhanced Revision Review Functions with Category Name Resolution
+// Enhanced Revision Review Functions with Category Name Resolution and Selective Approval
 let categoryCache = {};
+let fieldApprovals = {}; // Track field-level approvals
 
 // Function to load and cache categories
 async function loadCategories() {
     try {
         if (Object.keys(categoryCache).length === 0) {
-            const response = await fetch('/api/categories'); // URL tetap sama karena Laravel otomatis menambah prefix /api
+            const response = await fetch('/api/categories');
             const data = await response.json();
             
             if (data.success && data.categories) {
-                // Cache categories by ID for quick lookup
                 data.categories.forEach(category => {
                     categoryCache[category.id] = category.name;
                 });
@@ -1438,13 +1438,18 @@ async function loadCategories() {
 
 async function loadPendingRevisionsModal() {
     try {
-        // Load categories first
         await loadCategories();
         
         const response = await fetch('/collaboration/pending-revisions');
         const data = await response.json();
         
         if (data.success) {
+            // Initialize field approval tracking
+            fieldApprovals = {};
+            data.revisions.forEach(revision => {
+                fieldApprovals[revision.id] = {};
+            });
+            
             renderRevisionModal(data.revisions);
             document.getElementById('revisionModal').classList.remove('hidden');
         }
@@ -1453,6 +1458,167 @@ async function loadPendingRevisionsModal() {
         showNotification('Gagal memuat data revisi', 'error');
     }
 }
+
+// Handle individual field approval/rejection
+function handleFieldAction(revisionId, fieldKey, action) {
+    if (!fieldApprovals[revisionId]) {
+        fieldApprovals[revisionId] = {};
+    }
+    
+    fieldApprovals[revisionId][fieldKey] = action === 'approve' ? 'approved' : 'rejected';
+    
+    // Update UI to reflect the change
+    updateFieldStatus(revisionId, fieldKey, action);
+    updateApprovalCount(revisionId);
+}
+
+// Update field status in UI
+function updateFieldStatus(revisionId, fieldKey, action) {
+    const fieldContainer = document.querySelector(`[data-revision="${revisionId}"][data-field="${fieldKey}"]`);
+    if (!fieldContainer) return;
+    
+    const approveBtn = fieldContainer.querySelector('.approve-btn');
+    const rejectBtn = fieldContainer.querySelector('.reject-btn');
+    const statusIndicator = fieldContainer.querySelector('.status-indicator');
+    
+    // Reset button states
+    approveBtn.classList.remove('bg-green-100', 'text-green-700', 'border-green-200');
+    rejectBtn.classList.remove('bg-red-100', 'text-red-700', 'border-red-200');
+    approveBtn.classList.add('bg-gray-100', 'text-gray-600');
+    rejectBtn.classList.add('bg-gray-100', 'text-gray-600');
+    
+    // Remove existing status indicator
+    if (statusIndicator) {
+        statusIndicator.remove();
+    }
+    
+    if (action === 'approve') {
+        approveBtn.classList.remove('bg-gray-100', 'text-gray-600');
+        approveBtn.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-200');
+        
+        // Add approved status indicator
+        const statusHtml = `
+            <div class="mt-2 ml-6 status-indicator">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Disetujui
+                </span>
+            </div>
+        `;
+        fieldContainer.insertAdjacentHTML('beforeend', statusHtml);
+    } else if (action === 'reject') {
+        rejectBtn.classList.remove('bg-gray-100', 'text-gray-600');
+        rejectBtn.classList.add('bg-red-100', 'text-red-700', 'border', 'border-red-200');
+        
+        // Add rejected status indicator
+        const statusHtml = `
+            <div class="mt-2 ml-6 status-indicator">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Ditolak
+                </span>
+            </div>
+        `;
+        fieldContainer.insertAdjacentHTML('beforeend', statusHtml);
+    }
+}
+
+// Update approval count for a revision
+function updateApprovalCount(revisionId) {
+    const approvals = fieldApprovals[revisionId] || {};
+    const approvedCount = Object.values(approvals).filter(status => status === 'approved').length;
+    
+    const countElement = document.querySelector(`[data-revision-count="${revisionId}"]`);
+    if (countElement) {
+        countElement.textContent = approvedCount;
+    }
+    
+    const applyBtn = document.querySelector(`[data-apply-btn="${revisionId}"]`);
+    if (applyBtn) {
+        if (approvedCount === 0) {
+            applyBtn.disabled = true;
+            applyBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+            applyBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        } else {
+            applyBtn.disabled = false;
+            applyBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+            applyBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        }
+    }
+}
+
+// Apply selected changes
+async function applySelectedChanges(revisionId) {
+    const approvals = fieldApprovals[revisionId] || {};
+    const approvedFields = Object.entries(approvals)
+        .filter(([_, status]) => status === 'approved')
+        .map(([field, _]) => field);
+
+    if (approvedFields.length === 0) {
+        showNotification('Pilih minimal satu perubahan yang akan disetujui', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/collaboration/review-revision/${revisionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                action: 'selective_approve',
+                approved_fields: approvedFields
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Perubahan terpilih berhasil diterapkan', 'success');
+            // Redirect ke halaman index setelah berhasil
+            window.location.href = '/tasks'; // atau '/' jika index Anda di root
+        } else {
+            throw new Error(data.message || 'Gagal menerapkan perubahan');
+        }
+    } catch (error) {
+        console.error('Error applying changes:', error);
+        showNotification('Gagal menerapkan perubahan', 'error');
+    }
+}
+
+async function rejectRevision(revisionId) {
+    try {
+        const response = await fetch(`/collaboration/review-revision/${revisionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify({
+                action: 'reject'
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Usulan perubahan ditolak', 'success');
+            // Redirect ke halaman index setelah berhasil
+            window.location.href = '/tasks'; // atau '/' jika index Anda di root
+        } else {
+            throw new Error(data.message || 'Gagal menolak perubahan');
+        }
+    } catch (error) {
+        console.error('Error rejecting revision:', error);
+        showNotification('Gagal menolak perubahan', 'error');
+    }
+}
+
 
 function renderRevisionModal(revisions) {
     const content = document.getElementById('revisionModalContent');
@@ -1494,9 +1660,10 @@ function renderRevisionModal(revisions) {
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-800">Review Usulan Perubahan</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">Review Selektif</h3>
                     <p class="text-sm text-gray-600">
-                        Terdapat <span class="font-medium text-blue-600">${revisions.length}</span> usulan perubahan yang menunggu persetujuan Anda
+                        Terdapat <span class="font-medium text-blue-600">${revisions.length}</span> usulan perubahan. 
+                        Anda dapat menyetujui perubahan secara individual untuk setiap field.
                     </p>
                 </div>
             </div>
@@ -1507,7 +1674,6 @@ function renderRevisionModal(revisions) {
         let changesHtml = '';
         
         const formatValue = (val, fieldKey, revisionData = null) => {
-            // Special handling for priority - show Indonesian labels
             if (fieldKey === 'priority') {
                 const priorityLabels = {
                     'urgent': 'Urgent',
@@ -1522,36 +1688,29 @@ function renderRevisionModal(revisions) {
                 return priorityLabels[String(val).toLowerCase()] || val;
             }
             
-            // Special handling for category_id - show category name from cache
             if (fieldKey === 'category_id') {
-                // First try to get from cache
                 if (val && categoryCache[val]) {
                     return categoryCache[val];
                 }
                 
-                // Try to find category name from revision data
                 if (revisionData) {
-                    // Try from categories array in revision data
                     if (revisionData.categories) {
                         const category = revisionData.categories.find(cat => cat.id == val);
                         if (category) return category.name;
                     }
                     
-                    // Try from task data with category info
                     if (revisionData.task && revisionData.task.category) {
                         if (revisionData.task.category.id == val) {
                             return revisionData.task.category.name;
                         }
                     }
                     
-                    // Try from original_data
                     if (revisionData.original_data && revisionData.original_data.task && revisionData.original_data.task.category) {
                         if (revisionData.original_data.task.category.id == val) {
                             return revisionData.original_data.task.category.name;
                         }
                     }
                     
-                    // Try from proposed_data
                     if (revisionData.proposed_data && revisionData.proposed_data.task && revisionData.proposed_data.task.category) {
                         if (revisionData.proposed_data.task.category.id == val) {
                             return revisionData.proposed_data.task.category.name;
@@ -1559,7 +1718,6 @@ function renderRevisionModal(revisions) {
                     }
                 }
                 
-                // If still not found, return descriptive text
                 return val ? `Kategori ID: ${val}` : "Tidak ada kategori";
             }
             
@@ -1569,39 +1727,31 @@ function renderRevisionModal(revisions) {
             return val;
         };
 
-        // Function to normalize values for consistent comparison
         const normalizeValue = (val, fieldKey) => {
-            // Special handling for boolean fields
             if (fieldKey === 'is_all_day') {
                 if (val === true || val === 1 || val === "1" || val === "Ya") return "1";
                 if (val === false || val === 0 || val === "0" || val === "Tidak") return "0";
             }
             
-            // Special handling for category_id - ensure both are strings
             if (fieldKey === 'category_id') {
                 return String(val || '');
             }
             
-            // For other fields, convert to string and trim
             return String(val || '').trim();
         };
 
-        // Enhanced function to only show changed fields with strict comparison
+        // Enhanced function with selective approval controls
         const renderChanges = (originalData, proposedData, revisionData = null) => {
             const changes = [];
             
-            // Only compare fields that exist in both original and proposed data
             Object.keys(proposedData).forEach(key => {
                 const original = originalData[key];
                 const proposed = proposedData[key];
                 
-                // Normalize values for comparison
                 const normalizedOriginal = normalizeValue(original, key);
                 const normalizedProposed = normalizeValue(proposed, key);
                 
-                // Only add to changes if normalized values are actually different
                 if (normalizedOriginal !== normalizedProposed) {
-                    // Skip fields that are empty or null in both
                     if (!((!original || original === '') && (!proposed || proposed === ''))) {
                         changes.push({
                             field: fieldLabels[key] || key,
@@ -1613,27 +1763,55 @@ function renderRevisionModal(revisions) {
                 }
             });
 
-            // Return empty string if no real changes detected
             if (changes.length === 0) {
                 return '';
             }
 
             return changes.map(change => `
-                <div class="bg-white p-3 rounded-lg border border-gray-100 mb-3 last:mb-0">
-                    <div class="flex items-center gap-2 mb-2">
-                        <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        <span class="font-medium text-gray-800">${change.field}</span>
+                <div class="bg-white p-4 rounded-lg border border-gray-100 mb-3" data-revision="${revision.id}" data-field="${change.key}">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            <span class="font-medium text-gray-800">${change.field}</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <button
+                                onclick="handleFieldAction(${revision.id}, '${change.key}', 'approve')"
+                                class="approve-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-600"
+                            >
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Setujui
+                            </button>
+                            
+                            <button
+                                onclick="handleFieldAction(${revision.id}, '${change.key}', 'reject')"
+                                class="reject-btn px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600"
+                            >
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Tolak
+                            </button>
+                        </div>
                     </div>
-                    <div class="ml-6 space-y-1">
+                    
+                    <div class="ml-6 space-y-2">
                         <div class="flex items-center gap-2 text-sm">
                             <span class="text-red-600 font-medium">Dari:</span>
-                            <span class="bg-red-50 px-2 py-1 rounded text-red-800 line-through">${change.original}</span>
+                            <span class="bg-red-50 px-2 py-1 rounded text-red-800 line-through">
+                                ${change.original}
+                            </span>
                         </div>
                         <div class="flex items-center gap-2 text-sm">
                             <span class="text-green-600 font-medium">Menjadi:</span>
-                            <span class="bg-green-50 px-2 py-1 rounded text-green-800 font-medium">${change.proposed}</span>
+                            <span class="bg-green-50 px-2 py-1 rounded text-green-800 font-medium">
+                                ${change.proposed}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -1685,11 +1863,9 @@ function renderRevisionModal(revisions) {
             `;
         } 
         else if (revision.revision_type === 'update_task_with_subtasks') {
-            // Only show task changes if there are actual changes
             let taskChangesHtml = '';
             const taskChanges = renderChanges(revision.original_data.task, revision.proposed_data.task, revision);
             
-            // Only show task changes section if there are actual changes
             if (taskChanges && taskChanges.trim() !== '') {
                 taskChangesHtml = `
                     <div class="bg-gradient-to-r from-yellow-50 to-amber-50 p-4 rounded-lg border border-yellow-200 mb-4">
@@ -1789,9 +1965,25 @@ function renderRevisionModal(revisions) {
             }
             
             changesHtml = taskChangesHtml + subtaskChangesHtml + deletedChangesHtml;
+        } else {
+            // Handle regular update
+            changesHtml = `
+                <div class="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg border border-orange-200">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="bg-orange-100 p-1.5 rounded-full">
+                            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </div>
+                        <h5 class="font-semibold text-orange-800">Perubahan Tugas</h5>
+                    </div>
+                    <div class="space-y-2">
+                        ${renderChanges(revision.original_data.task || revision.original_data, revision.proposed_data.task || revision.proposed_data, revision)}
+                    </div>
+                </div>
+            `;
         }
 
-        // Enhanced revision type labels
         const getRevisionTypeLabel = (type) => {
             const labels = {
                 'create_subtask': { text: 'Tambah Subtugas', icon: '➕', color: 'green' },
@@ -1805,7 +1997,7 @@ function renderRevisionModal(revisions) {
         const typeInfo = getRevisionTypeLabel(revision.revision_type);
 
         return `
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 p-6 mb-6">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 mb-6" data-revision-id="${revision.id}">
                 <div class="flex justify-between items-start mb-4">
                     <div class="flex-1">
                         <div class="flex items-center gap-3 mb-2">
@@ -1843,27 +2035,43 @@ function renderRevisionModal(revisions) {
                 
                 <div class="flex gap-3 pt-4 border-t border-gray-100">
                     <button 
-                        onclick="reviewRevision(${revision.id}, 'approve')" 
-                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-100 transition-all duration-200 font-medium"
+                        onclick="applySelectedChanges(${revision.id})" 
+                        data-apply-btn="${revision.id}"
+                        class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-300 text-white rounded-lg cursor-not-allowed focus:ring-4 focus:ring-green-100 transition-all duration-200 font-medium"
+                        disabled
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        Setujui Perubahan
+                        Terapkan Perubahan Terpilih (<span data-revision-count="${revision.id}">0</span>)
                     </button>
                     <button 
-                        onclick="reviewRevision(${revision.id}, 'reject')" 
+                        onclick="rejectRevision(${revision.id})" 
                         class="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-100 transition-all duration-200 font-medium"
                     >
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
-                        Tolak Perubahan
+                        Tolak Semua Perubahan
                     </button>
                 </div>
             </div>
         `;
     }).join('');
+}
+
+// Utility function for notifications
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+        type === 'success' ? 'bg-green-600' : 'bg-red-600'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        document.body.removeChild(notification);
+    }, 3000);
 }
 
 // Function to handle revision approval/rejection  

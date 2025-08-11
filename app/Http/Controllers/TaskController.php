@@ -1081,4 +1081,45 @@ class TaskController extends Controller
             ]);
         });
     }
+
+    public function reviewRevision(Request $request, $revisionId)
+    {
+        $revision = \App\Models\TaskRevision::with(['task'])->findOrFail($revisionId);
+
+        // Hanya owner yang boleh approve/reject
+        if ($revision->task->user_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak berhak melakukan aksi ini.'], 403);
+        }
+
+        $action = $request->input('action');
+        if ($action === 'selective_approve') {
+            $approvedFields = $request->input('approved_fields', []);
+            if (empty($approvedFields)) {
+                return response()->json(['success' => false, 'message' => 'Tidak ada field yang disetujui.']);
+            }
+
+            // Terapkan perubahan hanya pada field yang disetujui
+            $proposedTask = $revision->proposed_data['task'] ?? [];
+            $task = $revision->task;
+
+            foreach ($approvedFields as $field) {
+                if (array_key_exists($field, $proposedTask)) {
+                    $task->$field = $proposedTask[$field];
+                }
+            }
+            $task->save();
+
+            // Tandai revisi sebagai approved
+            $revision->status = 'approved';
+            $revision->save();
+
+            return response()->json(['success' => true, 'message' => 'Perubahan terpilih berhasil diterapkan']);
+        } elseif ($action === 'reject') {
+            $revision->status = 'rejected';
+            $revision->save();
+            return response()->json(['success' => true, 'message' => 'Revisi ditolak']);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Aksi tidak dikenali.']);
+    }
 }

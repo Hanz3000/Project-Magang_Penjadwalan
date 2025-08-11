@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
         
         // Fix: Consistent route parameter
         Route::post('/revisions/{revision}', [CollaborationController::class, 'reviewRevision'])->name('collaboration.review');
+        Route::post('/review-revision/{revision}', [TaskController::class, 'reviewRevision']);
     });
 
  
@@ -69,5 +70,8 @@ Route::get('/api/categories', function() {
         'categories' => Category::select('id', 'name')->get()
     ]);
 });
+
+
+
 
 });
