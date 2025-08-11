@@ -1098,10 +1098,10 @@ class TaskController extends Controller
                 return response()->json(['success' => false, 'message' => 'Tidak ada field yang disetujui.']);
             }
 
-            // Terapkan perubahan hanya pada field yang disetujui
             $proposedTask = $revision->proposed_data['task'] ?? [];
             $task = $revision->task;
 
+            // Update task utama
             foreach ($approvedFields as $field) {
                 if (array_key_exists($field, $proposedTask)) {
                     $task->$field = $proposedTask[$field];
@@ -1109,7 +1109,24 @@ class TaskController extends Controller
             }
             $task->save();
 
-            // Tandai revisi sebagai approved
+            // Update subtask jika ada
+            $proposedSubtasks = $revision->proposed_data['subtasks'] ?? [];
+            foreach ($proposedSubtasks as $subId => $proposedSubtask) {
+                // Cek apakah ada field subtask yang di-approve, misal: title:subtaskId
+                foreach ($approvedFields as $field) {
+                    if (strpos($field, 'subtask:') === 0) {
+                        [$_, $fieldName, $id] = explode(':', $field);
+                        if ($id == $subId && isset($proposedSubtask[$fieldName])) {
+                            $subtask = \App\Models\SubTask::find($subId);
+                            if ($subtask) {
+                                $subtask->$fieldName = $proposedSubtask[$fieldName];
+                                $subtask->save();
+                            }
+                        }
+                    }
+                }
+            }
+
             $revision->status = 'approved';
             $revision->save();
 
