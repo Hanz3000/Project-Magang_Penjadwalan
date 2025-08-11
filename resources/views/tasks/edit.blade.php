@@ -1296,7 +1296,35 @@
                     </div>
                 `;
 
-                subtasksContainer.appendChild(subtaskElement);
+                // ...existing code...
+                if (parentId) {
+                    // Cari semua subtask dengan parentId yang sama
+                    const siblings = Array.from(subtasksContainer.querySelectorAll('.subtask-item'))
+                        .filter(item => item.querySelector(`input[name$="[parent_id]"]`).value === parentId);
+
+                    if (siblings.length > 0) {
+                        // Sisipkan setelah sibling terakhir
+                        siblings[siblings.length - 1].after(subtaskElement);
+                    } else {
+                        // Sisipkan setelah parent
+                        const parentItem = subtasksContainer.querySelector(`.subtask-item[data-id="${parentId}"]`);
+                        if (parentItem) {
+                            parentItem.after(subtaskElement);
+                        } else {
+                            subtasksContainer.appendChild(subtaskElement);
+                        }
+                    }
+                } else {
+                    // Jika root subtask, cari root terakhir
+                    const rootSubtasks = Array.from(subtasksContainer.querySelectorAll('.subtask-item'))
+                        .filter(item => !item.querySelector(`input[name$="[parent_id]"]`).value);
+                    if (rootSubtasks.length > 0) {
+                        rootSubtasks[rootSubtasks.length - 1].after(subtaskElement);
+                    } else {
+                        subtasksContainer.appendChild(subtaskElement);
+                    }
+                }
+                // ...existing code...
 
                 const startDateInput = subtaskElement.querySelector('.start-date-input');
                 const endDateInput = subtaskElement.querySelector('.end-date-input');
