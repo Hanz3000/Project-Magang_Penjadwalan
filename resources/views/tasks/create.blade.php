@@ -926,17 +926,26 @@
                     return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateString;
                 }
 
+                // ✅ FUNGSI UTAMA YANG DIPERBAIKI - Mengambil tanggal dari parent subtask yang tepat
                 function getParentDates(parentId) {
+                    // Default ke task utama
                     let parentStartDate = document.getElementById('start_date').value;
                     let parentEndDate = document.getElementById('end_date').value;
 
+                    // Jika ada parentId, cari parent subtask-nya
                     if (parentId) {
                         const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
                         if (parentItem) {
-                            const parentStartInput = parentItem.querySelector('input[name$="[start_date]"]');
-                            const parentEndInput = parentItem.querySelector('input[name$="[end_date]"]');
-                            if (parentStartInput && parentStartInput.value) parentStartDate = parentStartInput.value;
-                            if (parentEndInput && parentEndInput.value) parentEndDate = parentEndInput.value;
+                            const parentStartInput = parentItem.querySelector('input[name*="[start_date]"]');
+                            const parentEndInput = parentItem.querySelector('input[name*="[end_date]"]');
+                            
+                            // Gunakan tanggal dari parent subtask jika ada dan valid
+                            if (parentStartInput && parentStartInput.value) {
+                                parentStartDate = parentStartInput.value;
+                            }
+                            if (parentEndInput && parentEndInput.value) {
+                                parentEndDate = parentEndInput.value;
+                            }
                         }
                     }
 
@@ -948,35 +957,43 @@
 
                 function setSubtaskDateLimits() {
                     document.querySelectorAll('.subtask-item').forEach(item => {
-                        const parentIdInput = item.querySelector('input[name$="[parent_id]"]');
+                        const parentIdInput = item.querySelector('input[name*="[parent_id]"]');
                         const parentId = parentIdInput ? parentIdInput.value : null;
-                        const {
-                            parentStartDate,
-                            parentEndDate
-                        } = getParentDates(parentId);
+                        
+                        // ✅ Menggunakan fungsi getParentDates yang sudah diperbaiki
+                        const { parentStartDate, parentEndDate } = getParentDates(parentId);
 
-                        const startInput = item.querySelector('input[name$="[start_date]"]');
-                        const endInput = item.querySelector('input[name$="[end_date]"]');
+                        const startInput = item.querySelector('input[name*="[start_date]"]');
+                        const endInput = item.querySelector('input[name*="[end_date]"]');
                         const dateDisplaySpan = item.querySelector('.subtask-date span');
 
                         if (startInput) {
                             startInput.min = parentStartDate;
                             startInput.max = parentEndDate;
-                            if (startInput.value && startInput.value < parentStartDate) startInput.value =
-                                parentStartDate;
-                            if (startInput.value && startInput.value > parentEndDate) startInput.value =
-                                parentEndDate;
+                            
+                            // Adjust nilai jika di luar batas
+                            if (startInput.value && startInput.value < parentStartDate) {
+                                startInput.value = parentStartDate;
+                            }
+                            if (startInput.value && startInput.value > parentEndDate) {
+                                startInput.value = parentEndDate;
+                            }
                         }
 
                         if (endInput) {
                             endInput.min = parentStartDate;
                             endInput.max = parentEndDate;
-                            if (endInput.value && endInput.value < parentStartDate) endInput.value =
-                                parentStartDate;
-                            if (endInput.value && endInput.value > parentEndDate) endInput.value =
-                                parentEndDate;
+                            
+                            // Adjust nilai jika di luar batas
+                            if (endInput.value && endInput.value < parentStartDate) {
+                                endInput.value = parentStartDate;
+                            }
+                            if (endInput.value && endInput.value > parentEndDate) {
+                                endInput.value = parentEndDate;
+                            }
                         }
 
+                        // Update tampilan tanggal
                         if (dateDisplaySpan) {
                             const displayStart = formatDateDisplay(startInput?.value || parentStartDate);
                             const displayEnd = formatDateDisplay(endInput?.value || parentEndDate);
@@ -985,39 +1002,55 @@
                     });
                 }
 
+                // ✅ FUNGSI YANG DIPERBAIKI - Update child subtask saat parent berubah
                 function updateChildSubtaskLimits(parentSubtaskId) {
                     const parentItem = document.querySelector(`.subtask-item[data-id="${parentSubtaskId}"]`);
                     if (!parentItem) return;
 
-                    const parentStartInput = parentItem.querySelector('input[name$="[start_date]"]');
-                    const parentEndInput = parentItem.querySelector('input[name$="[end_date]"]');
+                    const parentStartInput = parentItem.querySelector('input[name*="[start_date]"]');
+                    const parentEndInput = parentItem.querySelector('input[name*="[end_date]"]');
                     const parentStartDate = parentStartInput ? parentStartInput.value : '';
                     const parentEndDate = parentEndInput ? parentEndInput.value : '';
 
                     if (!parentStartDate || !parentEndDate) return;
 
-                    document.querySelectorAll(`input[name$="[parent_id]"][value="${parentSubtaskId}"]`).forEach(
+                    // ✅ Cari semua child yang parent_id-nya sesuai dengan parentSubtaskId
+                    document.querySelectorAll(`input[name*="[parent_id]"][value="${parentSubtaskId}"]`).forEach(
                         childInput => {
                             const childItem = childInput.closest('.subtask-item');
                             if (!childItem) return;
 
-                            const childStartInput = childItem.querySelector('input[name$="[start_date]"]');
-                            const childEndInput = childItem.querySelector('input[name$="[end_date]"]');
+                            const childStartInput = childItem.querySelector('input[name*="[start_date]"]');
+                            const childEndInput = childItem.querySelector('input[name*="[end_date]"]');
 
+                            // Update limits dan nilai child
                             if (childStartInput) {
                                 childStartInput.min = parentStartDate;
-                                if (childStartInput.value < parentStartDate) childStartInput.value =
-                                    parentStartDate;
-                                if (childStartInput.value > parentEndDate) childStartInput.value = parentEndDate;
+                                childStartInput.max = parentEndDate;
+                                
+                                // Adjust nilai jika di luar batas parent
+                                if (childStartInput.value < parentStartDate) {
+                                    childStartInput.value = parentStartDate;
+                                }
+                                if (childStartInput.value > parentEndDate) {
+                                    childStartInput.value = parentEndDate;
+                                }
                             }
 
                             if (childEndInput) {
                                 childEndInput.min = parentStartDate;
                                 childEndInput.max = parentEndDate;
-                                if (childEndInput.value < parentStartDate) childEndInput.value = parentStartDate;
-                                if (childEndInput.value > parentEndDate) childEndInput.value = parentEndDate;
+                                
+                                // Adjust nilai jika di luar batas parent
+                                if (childEndInput.value < parentStartDate) {
+                                    childEndInput.value = parentStartDate;
+                                }
+                                if (childEndInput.value > parentEndDate) {
+                                    childEndInput.value = parentEndDate;
+                                }
                             }
 
+                            // Update tampilan tanggal child
                             const childDateDisplaySpan = childItem.querySelector('.subtask-date span');
                             if (childDateDisplaySpan) {
                                 const displayStart = formatDateDisplay(childStartInput?.value || parentStartDate);
@@ -1025,11 +1058,15 @@
                                 childDateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
                             }
 
+                            // ✅ REKURSIF - Update child dari child ini juga
                             const childId = childItem.dataset.id;
-                            if (childId) updateChildSubtaskLimits(childId);
+                            if (childId) {
+                                updateChildSubtaskLimits(childId);
+                            }
                         });
                 }
 
+                // ✅ FUNGSI ADDSUBTASK YANG DIPERBAIKI
                 function addSubtask(parentId) {
                     const subtasksContainer = document.querySelector('.subtasks-scroll-container');
                     const noSubtasksMessage = document.getElementById('no-subtasks');
@@ -1050,10 +1087,8 @@
                         }
                     }
 
-                    const {
-                        parentStartDate,
-                        parentEndDate
-                    } = getParentDates(parentId);
+                    // ✅ Menggunakan fungsi getParentDates yang sudah diperbaiki
+                    const { parentStartDate, parentEndDate } = getParentDates(parentId);
                     const displayParentStart = formatDateDisplay(parentStartDate);
                     const displayParentEnd = formatDateDisplay(parentEndDate);
 
@@ -1121,20 +1156,20 @@
                 </div>
             `;
 
-                    // --- PENAMBAHAN LOGIKA INSERT DI BAWAH PARENT DAN CHILD-NYA ---
+                    // ✅ INSERT DI POSISI YANG TEPAT (setelah parent dan semua child-nya)
                     if (parentId) {
-                        // Cari parent
                         const parentItem = document.querySelector(`.subtask-item[data-id="${parentId}"]`);
                         if (parentItem) {
-                            // Cari child terakhir dari parent (berdasarkan urutan DOM dan parent_id)
                             let insertAfter = parentItem;
                             let found = true;
+                            
+                            // Cari child terakhir dari parent ini
                             while (found) {
                                 found = false;
-                                // Cari child langsung setelah insertAfter
                                 const nextSibling = insertAfter.nextElementSibling;
-                                if (nextSibling && nextSibling.querySelector(`input[name$="[parent_id]"]`)?.value ===
-                                    parentId) {
+                                if (nextSibling && 
+                                    nextSibling.classList.contains('subtask-item') &&
+                                    nextSibling.querySelector(`input[name*="[parent_id]"]`)?.value === parentId) {
                                     insertAfter = nextSibling;
                                     found = true;
                                 }
@@ -1147,30 +1182,37 @@
                         subtasksContainer.appendChild(subtaskElement);
                     }
 
-                    // ...existing event listeners for date changes...
+                    // ✅ EVENT LISTENERS UNTUK PERUBAHAN TANGGAL
                     const startDateInput = subtaskElement.querySelector('.start-date-input');
                     const endDateInput = subtaskElement.querySelector('.end-date-input');
 
                     startDateInput.addEventListener('change', function() {
+                        // Validasi end date tidak boleh sebelum start date
+                        if (endDateInput.value < this.value) {
+                            endDateInput.value = this.value;
+                        }
                         endDateInput.min = this.value;
-                        if (endDateInput.value < this.value) endDateInput.value = this.value;
 
+                        // Update display tanggal
                         const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
                         if (dateDisplaySpan) {
                             dateDisplaySpan.textContent =
                                 `${formatDateDisplay(this.value)} - ${formatDateDisplay(endDateInput.value)}`;
                         }
 
+                        // ✅ Update semua child subtask dari subtask ini
                         updateChildSubtaskLimits(subtaskId);
                     });
 
                     endDateInput.addEventListener('change', function() {
+                        // Update display tanggal
                         const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
                         if (dateDisplaySpan) {
                             dateDisplaySpan.textContent =
                                 `${formatDateDisplay(startDateInput.value)} - ${formatDateDisplay(this.value)}`;
                         }
 
+                        // ✅ Update semua child subtask dari subtask ini
                         updateChildSubtaskLimits(subtaskId);
                     });
 
@@ -1178,7 +1220,7 @@
                 }
 
                 function removeSubtask(subtaskId, isExisting = false) {
-                    document.querySelectorAll(`input[name$="[parent_id]"][value="${subtaskId}"]`).forEach(
+                    document.querySelectorAll(`input[name*="[parent_id]"][value="${subtaskId}"]`).forEach(
                         childInput => {
                             const childId = childInput.closest('.subtask-item')?.dataset.id;
                             if (childId) removeSubtask(childId, false);
