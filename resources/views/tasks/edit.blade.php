@@ -564,32 +564,31 @@
                                 </div>
                             </div>
                             <!-- Hidden input for deleted subtasks -->
-                            <input type="hidden"
-                                            name="deleted_subtasks" id="deleted_subtasks" value="">
-                                    </div>
-                                </div>
+                            <input type="hidden" name="deleted_subtasks" id="deleted_subtasks" value="">
+                        </div>
+                    </div>
 
-                                <!-- Action Buttons -->
-                                <div
-                                    class="bg-gray-50 px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                                    <a href="{{ route('tasks.index') }}"
-                                        class="inline-flex items-center px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                                        </svg>
-                                        Kembali ke Daftar
-                                    </a>
+                    <!-- Action Buttons -->
+                    <div
+                        class="bg-gray-50 px-8 py-6 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <a href="{{ route('tasks.index') }}"
+                            class="inline-flex items-center px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            Kembali ke Daftar
+                        </a>
 
-                                    <button type="submit"
-                                        class="inline-flex items-center px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                        Update Task
-                                    </button>
-                                </div>
+                        <button type="submit"
+                            class="inline-flex items-center px-8 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Update Task
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -765,6 +764,9 @@
             let subtaskIdCounter = {{ $task->subTasks ? $task->subTasks->count() : 0 }};
             let currentTimeInput = null;
             let deletedSubtasks = [];
+            
+            // Flag untuk mencegah notifikasi duplikat
+            let isUpdatingSubtasks = false;
 
             // --- Priority Selection Enhancement ---
             function setupPrioritySelection() {
@@ -850,7 +852,6 @@
                 }, 200);
             }
 
-            // Ganti fungsi populateTimeLists dengan yang ini:
             function populateTimeLists(selectedHour, selectedMinute) {
                 const hourList = document.getElementById('hour-list');
                 const minuteList = document.getElementById('minute-list');
@@ -876,8 +877,8 @@
                     hourList.appendChild(hourDiv);
                 }
 
-                // BUAT OPSI MENIT (00-59) - PERUBAHAN UTAMA DI SINI
-                for (let i = 0; i <= 59; i++) { // Ubah dari i += 5 menjadi i++
+                // BUAT OPSI MENIT (00-59)
+                for (let i = 0; i <= 59; i++) {
                     const minuteDiv = document.createElement('div');
                     minuteDiv.className =
                         `time-option px-4 py-2 text-center cursor-pointer hover:bg-blue-50 ${
@@ -990,15 +991,20 @@
                             `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
                     }
                 }
+                
+                // Panggil updateAllSubtaskDates dengan flag
+                isUpdatingSubtasks = true;
                 updateAllSubtaskDates();
+                isUpdatingSubtasks = false;
             }
 
+            // MODIFIKASI FUNGSI INI UNTUK MENCEGAH NOTIFIKASI DUPLIKAT
             function updateAllSubtaskDates() {
                 const startDateInput = document.getElementById('start_date');
                 const endDateInput = document.getElementById('end_date');
                 const newStartDate = startDateInput.value;
                 const newEndDate = endDateInput.value;
-                let adjusted = false;
+                let mainTaskAdjusted = false;
 
                 document.querySelectorAll('.subtask-item').forEach(item => {
                     const parentIdInput = item.querySelector('input[name$="[parent_id]"]');
@@ -1010,7 +1016,6 @@
 
                     const startInput = item.querySelector('input[name$="[start_date]"]');
                     const endInput = item.querySelector('input[name$="[end_date]"]');
-                    const titleInput = item.querySelector('input[name$="[title]"]');
                     const dateDisplaySpan = item.querySelector('.subtask-date span');
 
                     if (startInput && endInput) {
@@ -1022,23 +1027,23 @@
                         // Sesuaikan tanggal subtask jika di luar rentang
                         if (startInput.value < parentStartDate) {
                             startInput.value = parentStartDate;
-                            adjusted = true;
+                            mainTaskAdjusted = true;
                         }
                         if (startInput.value > parentEndDate) {
                             startInput.value = parentEndDate;
-                            adjusted = true;
+                            mainTaskAdjusted = true;
                         }
                         if (endInput.value < parentStartDate) {
                             endInput.value = parentStartDate;
-                            adjusted = true;
+                            mainTaskAdjusted = true;
                         }
                         if (endInput.value > parentEndDate) {
                             endInput.value = parentEndDate;
-                            adjusted = true;
+                            mainTaskAdjusted = true;
                         }
                         if (endInput.value < startInput.value) {
                             endInput.value = startInput.value;
-                            adjusted = true;
+                            mainTaskAdjusted = true;
                         }
 
                         if (dateDisplaySpan) {
@@ -1047,12 +1052,12 @@
                             dateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
                         }
 
-                        const subtaskId = item.dataset.id;
-                        updateChildSubtaskLimits(subtaskId);
+                        // JANGAN PANGGIL updateChildSubtaskLimits di sini untuk mencegah notifikasi duplikat
                     }
                 });
 
-                if (adjusted) {
+                // HANYA TAMPILKAN SATU NOTIFIKASI JIKA ADA PENYESUAIAN
+                if (mainTaskAdjusted && isUpdatingSubtasks) {
                     showAlert('Tanggal subtask telah disesuaikan agar sesuai dengan rentang tanggal tugas utama.',
                         'info');
                 }
@@ -1127,6 +1132,7 @@
                 });
             }
 
+            // MODIFIKASI FUNGSI INI UNTUK MENCEGAH NOTIFIKASI DUPLIKAT SAAT UPDATE TANGGAL UTAMA
             function updateChildSubtaskLimits(parentSubtaskId) {
                 const parentItem = document.querySelector(`.subtask-item[data-id="${parentSubtaskId}"]`);
                 if (!parentItem) return;
@@ -1139,7 +1145,7 @@
 
                 if (!parentStartDate || !parentEndDate) return;
 
-                let adjusted = false;
+                let childAdjusted = false;
 
                 document.querySelectorAll(`input[name$="[parent_id]"][value="${parentSubtaskId}"]`).forEach(
                     childInput => {
@@ -1148,17 +1154,16 @@
 
                         const childStartInput = childItem.querySelector('input[name$="[start_date]"]');
                         const childEndInput = childItem.querySelector('input[name$="[end_date]"]');
-                        const childTitle = childItem.querySelector('input[name$="[title]"]').value;
 
                         if (childStartInput) {
                             childStartInput.min = parentStartDate;
                             if (childStartInput.value < parentStartDate) {
                                 childStartInput.value = parentStartDate;
-                                adjusted = true;
+                                childAdjusted = true;
                             }
                             if (childStartInput.value > parentEndDate) {
                                 childStartInput.value = parentEndDate;
-                                adjusted = true;
+                                childAdjusted = true;
                             }
                         }
 
@@ -1167,15 +1172,15 @@
                             childEndInput.max = parentEndDate;
                             if (childEndInput.value < parentStartDate) {
                                 childEndInput.value = parentStartDate;
-                                adjusted = true;
+                                childAdjusted = true;
                             }
                             if (childEndInput.value > parentEndDate) {
                                 childEndInput.value = parentEndDate;
-                                adjusted = true;
+                                childAdjusted = true;
                             }
                             if (childEndInput.value < childStartInput.value) {
                                 childEndInput.value = childStartInput.value;
-                                adjusted = true;
+                                childAdjusted = true;
                             }
                         }
 
@@ -1190,7 +1195,8 @@
                         if (childId) updateChildSubtaskLimits(childId);
                     });
 
-                if (adjusted) {
+                // HANYA TAMPILKAN NOTIFIKASI JIKA BUKAN DARI UPDATE TANGGAL UTAMA
+                if (childAdjusted && !isUpdatingSubtasks) {
                     showAlert(
                         `Tanggal subtask anak dari '${parentTitle}' telah disesuaikan agar sesuai dengan rentang tanggal subtask induk.`,
                         'info'
@@ -1296,17 +1302,13 @@
                     </div>
                 `;
 
-                // ...existing code...
                 if (parentId) {
-                    // Cari semua subtask dengan parentId yang sama
                     const siblings = Array.from(subtasksContainer.querySelectorAll('.subtask-item'))
                         .filter(item => item.querySelector(`input[name$="[parent_id]"]`).value === parentId);
 
                     if (siblings.length > 0) {
-                        // Sisipkan setelah sibling terakhir
                         siblings[siblings.length - 1].after(subtaskElement);
                     } else {
-                        // Sisipkan setelah parent
                         const parentItem = subtasksContainer.querySelector(`.subtask-item[data-id="${parentId}"]`);
                         if (parentItem) {
                             parentItem.after(subtaskElement);
@@ -1315,7 +1317,6 @@
                         }
                     }
                 } else {
-                    // Jika root subtask, cari root terakhir
                     const rootSubtasks = Array.from(subtasksContainer.querySelectorAll('.subtask-item'))
                         .filter(item => !item.querySelector(`input[name$="[parent_id]"]`).value);
                     if (rootSubtasks.length > 0) {
@@ -1324,7 +1325,6 @@
                         subtasksContainer.appendChild(subtaskElement);
                     }
                 }
-                // ...existing code...
 
                 const startDateInput = subtaskElement.querySelector('.start-date-input');
                 const endDateInput = subtaskElement.querySelector('.end-date-input');
@@ -1399,6 +1399,13 @@
             }
 
             function showAlert(message, type = 'info') {
+                // Cek apakah sudah ada notifikasi dengan pesan yang sama
+                const existingAlert = Array.from(document.querySelectorAll('.alert-message')).find(alert => 
+                    alert.textContent.trim() === message
+                );
+                
+                if (existingAlert) return; // Jangan tampilkan jika sudah ada
+                
                 const alertDiv = document.createElement('div');
                 const colors = {
                     error: 'bg-red-100 border-red-400 text-red-700',
@@ -1411,7 +1418,7 @@
                     `fixed top-4 right-4 border-l-4 ${colors[type]} px-4 py-3 rounded shadow-lg z-50 transition-all duration-300 transform translate-x-0 opacity-100`;
                 alertDiv.innerHTML = `
                     <div class="flex items-center">
-                        <span class="mr-2">${message}</span>
+                        <span class="mr-2 alert-message">${message}</span>
                         <button onclick="this.parentElement.parentElement.remove()" class="ml-auto">
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1541,7 +1548,6 @@
                         }
                     }
 
-                    // Validasi tanggal subtask sebelum submit
                     if (!validateSubtaskDatesBeforeSubmit()) {
                         e.preventDefault();
                         return false;
