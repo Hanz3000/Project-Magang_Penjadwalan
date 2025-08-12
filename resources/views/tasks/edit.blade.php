@@ -1057,7 +1057,7 @@
                 });
 
                 // HANYA TAMPILKAN SATU NOTIFIKASI JIKA ADA PENYESUAIAN
-                if (mainTaskAdjusted && isUpdatingSubtasks) {
+                if (mainTaskAdjusted && !isUpdatingSubtasks) {
                     showAlert('Tanggal subtask telah disesuaikan agar sesuai dengan rentang tanggal tugas utama.',
                         'info');
                 }
@@ -1132,14 +1132,14 @@
                 });
             }
 
-            // MODIFIKASI FUNGSI INI UNTUK MENCEGAH NOTIFIKASI DUPLIKAT SAAT UPDATE TANGGAL UTAMA
-            function updateChildSubtaskLimits(parentSubtaskId) {
+            // **PERBAIKAN UTAMA: REAL-TIME UPDATE BATAS TANGGAL ANAK SUBTASK**
+            function updateChildSubtaskLimitsRealtime(parentSubtaskId) {
                 const parentItem = document.querySelector(`.subtask-item[data-id="${parentSubtaskId}"]`);
                 if (!parentItem) return;
 
                 const parentStartInput = parentItem.querySelector('input[name$="[start_date]"]');
                 const parentEndInput = parentItem.querySelector('input[name$="[end_date]"]');
-                const parentTitle = parentItem.querySelector('input[name$="[title]"]').value;
+                const parentTitle = parentItem.querySelector('input[name$="[title]"]')?.value || 'Subtask';
                 const parentStartDate = parentStartInput ? parentStartInput.value : '';
                 const parentEndDate = parentEndInput ? parentEndInput.value : '';
 
@@ -1147,9 +1147,10 @@
 
                 let childAdjusted = false;
 
-                document.querySelectorAll(`input[name$="[parent_id]"][value="${parentSubtaskId}"]`).forEach(
-                    childInput => {
-                        const childItem = childInput.closest('.subtask-item');
+                // Cari semua anak subtask yang memiliki parent_id sama dengan parentSubtaskId
+                document.querySelectorAll('input[name$="[parent_id]"]').forEach(childParentInput => {
+                    if (childParentInput.value === parentSubtaskId) {
+                        const childItem = childParentInput.closest('.subtask-item');
                         if (!childItem) return;
 
                         const childStartInput = childItem.querySelector('input[name$="[start_date]"]');
@@ -1157,6 +1158,9 @@
 
                         if (childStartInput) {
                             childStartInput.min = parentStartDate;
+                            childStartInput.max = parentEndDate;
+                            
+                            // Sesuaikan nilai jika di luar batas
                             if (childStartInput.value < parentStartDate) {
                                 childStartInput.value = parentStartDate;
                                 childAdjusted = true;
@@ -1170,6 +1174,8 @@
                         if (childEndInput) {
                             childEndInput.min = parentStartDate;
                             childEndInput.max = parentEndDate;
+                            
+                            // Sesuaikan nilai jika di luar batas
                             if (childEndInput.value < parentStartDate) {
                                 childEndInput.value = parentStartDate;
                                 childAdjusted = true;
@@ -1184,6 +1190,7 @@
                             }
                         }
 
+                        // Update tampilan tanggal
                         const childDateDisplaySpan = childItem.querySelector('.subtask-date span');
                         if (childDateDisplaySpan) {
                             const displayStart = formatDateDisplay(childStartInput?.value || parentStartDate);
@@ -1191,17 +1198,26 @@
                             childDateDisplaySpan.textContent = `${displayStart} - ${displayEnd}`;
                         }
 
+                        // Recursively update grandchildren
                         const childId = childItem.dataset.id;
-                        if (childId) updateChildSubtaskLimits(childId);
-                    });
+                        if (childId) {
+                            updateChildSubtaskLimitsRealtime(childId);
+                        }
+                    }
+                });
 
-                // HANYA TAMPILKAN NOTIFIKASI JIKA BUKAN DARI UPDATE TANGGAL UTAMA
+                // Tampilkan notifikasi jika ada penyesuaian
                 if (childAdjusted && !isUpdatingSubtasks) {
                     showAlert(
-                        `Tanggal subtask anak dari '${parentTitle}' telah disesuaikan agar sesuai dengan rentang tanggal subtask induk.`,
+                        `Tanggal anak subtask dari '${parentTitle}' telah disesuaikan agar sesuai dengan rentang tanggal induk.`,
                         'info'
                     );
                 }
+            }
+
+            // MODIFIKASI FUNGSI INI UNTUK MENCEGAH NOTIFIKASI DUPLIKAT SAAT UPDATE TANGGAL UTAMA
+            function updateChildSubtaskLimits(parentSubtaskId) {
+                return updateChildSubtaskLimitsRealtime(parentSubtaskId);
             }
 
             function addSubtask(parentId) {
@@ -1326,33 +1342,53 @@
                     }
                 }
 
+                // **PERBAIKAN: Attach event listeners untuk real-time update**
+                attachSubtaskDateEventListeners(subtaskElement, subtaskId);
+                checkScrollIndicator();
+            }
+
+            // **FUNGSI BARU: Attach event listeners untuk subtask**
+            function attachSubtaskDateEventListeners(subtaskElement, subtaskId) {
                 const startDateInput = subtaskElement.querySelector('.start-date-input');
                 const endDateInput = subtaskElement.querySelector('.end-date-input');
 
-                startDateInput.addEventListener('change', function() {
-                    endDateInput.min = this.value;
-                    if (endDateInput.value < this.value) endDateInput.value = this.value;
+                if (startDateInput) {
+                    startDateInput.addEventListener('change', function() {
+                        const siblingEndInput = subtaskElement.querySelector('.end-date-input');
+                        if (siblingEndInput) {
+                            siblingEndInput.min = this.value;
+                            if (siblingEndInput.value < this.value) {
+                                siblingEndInput.value = this.value;
+                            }
+                        }
 
-                    const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
-                    if (dateDisplaySpan) {
-                        dateDisplaySpan.textContent =
-                            `${formatDateDisplay(this.value)} - ${formatDateDisplay(endDateInput.value)}`;
-                    }
+                        // Update tampilan tanggal
+                        const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
+                        if (dateDisplaySpan) {
+                            dateDisplaySpan.textContent =
+                                `${formatDateDisplay(this.value)} - ${formatDateDisplay(siblingEndInput.value)}`;
+                        }
 
-                    updateChildSubtaskLimits(subtaskId);
-                });
+                        // Update batas tanggal anak subtask secara real-time
+                        updateChildSubtaskLimitsRealtime(subtaskId);
+                    });
+                }
 
-                endDateInput.addEventListener('change', function() {
-                    const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
-                    if (dateDisplaySpan) {
-                        dateDisplaySpan.textContent =
-                            `${formatDateDisplay(startDateInput.value)} - ${formatDateDisplay(this.value)}`;
-                    }
+                if (endDateInput) {
+                    endDateInput.addEventListener('change', function() {
+                        const siblingStartInput = subtaskElement.querySelector('.start-date-input');
+                        
+                        // Update tampilan tanggal
+                        const dateDisplaySpan = subtaskElement.querySelector('.subtask-date span');
+                        if (dateDisplaySpan) {
+                            dateDisplaySpan.textContent =
+                                `${formatDateDisplay(siblingStartInput.value)} - ${formatDateDisplay(this.value)}`;
+                        }
 
-                    updateChildSubtaskLimits(subtaskId);
-                });
-
-                checkScrollIndicator();
+                        // Update batas tanggal anak subtask secara real-time
+                        updateChildSubtaskLimitsRealtime(subtaskId);
+                    });
+                }
             }
 
             function removeSubtask(subtaskId, isExisting = false) {
@@ -1554,43 +1590,10 @@
                     }
                 });
 
-                document.querySelectorAll('.subtask-item .start-date-input').forEach(input => {
-                    input.addEventListener('change', function() {
-                        const subtaskItem = this.closest('.subtask-item');
-                        const subtaskId = subtaskItem.dataset.id;
-                        const endDateInput = subtaskItem.querySelector('.end-date-input');
-                        endDateInput.min = this.value;
-                        if (endDateInput.value < this.value) {
-                            endDateInput.value = this.value;
-                            showAlert(
-                                'Tanggal selesai subtask disesuaikan agar tidak sebelum tanggal mulai.',
-                                'info');
-                        }
-
-                        const dateDisplaySpan = subtaskItem.querySelector('.subtask-date span');
-                        if (dateDisplaySpan) {
-                            dateDisplaySpan.textContent =
-                                `${formatDateDisplay(this.value)} - ${formatDateDisplay(endDateInput.value)}`;
-                        }
-
-                        updateChildSubtaskLimits(subtaskId);
-                    });
-                });
-
-                document.querySelectorAll('.subtask-item .end-date-input').forEach(input => {
-                    input.addEventListener('change', function() {
-                        const subtaskItem = this.closest('.subtask-item');
-                        const subtaskId = subtaskItem.dataset.id;
-                        const startDateInput = subtaskItem.querySelector('.start-date-input');
-
-                        const dateDisplaySpan = subtaskItem.querySelector('.subtask-date span');
-                        if (dateDisplaySpan) {
-                            dateDisplaySpan.textContent =
-                                `${formatDateDisplay(startDateInput.value)} - ${formatDateDisplay(this.value)}`;
-                        }
-
-                        updateChildSubtaskLimits(subtaskId);
-                    });
+                // **PERBAIKAN: Initialize event listeners untuk subtask yang sudah ada**
+                document.querySelectorAll('.subtask-item').forEach(item => {
+                    const subtaskId = item.dataset.id;
+                    attachSubtaskDateEventListeners(item, subtaskId);
                 });
             }
 
